@@ -170,6 +170,8 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		map< blk_ref, MDagPath > objs;
 		ImportNodes( root, objs );
 
+		//Report total number of blocks in memory
+		cout << "Blocks in memory:  " << BlocksInMemory() << endl;
 		
 		//--Import Data--//
 		cout << "Importing Data..." << endl;
@@ -527,6 +529,10 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 	}
 	
 	cout << "Finished Read" << endl;
+
+	//Report total number of blocks in memory (hopfully zero)
+	cout << "Blocks in memory:  " << BlocksInMemory() << endl;
+
 	return MStatus::kSuccess;
 }
 
