@@ -77,7 +77,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <string.h> 
 #include <vector>
 
-#include "NIFlib/niflib.h"
+#include "niflib.h"
 
 //--Constants--//
 const char PLUGIN_VERSION [] = "pre-alpha";	
@@ -510,11 +510,13 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		//--Reposition Nodes--//
 		for ( it = objs.begin(); it != objs.end(); ++it ) {
 			MFnTransform transFn( it->second );
-			float transform[4][4];
+			Matrix44 transform;
 			INode * node = (INode*)it->first->QueryInterface(Node);
-			node->GetLocalTransform( transform );
+			transform = node->GetLocalTransform();
+			float trans_arr[4][4];
+			transform.AsFloatArr( trans_arr );
 
-			transFn.set( MTransformationMatrix(MMatrix(transform)) );
+			transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
 			
 		}
 
@@ -563,7 +565,7 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	}
 
 	//--Set the Transform Matrix--//
-	float transform[4][4];
+	Matrix44 transform;
 
 	//If this is a skinned shape, turn off inherit transform and use the World Transform
 	//Some NIF files have the shapes parented to the skeleton which
@@ -571,18 +573,21 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	if ( (block->GetBlockType() == "NiTriShape") && (block["Skin Instance"]->asLink().is_null() == false) ) {
 		transFn.findPlug("inheritsTransform").setValue(false);
 		//node->GetWorldTransform( transform );
-		node->GetBindPosition( transform );
+		transform = node->GetBindPosition();
 
 	}
 	else {
 		//node->GetLocalTransform( transform );
 		//Get parent node if any
 
-		node->GetLocalBindPos( transform );
+		transform = node->GetLocalBindPos();
 	}
-	
 
-	transFn.set( MTransformationMatrix(MMatrix(transform)) );
+	//put matrix into a float array
+	float trans_arr[4][4];
+	transform.AsFloatArr( trans_arr );
+
+	transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
 	transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
 
 	// If the node has a name, set it
@@ -672,12 +677,11 @@ MObject NifTranslator::ImportMaterial( blk_ref block ) {
 	MFnPhongShader phongFn;
 	MObject obj = phongFn.create();
 
-	float3 color;
 	//Don't mess with Ambient right now... ugly white
 	//block->["Ambient Color"]->asFloat3( color );
 	//phongFn.setAmbientColor( MColor(color[0], color[1], color[2]) );
 
-	block["Diffuse Color"]->asFloat3( color );
+	Float3 color = block["Diffuse Color"];
 	phongFn.setColor( MColor(color[0], color[1], color[2]) );
 
 	//Set Specular color to 0 unless the mesh has a NiSpecularProperty
@@ -688,12 +692,12 @@ MObject NifTranslator::ImportMaterial( blk_ref block ) {
 		blk_ref spec_prop = par["Properties"]->FindLink( "NiSpecularProperty");
 		if ( spec_prop.is_null() == false && (spec_prop["Flags"] & 1) == true ) {
 			//This mesh uses specular color - load it
-			block["Specular Color"]->asFloat3( color );
+			color = block["Specular Color"];
 			phongFn.setSpecularColor( MColor(color[0], color[1], color[2]) );
 		}
 	}
 
-	block["Emissive Color"]->asFloat3( color );
+	color = block["Emissive Color"];
 	phongFn.setIncandescence( MColor(color[0], color[1], color[2]) );
 
 	if ( color[0] > 0.0 || color[1] > 0.0 || color[2] > 0.0) {
@@ -720,7 +724,7 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	int NumVertices = data->GetVertexCount();
 	int NumPolygons = data->GetTriangleCount();
 
-	vector<Vector3D> nif_verts = data->GetVertices();
+	vector<Vector3> nif_verts = data->GetVertices();
 	MPointArray maya_verts(NumVertices);
 
 	for (int i = 0; i < NumVertices; ++i) {
@@ -767,6 +771,19 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	
 	meshFn.create( NumVertices, NumPolygons, maya_verts, maya_poly_counts, maya_connects, parent );
 	meshFn.getPath( meshPath );
+
+	//Import Vertex Colors
+	vector<Color> nif_colors = data->GetColors();
+	if ( nif_colors.size() > 0 ) {
+		//Create vertex list
+		MIntArray vert_list(NumVertices);
+		MColorArray maya_colors((unsigned int)nif_colors.size(), MColor(0.5f, 0.5f, 0.5f, 1.0f) );
+		for (unsigned int i = 0; i < nif_colors.size(); ++i ) {
+			maya_colors[i] = MColor( nif_colors[i].r, nif_colors[i].g, nif_colors[i].b, nif_colors[i].a );
+			vert_list[i] = i;
+		}
+		meshFn.setVertexColors( maya_colors, vert_list );
+	}
 
 	//Get Parent to examine properties
 	blk_ref par = block->GetParent();
