@@ -119,7 +119,7 @@ public:
 	bool haveReferenceMethod () const { return false; }
 
 	//Returns true if the class has a write method and false otherwise
-	bool haveWriteMethod () const { return false; }
+	bool haveWriteMethod () const { return true; }
 
 	//Returns true if the class can deal with namespaces and false otherwise
 	bool haveNamespaceSupport () const { return false; }
@@ -166,9 +166,14 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		blk_ref root= ReadNifTree( file.fullName().asChar() );
 
 		cout << "Importing Nodes..." << endl;
-		//Import Nodes
+		//Import Nodes, starting at each child of the root
 		map< blk_ref, MDagPath > objs;
-		ImportNodes( root, objs );
+		list<blk_ref> root_children = root["Children"]->asLinkList();
+		list<blk_ref>::iterator node_it;
+		for (node_it = root_children.begin(); node_it != root_children.end(); ++node_it ) {
+			ImportNodes( *node_it, objs );
+		}
+		//ImportNodes( root, objs );
 
 		//Report total number of blocks in memory
 		cout << "Blocks in memory:  " << BlocksInMemory() << endl;
@@ -421,7 +426,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 					if ( skin_inst.is_null() == false ) {
 						//Get the NIF skin data interface
 						blk_ref skin_data = skin_inst["Data"];
-						ISkinData * data = (ISkinData*)skin_data->QueryInterface( SkinData );
+						ISkinData * data = (ISkinData*)skin_data->QueryInterface( ID_SKIN_DATA );
 
 						//Build up the MEL command string
 						string cmd = "skinCluster -tsb ";
@@ -511,7 +516,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		for ( it = objs.begin(); it != objs.end(); ++it ) {
 			MFnTransform transFn( it->second );
 			Matrix44 transform;
-			INode * node = (INode*)it->first->QueryInterface(Node);
+			INode * node = (INode*)it->first->QueryInterface(ID_NODE);
 			transform = node->GetLocalTransform();
 			float trans_arr[4][4];
 			transform.AsFloatArr( trans_arr );
@@ -541,7 +546,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 // Recursive function to crawl down tree looking for children and translate those that are understood
 void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs, MObject parent )  {
 	MObject obj;
-	INode * node = (INode*)block->QueryInterface(Node);
+	INode * node = (INode*)block->QueryInterface(ID_NODE);
 
 	//Stop at a non-node
 	if ( node == NULL )
@@ -718,8 +723,7 @@ MObject NifTranslator::ImportMaterial( blk_ref block ) {
 
 MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	//Get TriShapeData interface
-	int id = TriShapeData;
-	ITriShapeData * data = (ITriShapeData*)block->QueryInterface( id );
+	ITriShapeData * data = (ITriShapeData*)block->QueryInterface( ID_TRI_SHAPE_DATA );
 
 	int NumVertices = data->GetVertexCount();
 	int NumPolygons = data->GetTriangleCount();
@@ -880,7 +884,126 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 //Responsible for traversing all objects in the current Maya scene, and writing a representation to the given
 //file in the supported format.
 MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
-	return MS::kFailure;
+	//Create new root node
+	blk_ref root = CreateBlock("NiNode");
+	root["Name"] = string("Scene Root");
+	root["Scale"]->Set(1.0f);
+
+
+	cout << root->asString() << endl;
+
+	//A map to hold associations between DAG paths and NIF blocks
+	map< string, blk_ref > objs;
+
+	//Itterate through all of the Maya DAG nodes, adding them to the tree
+	 MItDag it(MItDag::kDepthFirst);
+	while(!it.isDone()) {
+
+		// attach a function set for a dag node to the
+		// object. Rather than access data directly,
+		// we access it via the function set.
+		MFnDagNode nodeFn(it.item());
+
+		//Check if this is a transform node
+		if ( it.item().hasFn(MFn::kTransform) ) {
+			//This is a transform node, check if it is an IK joint or a shape
+
+			//if ( it.item().hasFn(MFn::kShape) ) {
+			//	//NiTriShape
+			//} else {
+				//NiNode
+				blk_ref block = CreateBlock("NiNode");
+
+				//Fix name
+				string name = string( nodeFn.name().asChar() );
+				replace(name.begin(), name.end(), '_', ' ');
+				block["Name"] = name;
+
+				//Associate block with node DagPath
+				string path = nodeFn.fullPathName().asChar();
+				objs[path] = block;
+				
+				////Is this a joint and therefore has bind pose info?
+				//if ( it.item().hasFn(MFn::kJoint) ) {
+				//}
+			/*}*/
+		}
+
+
+
+
+
+
+
+
+
+
+
+		//// get the name of the node
+		//MString name = fn.name();
+
+		//// write the node type found
+		//cout << "node: " << name.asChar() << endl;
+
+		//// write the info about the children
+		//cout <<"num_kids " << fn.childCount() << endl;
+
+		//for(int i=0;i<fn.childCount();++i) {
+  //			// get the MObject for the i'th child
+		//MObject child = fn.child(i);
+
+		//// attach a function set to it
+		//MFnDagNode fnChild(child);
+
+		//// write the child name
+		//cout << "\t" << fnChild.name().asChar();
+		//cout << endl;
+
+		//}
+
+
+
+		//}
+
+		// move to next node
+		it.next();
+	}
+
+	//Loop through again, this time connecting the parents to the children
+	it.reset();
+	while(!it.isDone()) {
+		MFnDagNode nodeFn(it.item());
+
+		//Get path to this block
+		string blk_path = nodeFn.fullPathName().asChar();
+
+		for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
+  			// get the MObject for the i'th parent
+			MObject parent = nodeFn.parent(i);
+
+			// attach a function set to it
+			MFnDagNode parentFn(parent);
+
+			string par_path = parentFn.fullPathName().asChar();
+
+			//Check if parent exists in map we've built
+			if ( objs.find( par_path ) != objs.end() ) {
+				//Object found
+				objs[par_path]["Children"]->AddLink( objs[blk_path] );
+			} else {
+				//parent to scene root
+				root["Children"]->AddLink( objs[blk_path] );
+			}
+		}
+
+		// move to next node
+		it.next();
+	}
+
+	//Write finished NIF file
+	WriteNifTree(file.fullName().asChar(), root);
+	
+	return MS::kSuccess;
 }
 
 //--NifTranslator::identifyFile--//
