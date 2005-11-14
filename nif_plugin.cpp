@@ -76,6 +76,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 
 #include <string.h> 
 #include <vector>
+#include <cmath>
 
 #include "niflib.h"
 
@@ -168,12 +169,18 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		cout << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
 		map< blk_ref, MDagPath > objs;
-		list<blk_ref> root_children = root["Children"]->asLinkList();
-		list<blk_ref>::iterator node_it;
-		for (node_it = root_children.begin(); node_it != root_children.end(); ++node_it ) {
-			ImportNodes( *node_it, objs );
+		attr_ref children_attr = root["Children"];
+		if ( children_attr.is_null() == false ) {
+			//Root is a Parent Node
+			list<blk_ref> root_children = children_attr->asLinkList();
+			list<blk_ref>::iterator node_it;
+			for (node_it = root_children.begin(); node_it != root_children.end(); ++node_it ) {
+				ImportNodes( *node_it, objs );
+			}
+		} else {
+			//Root is a lone block
+			ImportNodes( root, objs );
 		}
-		//ImportNodes( root, objs );
 
 		//Report total number of blocks in memory
 		cout << "Blocks in memory:  " << BlocksInMemory() << endl;
@@ -546,7 +553,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 // Recursive function to crawl down tree looking for children and translate those that are understood
 void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs, MObject parent )  {
 	MObject obj;
-	INode * node = (INode*)block->QueryInterface(ID_NODE);
+	INode * node = QueryNode(block);
 
 	//Stop at a non-node
 	if ( node == NULL )
@@ -554,7 +561,7 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 
 	//This must be a node, so process its basic attributes	
 	MFnTransform transFn;
-	string name = block["Name"];
+	string name = block->GetName();
 	int flags = block["Flags"];
 	if ( block->GetBlockType() == "NiNode" && ( (strstr(name.c_str(), "Bip") != NULL ) || ((flags & 8) == 0) ) ) {
 		// This is a bone, create an IK joint parented to the given parent
@@ -596,11 +603,10 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
 
 	// If the node has a name, set it
-	attr_ref attr = block["Name"];
-	if ( attr.is_null() == false ) {
+	if ( block->Namable() == true ) {
 		MFnDependencyNode dnFn;
 		dnFn.setObject(obj);
-		string name = attr;
+		string name = block->GetName();
 		dnFn.setName(MString(name.c_str()));	
 	}
 
@@ -715,18 +721,22 @@ MObject NifTranslator::ImportMaterial( blk_ref block ) {
 	float alpha = block["Alpha"];
 	phongFn.setTranslucenceCoeff( alpha );
 
-	string name = block["Name"];
+	string name = block->GetName();
 	phongFn.setName( MString(name.c_str()) );
 
 	return obj;
 }
 
 MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
-	//Get TriShapeData interface
-	ITriShapeData * data = (ITriShapeData*)block->QueryInterface( ID_TRI_SHAPE_DATA );
+	//Get ShapeData and TriShapeData interface
+	IShapeData * data = QueryShapeData(block);
+	ITriShapeData * tri_data = QueryTriShapeData(block);
+
+	if ( data == NULL ) { throw runtime_error("IShapeData interface not returend"); }
+	if ( tri_data == NULL ) { throw runtime_error("ITriShapeData interface not returend"); }
 
 	int NumVertices = data->GetVertexCount();
-	int NumPolygons = data->GetTriangleCount();
+	int NumPolygons = tri_data->GetTriangleCount();
 
 	vector<Vector3> nif_verts = data->GetVertices();
 	MPointArray maya_verts(NumVertices);
@@ -758,7 +768,7 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	//There are 3 verticies to list per triangle
 	vector<int> connects( NumPolygons * 3 );// = new int[NumPolygons * 3];
 
-	vector<Triangle> triangles = data->GetTriangles();
+	vector<Triangle> triangles = tri_data->GetTriangles();
 
 	MIntArray maya_connects;
 	for (int i = 0; i < NumPolygons; ++i) {
@@ -884,124 +894,168 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 //Responsible for traversing all objects in the current Maya scene, and writing a representation to the given
 //file in the supported format.
 MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
-	//Create new root node
-	blk_ref root = CreateBlock("NiNode");
-	root["Name"] = string("Scene Root");
-	root["Scale"]->Set(1.0f);
+	
+	try {
+	
+		//Create new root node
+		blk_ref root = CreateBlock("NiNode");
+		root->SetName("Scene Root");
+		root["Scale"]->Set(1.0f);
 
 
-	cout << root->asString() << endl;
+		cout << root->asString() << endl;
 
-	//A map to hold associations between DAG paths and NIF blocks
-	map< string, blk_ref > objs;
+		//A map to hold associations between DAG paths and NIF blocks
+		map< string, blk_ref > objs;
 
-	//Itterate through all of the Maya DAG nodes, adding them to the tree
-	 MItDag it(MItDag::kDepthFirst);
-	while(!it.isDone()) {
+		//Itterate through all of the Maya DAG nodes, adding them to the tree
+		MItDag it(MItDag::kDepthFirst);
+		while(!it.isDone()) {
 
-		// attach a function set for a dag node to the
-		// object. Rather than access data directly,
-		// we access it via the function set.
-		MFnDagNode nodeFn(it.item());
+			// attach a function set for a dag node to the
+			// object. Rather than access data directly,
+			// we access it via the function set.
+			MFnDagNode nodeFn(it.item());
 
-		//Check if this is a transform node
-		if ( it.item().hasFn(MFn::kTransform) ) {
-			//This is a transform node, check if it is an IK joint or a shape
+			// only want non-history items
+			if( !nodeFn.isIntermediateObject() ) {
 
-			//if ( it.item().hasFn(MFn::kShape) ) {
-			//	//NiTriShape
-			//} else {
-				//NiNode
-				blk_ref block = CreateBlock("NiNode");
+				//Check if this is a transform node
+				if ( it.item().hasFn(MFn::kTransform) ) {
+					//This is a transform node, check if it is an IK joint or a shape
 
-				//Fix name
-				string name = string( nodeFn.name().asChar() );
-				replace(name.begin(), name.end(), '_', ' ');
-				block["Name"] = name;
+					blk_ref block;
+					if ( it.item().hasFn(MFn::kShape) ) {
+						//NiTriShape
+						block = CreateBlock("NiTriShape");
+					} else {
+						//NiNode
+						block = CreateBlock("NiNode");
+					}
 
-				//Associate block with node DagPath
-				string path = nodeFn.fullPathName().asChar();
-				objs[path] = block;
-				
-				////Is this a joint and therefore has bind pose info?
-				//if ( it.item().hasFn(MFn::kJoint) ) {
-				//}
-			/*}*/
-		}
+					//Fix name
+					string name = string( nodeFn.name().asChar() );
+					replace(name.begin(), name.end(), '_', ' ');
+					block->SetName( name );
+					MMatrix my_trans= nodeFn.transformationMatrix();
 
+					//--Extract Scale from first 3 rows--//
+					double scale[3];
+					for (int r = 0; r < 3; ++r) {
+						//Get scale for this row
+						scale[r] = sqrt(my_trans[r][0] * my_trans[r][0] + my_trans[r][1] * my_trans[r][1] + my_trans[r][2] * my_trans[r][2] + my_trans[r][3] * my_trans[r][3]);
+					
+						//Normalize the row by dividing each factor by scale
+						my_trans[r][0] /= scale[r];
+						my_trans[r][1] /= scale[r];
+						my_trans[r][2] /= scale[r];
+						my_trans[r][3] /= scale[r];
+					}
 
-
-
-
-
-
-
-
-
-
-		//// get the name of the node
-		//MString name = fn.name();
-
-		//// write the node type found
-		//cout << "node: " << name.asChar() << endl;
-
-		//// write the info about the children
-		//cout <<"num_kids " << fn.childCount() << endl;
-
-		//for(int i=0;i<fn.childCount();++i) {
-  //			// get the MObject for the i'th child
-		//MObject child = fn.child(i);
-
-		//// attach a function set to it
-		//MFnDagNode fnChild(child);
-
-		//// write the child name
-		//cout << "\t" << fnChild.name().asChar();
-		//cout << endl;
-
-		//}
+					//Get Rotatoin
+					Matrix33 nif_rotate;
+					for ( int r = 0; r < 3; ++r ) {
+						for ( int c = 0; c < 3; ++c ) {
+							nif_rotate[r][c] = float(my_trans[r][c]);
+						}
+					}
+					//Get Translation
+					Float3 nif_trans;
+					nif_trans[0] = float(my_trans[3][0]);
+					nif_trans[1] = float(my_trans[3][1]);
+					nif_trans[2] = float(my_trans[3][2]);
+					//nif_trans.Set( float(my_trans[3][0]), float(my_trans[3][1]), float(my_trans[3][2]) );
+					
+					//Store Transform Values in block
+					block["Scale"] = float(scale[0] + scale[1] + scale[2]) / 3.0f;
+					block["Rotation"] = nif_rotate;
+					block["Translation"] = nif_trans;
 
 
 
-		//}
 
-		// move to next node
-		it.next();
-	}
 
-	//Loop through again, this time connecting the parents to the children
-	it.reset();
-	while(!it.isDone()) {
-		MFnDagNode nodeFn(it.item());
-
-		//Get path to this block
-		string blk_path = nodeFn.fullPathName().asChar();
-
-		for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
-  			// get the MObject for the i'th parent
-			MObject parent = nodeFn.parent(i);
-
-			// attach a function set to it
-			MFnDagNode parentFn(parent);
-
-			string par_path = parentFn.fullPathName().asChar();
-
-			//Check if parent exists in map we've built
-			if ( objs.find( par_path ) != objs.end() ) {
-				//Object found
-				objs[par_path]["Children"]->AddLink( objs[blk_path] );
-			} else {
-				//parent to scene root
-				root["Children"]->AddLink( objs[blk_path] );
+					//Associate block with node DagPath
+					string path = nodeFn.fullPathName().asChar();
+					objs[path] = block;
+				}
 			}
+
+			// move to next node
+			it.next();
 		}
 
-		// move to next node
-		it.next();
-	}
+							////Is this a joint and therefore has bind pose info?
+						//if ( it.item().hasFn(MFn::kJoint) ) {
+						//}
+					/*}*/
+			//}
 
-	//Write finished NIF file
-	WriteNifTree(file.fullName().asChar(), root);
+			//// get the name of the node
+			//MString name = fn.name();
+
+			//// write the node type found
+			//cout << "node: " << name.asChar() << endl;
+
+			//// write the info about the children
+			//cout <<"num_kids " << fn.childCount() << endl;
+
+			//for(int i=0;i<fn.childCount();++i) {
+	//			// get the MObject for the i'th child
+			//MObject child = fn.child(i);
+
+			//// attach a function set to it
+			//MFnDagNode fnChild(child);
+
+			//// write the child name
+			//cout << "\t" << fnChild.name().asChar();
+			//cout << endl;
+
+		//Loop through again, this time connecting the parents to the children
+		it.reset();
+		while(!it.isDone()) {
+			MFnDagNode nodeFn(it.item());
+
+			//Get path to this block
+			string blk_path = nodeFn.fullPathName().asChar();
+
+			for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
+  				// get the MObject for the i'th parent
+				MObject parent = nodeFn.parent(i);
+
+				// attach a function set to it
+				MFnDagNode parentFn(parent);
+
+				string par_path = parentFn.fullPathName().asChar();
+
+				//Check if parent exists in map we've built
+				if ( objs.find( par_path ) != objs.end() ) {
+					//Object found
+					objs[par_path]["Children"]->AddLink( objs[blk_path] );
+				} else {
+					//See if block was created at all
+					if ( objs.find( blk_path ) != objs.end() ) {
+						//Block was created, parent to scene root
+						root["Children"]->AddLink( objs[blk_path] );
+					}
+				}
+			}
+
+			// move to next node
+			it.next();
+		}
+
+		//Write finished NIF file
+		WriteNifTree(file.fullName().asChar(), root);
+	}
+	catch( exception & e ) {
+		cout << "Error:  " << e.what() << endl;
+		return MStatus::kFailure;
+	}
+	catch( ... ) {
+		cout << "Error:  Unknown Exception." << endl;
+		return MStatus::kFailure;
+	}
 	
 	return MS::kSuccess;
 }
