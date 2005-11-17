@@ -200,7 +200,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			string blk_type = block->GetBlockType();
 
 			//Import the data based on the type of node - NiTriShape only so far
-			if ( blk_type == "NiTriShape" ) {
+			if ( blk_type == "NiTriShape" || blk_type == "NiTriStrips" ) {
 				////If this is a skinned shape, turn off inherit transform
 				////Some NIF files have the shapes parented to the skeleton which
 				////messes up the deformation
@@ -731,12 +731,12 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	//Get ShapeData and TriShapeData interface
 	IShapeData * data = QueryShapeData(block);
 	ITriShapeData * tri_data = QueryTriShapeData(block);
+	ITriStripsData * strip_data = QueryTriStripsData(block);
 
 	if ( data == NULL ) { throw runtime_error("IShapeData interface not returend"); }
-	if ( tri_data == NULL ) { throw runtime_error("ITriShapeData interface not returend"); }
+	if ( tri_data == NULL && strip_data == NULL ) { throw runtime_error("Mesh did not return a Triangle or Strip interface."); }
 
 	int NumVertices = data->GetVertexCount();
-	int NumPolygons = tri_data->GetTriangleCount();
 
 	vector<Vector3> nif_verts = data->GetVertices();
 	MPointArray maya_verts(NumVertices);
@@ -745,20 +745,23 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 		maya_verts[i] = MPoint(nif_verts[i].x, nif_verts[i].y, nif_verts[i].z, 0.0f);
 	}
 
-//Theoretical Example
-//int NumVertices = data->GetVertexCount();
-//int NumPolygons = data->GetTriangleCount();
-//
-//MPoint * maya_verts = new MPoint[NumVertices];
-//MPointArray maya_verts(NumVertices);
-//
-//attr_ref verts = tri_data_block["Verticies"];
-//for (i = 0; i < NumVertices; ++i) {
-//      attr_ref elem = verts->GetElement(i);
-//      MPointArray[i] = MPoint( elem->GetChild("x"), elem->GetChild("y"), elem->GetChild("z"), 0.0f ) );
-//}
+	//Get Polygons
+	int NumPolygons = 0;
+	vector<Triangle> triangles;
+	if ( tri_data != NULL ) {
+		//We're dealing with Triangle Data
+		NumPolygons = tri_data->GetTriangleCount();
+
+		triangles = tri_data->GetTriangles();
+	} else {
+		//We're dealing with Strip Data
+		NumPolygons = strip_data->GetTriangleCount();
+
+		triangles = strip_data->GetTriangles();
+	}
 
 	//Nifs only have triangles, so all polys have 3 verticies
+	//Create an array to tell Maya this
 	int * poly_counts = new int[NumPolygons];
 	for (int i = 0; i < NumPolygons; ++i) {
 		poly_counts[i] = 3;
@@ -767,8 +770,6 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 
 	//There are 3 verticies to list per triangle
 	vector<int> connects( NumPolygons * 3 );// = new int[NumPolygons * 3];
-
-	vector<Triangle> triangles = tri_data->GetTriangles();
 
 	MIntArray maya_connects;
 	for (int i = 0; i < NumPolygons; ++i) {
@@ -868,18 +869,18 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	}
 
 	// Don't load the normals now because they glitch up the skinning (sigh)
-	//// Load Normals
-	//vector<Vector3D> nif_normals(NumVertices);
-	//nif_normals = data->GetNormals();
+	// Load Normals
+	vector<Vector3> nif_normals(NumVertices);
+	nif_normals = data->GetNormals();
 
-	//MVectorArray maya_normals(NumVertices);
-	//MIntArray vert_list(NumVertices);
-	//for (int i = 0; i < NumVertices; ++i) {
-	//	maya_normals[i] = MVector(nif_normals[i].x, nif_normals[i].y, nif_normals[i].z );
-	//	vert_list[i] = i;
-	//}
+	MVectorArray maya_normals(NumVertices);
+	MIntArray vert_list(NumVertices);
+	for (int i = 0; i < NumVertices; ++i) {
+		maya_normals[i] = MVector(nif_normals[i].x, nif_normals[i].y, nif_normals[i].z );
+		vert_list[i] = i;
+	}
 
-	//meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
+	meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
 
 
 	//Delete everything that was used to load verticies
