@@ -181,6 +181,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			//Root is a lone block
 			ImportNodes( root, objs );
 		}
+		
 
 		//Report total number of blocks in memory
 		cout << "Blocks in memory:  " << BlocksInMemory() << endl;
@@ -264,6 +265,8 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						MFnDependencyNode nodeFn;
 						blk_ref tx_block;
 						Texture tx;
+
+						
 
 						//Cycle through for each type of texture
 						int uv_set = 0;
@@ -427,6 +430,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 							++uv_set;
 						}
 					}
+					
 					dgModifier.doIt();
 
 					//--Bind Skin if any--//
@@ -519,18 +523,20 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			}
 		}
 
-		//--Reposition Nodes--//
-		for ( it = objs.begin(); it != objs.end(); ++it ) {
-			MFnTransform transFn( it->second );
-			Matrix44 transform;
-			INode * node = (INode*)it->first->QueryInterface(ID_NODE);
-			transform = node->GetLocalTransform();
-			float trans_arr[4][4];
-			transform.AsFloatArr( trans_arr );
 
-			transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
-			
-		}
+
+		////--Reposition Nodes--//
+		//for ( it = objs.begin(); it != objs.end(); ++it ) {
+		//	MFnTransform transFn( it->second );
+		//	Matrix44 transform;
+		//	INode * node = (INode*)it->first->QueryInterface(ID_NODE);
+		//	transform = node->GetLocalTransform();
+		//	float trans_arr[4][4];
+		//	transform.AsFloatArr( trans_arr );
+
+		//	transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
+		//	
+		//}
 
 	}
 	catch( exception & e ) {
@@ -561,7 +567,7 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 
 	//This must be a node, so process its basic attributes	
 	MFnTransform transFn;
-	string name = block->GetName();
+	string name = block["Name"];
 	int flags = block["Flags"];
 	if ( block->GetBlockType() == "NiNode" && ( (strstr(name.c_str(), "Bip") != NULL ) || ((flags & 8) == 0) ) ) {
 		// This is a bone, create an IK joint parented to the given parent
@@ -603,10 +609,11 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
 
 	// If the node has a name, set it
-	if ( block->Namable() == true ) {
+	attr_ref name_attr = block["Name"];
+	if ( name_attr.is_null() == false ) {
 		MFnDependencyNode dnFn;
 		dnFn.setObject(obj);
-		string name = block->GetName();
+		string name = name_attr;
 		dnFn.setName(MString(name.c_str()));	
 	}
 
@@ -721,7 +728,7 @@ MObject NifTranslator::ImportMaterial( blk_ref block ) {
 	float alpha = block["Alpha"];
 	phongFn.setTranslucenceCoeff( alpha );
 
-	string name = block->GetName();
+	string name = block["Name"];
 	phongFn.setName( MString(name.c_str()) );
 
 	return obj;
@@ -843,7 +850,7 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	// Get default (first) UV Set if there is one		
 	if ( data->GetUVSetCount() > 0 ) {
 		meshFn.clearUVs();
-		vector<UVCoord> uv_set;
+		vector<TexCoord> uv_set;
 		//Arrays for maya
 		MFloatArray u_arr(NumVertices), v_arr(NumVertices);
 
@@ -869,18 +876,18 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	}
 
 	// Don't load the normals now because they glitch up the skinning (sigh)
-	// Load Normals
-	vector<Vector3> nif_normals(NumVertices);
-	nif_normals = data->GetNormals();
+	//// Load Normals
+	//vector<Vector3> nif_normals(NumVertices);
+	//nif_normals = data->GetNormals();
 
-	MVectorArray maya_normals(NumVertices);
-	MIntArray vert_list(NumVertices);
-	for (int i = 0; i < NumVertices; ++i) {
-		maya_normals[i] = MVector(nif_normals[i].x, nif_normals[i].y, nif_normals[i].z );
-		vert_list[i] = i;
-	}
+	//MVectorArray maya_normals(NumVertices);
+	//MIntArray vert_list(NumVertices);
+	//for (int i = 0; i < NumVertices; ++i) {
+	//	maya_normals[i] = MVector(nif_normals[i].x, nif_normals[i].y, nif_normals[i].z );
+	//	vert_list[i] = i;
+	//}
 
-	meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
+	//meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
 
 
 	//Delete everything that was used to load verticies
@@ -900,7 +907,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	
 		//Create new root node
 		blk_ref root = CreateBlock("NiNode");
-		root->SetName("Scene Root");
+		root["Name"] = "Scene Root";
 		root["Scale"]->Set(1.0f);
 
 
@@ -937,7 +944,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 					//Fix name
 					string name = string( nodeFn.name().asChar() );
 					replace(name.begin(), name.end(), '_', ' ');
-					block->SetName( name );
+					block["Name"] = name;
 					MMatrix my_trans= nodeFn.transformationMatrix();
 
 					//--Extract Scale from first 3 rows--//
