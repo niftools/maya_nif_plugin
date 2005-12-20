@@ -264,7 +264,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 					if (tx_prop_block.is_null() == false ) {
 						MFnDependencyNode nodeFn;
 						blk_ref tx_block;
-						Texture tx;
+						TexDesc tx;
 
 						
 
@@ -636,7 +636,7 @@ MObject NifTranslator::ImportTexture( blk_ref block ) {
 	//block = block->GetLink("Base Texture");
 	
 	//If the texture is stored externally, use it
-	TextureSource ts = block["Texture Source"];
+	TexSource ts = block["Texture Source"];
 
 	if ( ts.useExternal == true ) {
 		//An external texture is used, create a texture node
@@ -816,25 +816,25 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 		//Create a list of the UV sets used by the texturing property if there is one
 		blk_ref tx_prop = par["Properties"]->FindLink( "NiTexturingProperty");
 		if ( tx_prop.is_null() == false ) {
-			if ( tx_prop["Base Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Base Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("map1") );
 			}
-			if ( tx_prop["Dark Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Dark Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("dark") );
 			}
-			if ( tx_prop["Detail Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Detail Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("detail") );
 			}
-			if ( tx_prop["Gloss Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Gloss Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("gloss") );
 			}
-			if ( tx_prop["Glow Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Glow Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("glow") );
 			}
-			if ( tx_prop["Bump Map Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Bump Map Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("bump") );
 			}
-			if ( tx_prop["Decal 0 Texture"]->asTexture().isUsed == true ) {
+			if ( tx_prop["Decal 0 Texture"]->asTexDesc().isUsed == true ) {
 				uv_set_list.push_back( MString("decal0") );
 			}
 		}
