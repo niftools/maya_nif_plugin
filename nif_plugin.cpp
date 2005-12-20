@@ -590,14 +590,9 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	//messes up the deformation
 	if ( (block->GetBlockType() == "NiTriShape") && (block["Skin Instance"]->asLink().is_null() == false) ) {
 		transFn.findPlug("inheritsTransform").setValue(false);
-		//node->GetWorldTransform( transform );
 		transform = node->GetBindPosition();
-
 	}
 	else {
-		//node->GetLocalTransform( transform );
-		//Get parent node if any
-
 		transform = node->GetLocalBindPos();
 	}
 
@@ -795,7 +790,7 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	meshFn.getPath( meshPath );
 
 	//Import Vertex Colors
-	vector<Color> nif_colors = data->GetColors();
+	vector<Color4> nif_colors = data->GetColors();
 	if ( nif_colors.size() > 0 ) {
 		//Create vertex list
 		MIntArray vert_list(NumVertices);
