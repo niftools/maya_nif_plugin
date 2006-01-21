@@ -120,7 +120,7 @@ public:
 	bool haveReferenceMethod () const { return false; }
 
 	//Returns true if the class has a write method and false otherwise
-	bool haveWriteMethod () const { return true; }
+	bool haveWriteMethod () const { return false; }
 
 	//Returns true if the class can deal with namespaces and false otherwise
 	bool haveNamespaceSupport () const { return false; }
@@ -148,7 +148,7 @@ private:
 //This routine is called by Maya when it is necessary to load a file of a type supported by this translator.
 //Responsible for reading the contents of the given file, and creating Maya objects via API or MEL calls to reflect the data in the file.
 MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
-	cout << "Begining Read..." << endl;
+	//cout << "Begining Read..." << endl;
 	try {
 		//Parse Options String
 		MStringArray options;
@@ -162,11 +162,11 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			}
 		}
 
-		cout << "Reading NIF File..." << endl;
+		//cout << "Reading NIF File..." << endl;
 		//Read NIF file
 		blk_ref root= ReadNifTree( file.fullName().asChar() );
 
-		cout << "Importing Nodes..." << endl;
+		//cout << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
 		map< blk_ref, MDagPath > objs;
 		attr_ref children_attr = root["Children"];
@@ -184,10 +184,10 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		
 
 		//Report total number of blocks in memory
-		cout << "Blocks in memory:  " << BlocksInMemory() << endl;
+		//cout << "Blocks in memory:  " << BlocksInMemory() << endl;
 		
 		//--Import Data--//
-		cout << "Importing Data..." << endl;
+		//cout << "Importing Data..." << endl;
 		//maps to hold information about what has already been imported
 		map< pair<blk_ref, blk_ref>, MObject > materials;
 		map< blk_ref, MObject > textures;
@@ -479,7 +479,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 							////Get Bind Pose
 							//float bind_pose[4][4];
 							//INode * node = (INode*)bone_blks[i]->QueryInterface(Node);
-							//node->GetBindPosition( bind_pose );
+							//node->GetWorldBindPos( bind_pose );
 							//MFnMatrixData mat;
 							//mat.set( MMatrix( bind_pose ) );
 
@@ -525,18 +525,18 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 
 
 
-		////--Reposition Nodes--//
-		//for ( it = objs.begin(); it != objs.end(); ++it ) {
-		//	MFnTransform transFn( it->second );
-		//	Matrix44 transform;
-		//	INode * node = (INode*)it->first->QueryInterface(ID_NODE);
-		//	transform = node->GetLocalTransform();
-		//	float trans_arr[4][4];
-		//	transform.AsFloatArr( trans_arr );
+		//--Reposition Nodes--//
+		for ( it = objs.begin(); it != objs.end(); ++it ) {
+			MFnTransform transFn( it->second );
+			Matrix44 transform;
+			INode * node = (INode*)it->first->QueryInterface(ID_NODE);
+			transform = node->GetLocalTransform();
+			float trans_arr[4][4];
+			transform.AsFloatArr( trans_arr );
 
-		//	transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
-		//	
-		//}
+			transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
+			
+		}
 
 	}
 	catch( exception & e ) {
@@ -548,10 +548,10 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		return MStatus::kFailure;
 	}
 	
-	cout << "Finished Read" << endl;
+	//cout << "Finished Read" << endl;
 
 	//Report total number of blocks in memory (hopfully zero)
-	cout << "Blocks in memory:  " << BlocksInMemory() << endl;
+	//cout << "Blocks in memory:  " << BlocksInMemory() << endl;
 
 	return MStatus::kSuccess;
 }
@@ -590,7 +590,7 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	//messes up the deformation
 	if ( (block->GetBlockType() == "NiTriShape") && (block["Skin Instance"]->asLink().is_null() == false) ) {
 		transFn.findPlug("inheritsTransform").setValue(false);
-		transform = node->GetBindPosition();
+		transform = node->GetWorldBindPos();
 	}
 	else {
 		transform = node->GetLocalBindPos();
@@ -906,7 +906,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		root["Scale"]->Set(1.0f);
 
 
-		cout << root->asString() << endl;
+		//cout << root->asString() << endl;
 
 		//A map to hold associations between DAG paths and NIF blocks
 		map< string, blk_ref > objs;
@@ -1070,7 +1070,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 // Code adapted from animImportExport example that comes with Maya 6.5
 
 MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fileName, const char* buffer, short size) const {
-	cout << "Checking File Type..." << endl;
+	//cout << "Checking File Type..." << endl;
 	const char *name = fileName.name().asChar();
 	int nameLength = (int)strlen(name);
 
@@ -1087,7 +1087,7 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 
 // Code adapted from lepTranslator example that comes with Maya 6.5
 MStatus initializePlugin( MObject obj ) {
-	cout << "Initializing Plugin..." << endl;
+	//cout << "Initializing Plugin..." << endl;
 	MStatus   status;
 	MFnPlugin plugin( obj, "NIFLA", PLUGIN_VERSION, "Any");
 
@@ -1103,7 +1103,7 @@ MStatus initializePlugin( MObject obj ) {
 		return status;
 	}
 
-	cout << "Done Initializing." << endl;
+	//cout << "Done Initializing." << endl;
 	return status;
 }
 
