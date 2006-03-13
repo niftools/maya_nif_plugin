@@ -1,86 +1,5 @@
-// Maya NIF File Translator Plugin
-// Based on information from NIFLA
+#include "nif_plugin.h"
 
-/* Copyright (c) 2005, NIF File Format Library and Tools
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions
-are met:
-
-   * Redistributions of source code must retain the above copyright
-     notice, this list of conditions and the following disclaimer.
-
-   * Redistributions in binary form must reproduce the above
-     copyright notice, this list of conditions and the following
-     disclaimer in the documentation and/or other materials provided
-     with the distribution.
-
-   * Neither the name of the NIF File Format Library and Tools
-     project nor the names of its contributors may be used to endorse
-     or promote products derived from this software without specific
-     prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
-"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
-LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
-FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
-COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
-BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
-LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
-LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
-ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-POSSIBILITY OF SUCH DAMAGE. */
-
-//--Includes--//
-#include <maya/MDagPath.h>
-#include <maya/MEulerRotation.h>
-#include <maya/MFloatArray.h>
-#include <maya/MFnBase.h>
-#include <maya/MFnComponent.h>
-#include <maya/MFnData.h>
-#include <maya/MFnDagNode.h>
-#include <maya/MFnDependencyNode.h>
-#include <maya/MFnIkJoint.h>
-#include <maya/MFnMatrixData.h>
-#include <maya/MFnMesh.h>
-#include <maya/MFnNumericAttribute.h>
-#include <maya/MFnPhongShader.h>
-#include <maya/MFnPlugin.h>
-#include <maya/MFnSet.h>
-#include <maya/MFnTransform.h>
-#include <maya/MFStream.h>
-#include <maya/MGlobal.h>
-#include <maya/MIntArray.h>
-#include <maya/MIOStream.h> 
-#include <maya/MItDag.h>
-#include <maya/MItDependencyNodes.h>
-#include <maya/MItGeometry.h>
-#include <maya/MItSelectionList.h>
-#include <maya/MMatrix.h>
-#include <maya/MObject.h>
-#include <maya/MPlug.h>
-#include <maya/MPlugArray.h>
-#include <maya/MPointArray.h>
-#include <maya/MPxFileTranslator.h>
-#include <maya/MQuaternion.h>
-#include <maya/MSelectionList.h>
-#include <maya/MFnSingleIndexedComponent.h>
-#include <maya/MFnSkinCluster.h>
-#include <maya/MStatus.h>
-#include <maya/MString.h>
-#include <maya/MStringArray.h>
-#include <maya/MVector.h>
-
-#include <string.h> 
-#include <vector>
-#include <cmath>
-
-#include "niflib.h"
-
-//--Constants--//
 const char PLUGIN_VERSION [] = "pre-alpha";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
@@ -89,59 +8,66 @@ string texture_path; // Path to textures gotten from option string
 
 //--Function Definitions--//
 
+//--NifTranslator::identifyFile--//
 
+// This routine must use passed data to determine if the file is of a type supported by this translator
 
-//--NifTranslator Class--//
+// Code adapted from animImportExport example that comes with Maya 6.5
 
-//This class implements the file translation functionality of the plug-in
-class NifTranslator : public MPxFileTranslator {
-public:
-	//Constructor
-	NifTranslator () {};
+MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fileName, const char* buffer, short size) const {
+	//cout << "Checking File Type..." << endl;
+	const char *name = fileName.name().asChar();
+	int nameLength = (int)strlen(name);
 
-	//Destructor
-	virtual ~NifTranslator () {};
+	if ((nameLength > 4) && !strcasecmp(name+nameLength-4, ".nif")) {
+		return kIsMyFileType;
+	}
 
-	//Factory function for Maya to use to create a NifTranslator
-	static void* creator() { return new NifTranslator(); }
+	return	kNotMyFileType;
+}
 
-	//This routine is called by Maya when it is necessary to load a file of a type supported by this translator.
-	//Responsible for reading the contents of the given file, and creating Maya objects via API or MEL calls to reflect the data in the file.
-	MStatus reader (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
-	
-	//This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
-	//Responsible for traversing all objects in the current Maya scene, and writing a representation to the given file in the supported format.
-	MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
-	
-	//Returns true if the class has a read method and false otherwise
-	bool haveReadMethod () const { return true; }
+//--Plug-in Load/Unload--//
 
-	//Returns true if the class has a reference method and false otherwise
-	bool haveReferenceMethod () const { return false; }
+//--initializePlugin--//
 
-	//Returns true if the class has a write method and false otherwise
-	bool haveWriteMethod () const { return false; }
+// Code adapted from lepTranslator example that comes with Maya 6.5
+MStatus initializePlugin( MObject obj ) {
+	//cout << "Initializing Plugin..." << endl;
+	MStatus   status;
+	MFnPlugin plugin( obj, "NIFLA", PLUGIN_VERSION, "Any");
 
-	//Returns true if the class can deal with namespaces and false otherwise
-	bool haveNamespaceSupport () const { return false; }
+	// Register the translator with the system
+	status =  plugin.registerFileTranslator( TRANSLATOR_NAME,  //File Translator Name
+										"nifTranslator.rgb", //Icon
+										NifTranslator::creator, //Factory Function
+										"nifTranslatorOpts", //MEL Script for options dialog
+										NULL, //Default Options
+										false ); //Requires MEL support
+	if (!status) {
+		status.perror("registerFileTranslator");
+		return status;
+	}
 
-	//Returns a string containing the default extension of the translator, excluding the period at the beginning
-	MString defaultExtension () const { return MString("nif"); }
+	//cout << "Done Initializing." << endl;
+	return status;
+}
 
-	//Returns true if the class can open and import files
-	//Returns false if the class can only import files
-	bool canBeOpened() const { return true; }
+//--uninitializePlugin--//
 
-	// This routine must use passed data to determine if the file is of a type supported by this translator
-	MFileKind identifyFile (const MFileObject& fileName, const char* buffer, short size) const;
+// Code adapted from lepTranslator example that comes with Maya 6.5
+MStatus uninitializePlugin( MObject obj )
+{
+	MStatus   status;
+	MFnPlugin plugin( obj );
 
-private:
-	void ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs, MObject parent = MObject::kNullObj );
-	MDagPath ImportMesh( blk_ref block, MObject parent = MObject::kNullObj );
-	MObject ImportMaterial( blk_ref block );
-	MObject ImportTexture( blk_ref block );
+	status =  plugin.deregisterFileTranslator( TRANSLATOR_NAME );
+	if (!status) {
+		status.perror("deregisterFileTranslator");
+		return status;
+	}
 
-};
+	return status;
+}
 
 //--NifTranslator::reader--//
 
@@ -266,71 +192,51 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						blk_ref tx_block;
 						TexDesc tx;
 
-						
+						//Get TexturingProperty Interface
+						ITexturingProperty * tx_prop = QueryTexturingProperty( tx_prop_block );
+						int tx_count = tx_prop->GetTextureCount();
 
 						//Cycle through for each type of texture
 						int uv_set = 0;
-						for (int i = 0; i < 7; ++i) {
-							switch(i) {
-								case 0:
-									tx_block = tx_prop_block["Base Texture"];
-									tx = tx_prop_block["Base Texture"];
-									break;
-								case 1:
-									tx_block = tx_prop_block["Dark Texture"];
-									tx = tx_prop_block["Dark Texture"];
+						for (int i = 0; i < tx_count; ++i) {
+							tx = tx_prop->GetTexture( i );
+							tx_block = tx.source;
 
+							switch(i) {
+								case DARK_MAP:
 									//Temporary until/if Dark Textures are supported
 									if ( tx.isUsed == true ) {
 										cout << "Warning:  Dark Textures are not yet supported." << endl;
 										uv_set++;
 									}
 									continue;
-								case 2:
-									tx_block = tx_prop_block["Detail Texture"];
-									tx = tx_prop_block["Detail Texture"];
-
+								case DETAIL_MAP:
 									//Temporary until/if Detail Textures are supported
 									if ( tx.isUsed == true ) {
 										cout << "Warning:  Detail Textures are not yet supported." << endl;
 										uv_set++;
 									}
 									continue;
-								case 3:
-									tx_block = tx_prop_block["Gloss Texture"];
-									tx = tx_prop_block["Gloss Texture"];
-
+								case GLOSS_MAP:
 									//Temporary until/if Detail Textures are supported
 									if ( tx.isUsed == true ) {
 										cout << "Warning:  Gloss Textures are not yet supported." << endl;
 										uv_set++;
 									}
 									continue;
-								case 4:
-									tx_block = tx_prop_block["Glow Texture"];
-									tx = tx_prop_block["Glow Texture"];
-									break;
-								case 5:
-									tx_block = tx_prop_block["Bump Map Texture"];
-									tx = tx_prop_block["Bump Map Texture"];
-
+								case BUMP_MAP:
 									//Temporary until/if Bump Map Textures are supported
 									if ( tx.isUsed == true ) {
 										cout << "Warning:  Bump Map Textures are not yet supported." << endl;
 										uv_set++;
 									}
 									continue;
-								case 6:
-									tx_block = tx_prop_block["Decal 0 Texture"];
-									tx = tx_prop_block["Decal 0 Texture"];
-
+								case DECAL_0_MAP:
 									//Temporary until/if Decal Textures are supported
 									if ( tx.isUsed == true ) {
 										cout << "Warning:  Decal Textures are not yet supported." << endl;
 										uv_set++;
 									}
-									continue;
-								default:
 									continue;
 							}
 
@@ -348,7 +254,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 								nodeFn.setObject(txOb);
 								MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
 								switch(i) {
-									case 0:
+									case BASE_MAP:
 										//Base Texture
 										dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
 										//Check if Alpha needs to be used
@@ -360,7 +266,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 											}
 										}
 										break;
-									case 4:
+									case GLOW_MAP:
 										//Glow Texture
 										dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
 										nodeFn.findPlug("alphaGain").setValue(0.25);
@@ -561,6 +467,9 @@ void NifTranslator::ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs,
 	MObject obj;
 	INode * node = QueryNode(block);
 
+	//cout << "Importing " << block << endl
+	//	<< "Blocks in memory:  " << BlocksInMemory() << endl;
+
 	//Stop at a non-node
 	if ( node == NULL )
 		return;
@@ -752,15 +661,14 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	vector<Triangle> triangles;
 	if ( tri_data != NULL ) {
 		//We're dealing with Triangle Data
-		NumPolygons = tri_data->GetTriangleCount();
-
 		triangles = tri_data->GetTriangles();
+		
 	} else {
 		//We're dealing with Strip Data
-		NumPolygons = strip_data->GetTriangleCount();
-
 		triangles = strip_data->GetTriangles();
 	}
+
+	NumPolygons = triangles.size();
 
 	//Nifs only have triangles, so all polys have 3 verticies
 	//Create an array to tell Maya this
@@ -814,28 +722,37 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 		}
 
 		//Create a list of the UV sets used by the texturing property if there is one
-		blk_ref tx_prop = par["Properties"]->FindLink( "NiTexturingProperty");
-		if ( tx_prop.is_null() == false ) {
-			if ( tx_prop["Base Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("map1") );
-			}
-			if ( tx_prop["Dark Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("dark") );
-			}
-			if ( tx_prop["Detail Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("detail") );
-			}
-			if ( tx_prop["Gloss Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("gloss") );
-			}
-			if ( tx_prop["Glow Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("glow") );
-			}
-			if ( tx_prop["Bump Map Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("bump") );
-			}
-			if ( tx_prop["Decal 0 Texture"]->asTexDesc().isUsed == true ) {
-				uv_set_list.push_back( MString("decal0") );
+		blk_ref tx_prop_blk = par["Properties"]->FindLink( "NiTexturingProperty");
+		if ( tx_prop_blk.is_null() == false ) {
+			ITexturingProperty * tx_prop = QueryTexturingProperty( tx_prop_blk );
+			int tx_count = tx_prop->GetTextureCount();
+
+			for ( int i = 0; i < tx_count; ++i ) {
+				if ( tx_prop->GetTexture(i).isUsed == true ) {
+					switch(i) {
+						case BASE_MAP:
+							uv_set_list.push_back( MString("map1") );
+							break;
+						case DARK_MAP:
+							uv_set_list.push_back( MString("dark") );
+							break;
+						case DETAIL_MAP:
+							uv_set_list.push_back( MString("detail") );
+							break;
+						case GLOSS_MAP:
+							uv_set_list.push_back( MString("gloss") );
+							break;
+						case GLOW_MAP:
+							uv_set_list.push_back( MString("glow") );
+							break;
+						case BUMP_MAP:
+							uv_set_list.push_back( MString("bump") );
+							break;
+						case DECAL_0_MAP:
+							uv_set_list.push_back( MString("decal0") );
+							break;
+					}
+				}
 			}
 		}
 	}
@@ -891,6 +808,9 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 	return meshPath;
 }
 
+void ExportNodes( map< string, blk_ref > & objs, blk_ref root );
+void ExportFileTextures( map< string, blk_ref > & textures );
+
 //--NifTranslator::writer--//
 
 //This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
@@ -899,156 +819,25 @@ MDagPath NifTranslator::ImportMesh( blk_ref block, MObject parent ) {
 MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
 	
 	try {
-	
 		//Create new root node
 		blk_ref root = CreateBlock("NiNode");
 		root["Name"] = "Scene Root";
 		root["Scale"]->Set(1.0f);
 
-
-		//cout << root->asString() << endl;
-
 		//A map to hold associations between DAG paths and NIF blocks
-		map< string, blk_ref > objs;
+		map< string, blk_ref > nodes;
 
-		//Itterate through all of the Maya DAG nodes, adding them to the tree
-		MItDag it(MItDag::kDepthFirst);
-		while(!it.isDone()) {
+		//Export nodes and get back a map of DAG path to Nif block
+		ExportNodes( nodes, root );
 
-			// attach a function set for a dag node to the
-			// object. Rather than access data directly,
-			// we access it via the function set.
-			MFnDagNode nodeFn(it.item());
+		//A map to hold associations between names and NIF blocks
+		map< string, blk_ref > textures;
 
-			// only want non-history items
-			if( !nodeFn.isIntermediateObject() ) {
+		//Export file textures and get back a map of DAG path to Nif block
+		ExportFileTextures( textures );
 
-				//Check if this is a transform node
-				if ( it.item().hasFn(MFn::kTransform) ) {
-					//This is a transform node, check if it is an IK joint or a shape
+		//--Write finished NIF file--//
 
-					blk_ref block;
-					if ( it.item().hasFn(MFn::kShape) ) {
-						//NiTriShape
-						block = CreateBlock("NiTriShape");
-					} else {
-						//NiNode
-						block = CreateBlock("NiNode");
-					}
-
-					//Fix name
-					string name = string( nodeFn.name().asChar() );
-					replace(name.begin(), name.end(), '_', ' ');
-					block["Name"] = name;
-					MMatrix my_trans= nodeFn.transformationMatrix();
-
-					//--Extract Scale from first 3 rows--//
-					double scale[3];
-					for (int r = 0; r < 3; ++r) {
-						//Get scale for this row
-						scale[r] = sqrt(my_trans[r][0] * my_trans[r][0] + my_trans[r][1] * my_trans[r][1] + my_trans[r][2] * my_trans[r][2] + my_trans[r][3] * my_trans[r][3]);
-					
-						//Normalize the row by dividing each factor by scale
-						my_trans[r][0] /= scale[r];
-						my_trans[r][1] /= scale[r];
-						my_trans[r][2] /= scale[r];
-						my_trans[r][3] /= scale[r];
-					}
-
-					//Get Rotatoin
-					Matrix33 nif_rotate;
-					for ( int r = 0; r < 3; ++r ) {
-						for ( int c = 0; c < 3; ++c ) {
-							nif_rotate[r][c] = float(my_trans[r][c]);
-						}
-					}
-					//Get Translation
-					Float3 nif_trans;
-					nif_trans[0] = float(my_trans[3][0]);
-					nif_trans[1] = float(my_trans[3][1]);
-					nif_trans[2] = float(my_trans[3][2]);
-					//nif_trans.Set( float(my_trans[3][0]), float(my_trans[3][1]), float(my_trans[3][2]) );
-					
-					//Store Transform Values in block
-					block["Scale"] = float(scale[0] + scale[1] + scale[2]) / 3.0f;
-					block["Rotation"] = nif_rotate;
-					block["Translation"] = nif_trans;
-
-
-
-
-
-					//Associate block with node DagPath
-					string path = nodeFn.fullPathName().asChar();
-					objs[path] = block;
-				}
-			}
-
-			// move to next node
-			it.next();
-		}
-
-							////Is this a joint and therefore has bind pose info?
-						//if ( it.item().hasFn(MFn::kJoint) ) {
-						//}
-					/*}*/
-			//}
-
-			//// get the name of the node
-			//MString name = fn.name();
-
-			//// write the node type found
-			//cout << "node: " << name.asChar() << endl;
-
-			//// write the info about the children
-			//cout <<"num_kids " << fn.childCount() << endl;
-
-			//for(int i=0;i<fn.childCount();++i) {
-	//			// get the MObject for the i'th child
-			//MObject child = fn.child(i);
-
-			//// attach a function set to it
-			//MFnDagNode fnChild(child);
-
-			//// write the child name
-			//cout << "\t" << fnChild.name().asChar();
-			//cout << endl;
-
-		//Loop through again, this time connecting the parents to the children
-		it.reset();
-		while(!it.isDone()) {
-			MFnDagNode nodeFn(it.item());
-
-			//Get path to this block
-			string blk_path = nodeFn.fullPathName().asChar();
-
-			for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
-  				// get the MObject for the i'th parent
-				MObject parent = nodeFn.parent(i);
-
-				// attach a function set to it
-				MFnDagNode parentFn(parent);
-
-				string par_path = parentFn.fullPathName().asChar();
-
-				//Check if parent exists in map we've built
-				if ( objs.find( par_path ) != objs.end() ) {
-					//Object found
-					objs[par_path]["Children"]->AddLink( objs[blk_path] );
-				} else {
-					//See if block was created at all
-					if ( objs.find( blk_path ) != objs.end() ) {
-						//Block was created, parent to scene root
-						root["Children"]->AddLink( objs[blk_path] );
-					}
-				}
-			}
-
-			// move to next node
-			it.next();
-		}
-
-		//Write finished NIF file
 		WriteNifTree(file.fullName().asChar(), root);
 	}
 	catch( exception & e ) {
@@ -1063,63 +852,379 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	return MS::kSuccess;
 }
 
-//--NifTranslator::identifyFile--//
+void ExportMesh( blk_ref tri_shape, MObject mesh ) {
+	blk_ref tsd_blk = CreateBlock("NiTriShapeData");
+	tri_shape["Data"] = tsd_blk;
+	IShapeData * shape_data = QueryShapeData( tsd_blk );
+	ITriShapeData * tri_data = QueryTriShapeData( tsd_blk );
 
-// This routine must use passed data to determine if the file is of a type supported by this translator
+	MFnMesh fn(mesh);
 
-// Code adapted from animImportExport example that comes with Maya 6.5
+	// this will hold the returned vertex positions
+	MPointArray vts;
 
-MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fileName, const char* buffer, short size) const {
-	//cout << "Checking File Type..." << endl;
-	const char *name = fileName.name().asChar();
-	int nameLength = (int)strlen(name);
+	// use the function set to get the points
+	fn.getPoints(vts);
 
-	if ((nameLength > 4) && !strcasecmp(name+nameLength-4, ".nif")) {
-		return kIsMyFileType;
+	vector<Vector3> nif_vts( vts.length() );
+
+	// only want non-history items
+	for( int i=0; i != vts.length(); ++i ) {
+		nif_vts[i].x = float(vts[i].x);
+		nif_vts[i].y = float(vts[i].y);
+		nif_vts[i].z = float(vts[i].z);
 	}
 
-	return	kNotMyFileType;
+	
+
+	// this will hold the returned vertex positions
+	MFloatVectorArray nmls;
+
+	// use the function set to get the points
+	fn.getNormals(nmls);
+
+	vector<Vector3> nif_nmls( nif_vts.size() );
+	//Set them to zero for now so we can detect when a vertex needs to be split
+	for( int i=0; i != vts.length(); ++i ) {
+		nif_nmls[i].Set( 0.0f, 0.0f, 0.0f );
+	}
+
+	vector<Triangle> nif_tris;
+
+	// this will hold references to the shaders used on the meshes
+	MObjectArray Shaders;
+
+	// this is used to hold indices to the materials returned in the object array
+	MIntArray    FaceIndices;
+
+	// get the shaders used by the i'th mesh instance
+	// Assume this is not instanced for now
+	// TODO support instanceing properly
+	fn.getConnectedShaders(0,Shaders,FaceIndices);
+
+	if ( Shaders.length() <= 1 ) {
+		// TODO export material if there is one
+		//Shaders[0] holds material for all faces if Shaders.length() == 1
+		
+		// attach an iterator to the mesh
+		MItMeshPolygon itPoly(mesh);
+
+		//int face = 0;
+
+		// Create a list of faces with vertex IDs, and duplicate normals so they have the same ID
+		while(!itPoly.isDone()) {
+
+			//cout << "Face " << face << ":" << endl;
+			//++face;
+
+            if ( itPoly.polygonVertexCount() != 3 ) {
+				throw runtime_error( "This exporter only supports triangulated meshes.  Please triangulate all meshes before exporting with Polygons->Triangulate" );
+			}
+
+			Triangle new_face;
+
+			// print all vertex, normal and uv indices
+			for( int i=0; i < 3; ++i ) {
+
+				//cout << "   Vertex " << i << ":" << endl;
+
+                int v = itPoly.vertexIndex(i);
+				int n = itPoly.normalIndex(i);
+
+				//Make a new vertex if the normal has already been set
+				if ( nif_nmls[v].x != 0.0f || nif_nmls[v].y != 0.0f || nif_nmls[v].z != 0.0f ) {
+					//cout << "      Normal has already been set.  Cloning vertex." << endl;
+
+					//Make sure new normal isn't basically the same as the old one before we make a new vertex for it
+					if ( abs( nif_nmls[v].x - float(nmls[n].x)) > 0.00001f && abs( nif_nmls[v].y - float(nmls[n].y)) > 0.00001f && abs( nif_nmls[v].z - float(nmls[n].z)) > 0.00001f ) {
+					
+						//Clone this vertex so it can have its own normal
+						nif_vts.push_back( nif_vts[v] );
+
+						//Set the new vertex index
+						v = nif_vts.size() - 1;
+
+						//Add a new normal to the end of the nif_nmls list
+						nif_nmls.resize( nif_vts.size() );
+
+						//cout << "      New vertex count:  " << nif_vts.size() << endl;
+					}
+				}
+				
+				//Put normal values into the same index as the new or existing vertex
+				nif_nmls[v].Set( float(nmls[n].x), float(nmls[n].y), float(nmls[n].z) );
+
+
+				//TODO: UV Coordinates
+				//if(bUvs) {
+				//  	
+
+				//	// have to get the uv index seperately
+				//	int uv_index;
+
+				//	// ouput each uv index
+				//	for(int k=0;k<sets.length();++k) {
+				//	  	
+
+				//		itPoly.getUVIndex(i,uv_index,&sets[k]);
+
+				//		cout << " " << uv_index;
+				//	}
+				//}
+
+				//Add the vertex coordinate to the new face
+				new_face[i] = unsigned short(v);
+			}
+
+			//Push the face into the face list
+			nif_tris.push_back(new_face);
+
+			// move to next face
+			itPoly.next();
+
+		}
+		
+		//Set data in NIf block
+		shape_data->SetVertexCount( nif_vts.size() );
+		shape_data->SetVertices( nif_vts );
+		shape_data->SetNormals( nif_nmls );
+		tri_data->SetTriangles( nif_tris );
+	} else {
+		throw runtime_error( "For now you must use only one material per mesh." );
+		// if more than one material is used, write out the face indices the materials
+		// are applied to.
+
+			//TODO Break up mesh into sub-meshes in this case
+		//	cout << "\t\tmaterials " << Shaders.length() << endl;
+
+		//	// i'm going to sort the face indicies into groups based on
+		//	// the applied material - might as well... ;)
+		//	vector< vector< int > > FacesByMatID;
+
+		//	// set to same size as num of shaders
+		//	FacesByMatID.resize(Shaders.length());
+
+		//	// put face index into correct array
+		//	for(int j=0;j < FaceIndices.length();++j)
+		//	{
+		//		FacesByMatID[ FaceIndices[j] ].push_back(j);
+		//	}
+
+		//	// now write each material and the face indices that use them
+		//	for(int j=0;j < Shaders.length();++j)
+		//	{
+		//		cout << "\t\t\t"
+		//			<< GetShaderName( Shaders[j] ).asChar()
+		//			<< "\n\t\t\t"
+		//			<< FacesByMatID[j].size()
+		//			<< "\n\t\t\t\t";
+
+		//		vector< int >::iterator it = FacesByMatID[j].begin();
+		//		for( ; it != FacesByMatID[j].end(); ++it )
+		//		{
+		//			cout << *it << " ";
+		//		}
+		//		cout << endl;
+		//	}
+		//}
+		//break;
+	}
 }
 
-//--Plug-in Load/Unload--//
+//--Itterate through all of the Maya DAG nodes, adding them to the tree--//
+void ExportNodes( map< string, blk_ref > & objs, blk_ref root ) {
 
-//--initializePlugin--//
+	//Create iterator to go through all DAG nodes depth first
+	MItDag it(MItDag::kDepthFirst);
+	while(!it.isDone()) {
 
-// Code adapted from lepTranslator example that comes with Maya 6.5
-MStatus initializePlugin( MObject obj ) {
-	//cout << "Initializing Plugin..." << endl;
-	MStatus   status;
-	MFnPlugin plugin( obj, "NIFLA", PLUGIN_VERSION, "Any");
+		// attach a function set for a dag node to the
+		// object. Rather than access data directly,
+		// we access it via the function set.
+		MFnDagNode nodeFn(it.item());
 
-	// Register the translator with the system
-	status =  plugin.registerFileTranslator( TRANSLATOR_NAME,  //File Translator Name
-										"nifTranslator.rgb", //Icon
-										NifTranslator::creator, //Factory Function
-										"nifTranslatorOpts", //MEL Script for options dialog
-										NULL, //Default Options
-										false ); //Requires MEL support
-	if (!status) {
-		status.perror("registerFileTranslator");
-		return status;
+		// only want non-history items
+		if( !nodeFn.isIntermediateObject() ) {
+
+			//Check if this is a transform node
+			if ( it.item().hasFn(MFn::kTransform) ) {
+				//This is a transform node, check if it is an IK joint or a shape
+
+				blk_ref block;
+
+				bool tri_shape = false;
+				MObject matching_child;
+
+				//Check to see what kind of node we should create
+				for( int i=0; i!=nodeFn.childCount(); ++i ) {
+					// get a handle to the child
+					if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
+						tri_shape = true;
+						matching_child = nodeFn.child(i);
+						break;
+					}
+
+				}
+	
+				if ( tri_shape == true ) {
+					//NiTriShape
+					block = CreateBlock("NiTriShape");
+					ExportMesh( block, matching_child );
+				} else {
+					//NiNode
+					block = CreateBlock("NiNode");
+				}
+
+				//Fix name
+				string name = string( nodeFn.name().asChar() );
+				replace(name.begin(), name.end(), '_', ' ');
+				block["Name"] = name;
+				MMatrix my_trans= nodeFn.transformationMatrix();
+
+				//--Extract Scale from first 3 rows--//
+				double scale[3];
+				for (int r = 0; r < 3; ++r) {
+					//Get scale for this row
+					scale[r] = sqrt(my_trans[r][0] * my_trans[r][0] + my_trans[r][1] * my_trans[r][1] + my_trans[r][2] * my_trans[r][2] + my_trans[r][3] * my_trans[r][3]);
+				
+					//Normalize the row by dividing each factor by scale
+					my_trans[r][0] /= scale[r];
+					my_trans[r][1] /= scale[r];
+					my_trans[r][2] /= scale[r];
+					my_trans[r][3] /= scale[r];
+				}
+
+				//Get Rotatoin
+				Matrix33 nif_rotate;
+				for ( int r = 0; r < 3; ++r ) {
+					for ( int c = 0; c < 3; ++c ) {
+						nif_rotate[r][c] = float(my_trans[r][c]);
+					}
+				}
+				//Get Translation
+				Float3 nif_trans;
+				nif_trans[0] = float(my_trans[3][0]);
+				nif_trans[1] = float(my_trans[3][1]);
+				nif_trans[2] = float(my_trans[3][2]);
+				//nif_trans.Set( float(my_trans[3][0]), float(my_trans[3][1]), float(my_trans[3][2]) );
+				
+				//Store Transform Values in block
+				block["Scale"] = float(scale[0] + scale[1] + scale[2]) / 3.0f;
+				block["Rotation"] = nif_rotate;
+				block["Translation"] = nif_trans;
+
+				//Associate block with node DagPath
+				string path = nodeFn.fullPathName().asChar();
+				objs[path] = block;
+			}
+		}
+
+		// move to next node
+		it.next();
 	}
 
-	//cout << "Done Initializing." << endl;
-	return status;
+						////Is this a joint and therefore has bind pose info?
+					//if ( it.item().hasFn(MFn::kJoint) ) {
+					//}
+				/*}*/
+		//}
+
+		//// get the name of the node
+		//MString name = fn.name();
+
+		//// write the node type found
+		//cout << "node: " << name.asChar() << endl;
+
+		//// write the info about the children
+		//cout <<"num_kids " << fn.childCount() << endl;
+
+		//for(int i=0;i<fn.childCount();++i) {
+//			// get the MObject for the i'th child
+		//MObject child = fn.child(i);
+
+		//// attach a function set to it
+		//MFnDagNode fnChild(child);
+
+		//// write the child name
+		//cout << "\t" << fnChild.name().asChar();
+		//cout << endl;
+
+	//Loop through again, this time connecting the parents to the children
+	it.reset();
+	while(!it.isDone()) {
+		MFnDagNode nodeFn(it.item());
+
+		//Get path to this block
+		string blk_path = nodeFn.fullPathName().asChar();
+
+		for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
+  			// get the MObject for the i'th parent
+			MObject parent = nodeFn.parent(i);
+
+			// attach a function set to it
+			MFnDagNode parentFn(parent);
+
+			string par_path = parentFn.fullPathName().asChar();
+
+			//Check if parent exists in map we've built
+			if ( objs.find( par_path ) != objs.end() ) {
+				//Object found
+				if ( objs[par_path]->GetBlockType() != "NiTriShape" ) {
+					objs[par_path]["Children"]->AddLink( objs[blk_path] );
+				}
+			} else {
+				//See if block was created at all
+				if ( objs.find( blk_path ) != objs.end() ) {
+					//Block was created, parent to scene root
+					root["Children"]->AddLink( objs[blk_path] );
+				}
+			}
+		}
+
+		// move to next node
+		it.next();
+	}
 }
 
-//--uninitializePlugin--//
+//--Iterate through all file textures, creating NiSourceTexture blocks for each one--//
+void ExportFileTextures( map< string, blk_ref > & textures ) {
+	// create an iterator to go through all file textures
+	MItDependencyNodes it(MFn::kFileTexture);
 
-// Code adapted from lepTranslator example that comes with Maya 6.5
-MStatus uninitializePlugin( MObject obj )
-{
-	MStatus   status;
-	MFnPlugin plugin( obj );
+	//iterate through all textures
+	while(!it.isDone())
+	{
+		// attach a dependency node to the file node
+		MFnDependencyNode fn(it.item());
 
-	status =  plugin.deregisterFileTranslator( TRANSLATOR_NAME );
-	if (!status) {
-		status.perror("deregisterFileTranslator");
-		return status;
-	}
+		// get the attribute for the full texture path
+		MPlug ftn = fn.findPlug("fileTextureName");
 
-	return status;
+		// get the filename from the attribute
+		MString filename;
+		ftn.getValue(filename);
+
+		//Create the NiSourceTexture block
+		blk_ref ni_tex = CreateBlock("NiSourceTexture");
+		TexSource tx_src;
+		tx_src.useExternal = true;
+		MString fname;
+		ftn.getValue(fname);
+		tx_src.fileName = fname.asChar();
+		ni_tex["Texture Source"] = tx_src;
+		ni_tex["Pixel Layout"] = 5; //default
+		ni_tex["Use Mipmaps"] = 2; //default
+		ni_tex["Alpha Format"] = 3; //default
+		ni_tex["Unknown Byte"] = 1; //default
+		
+		//Associate block with fileTexture DagPath
+		string path = fn.name().asChar();
+		textures[path] = ni_tex;
+
+		//TEMP: Write the block so we can see it worked
+		cout << ni_tex->asString();
+
+		// get next fileTexture
+		it.next();
+	} 
 }
