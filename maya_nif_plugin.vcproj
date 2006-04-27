@@ -20,15 +20,15 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya6.5\include"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="5"
+				RuntimeLibrary="3"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin niflib.lib"
-				AdditionalDependencies="Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalOptions="/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin"
+				AdditionalDependencies=" niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="../bin/nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya6.5\lib"
 				ProgramDatabaseFile="../Debug/maya_nif_plugin.pdb"
@@ -66,15 +66,15 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya6.5\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="4"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"/>
 			<Tool
 				Name="VCCustomBuildTool"/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin niflib.lib"
-				AdditionalDependencies="Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
+				AdditionalDependencies=" niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="..\bin\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya6.5\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
