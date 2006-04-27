@@ -11,8 +11,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="../Debug"
-			IntermediateDirectory="../Debug"
+			OutputDirectory="..\Debug"
+			IntermediateDirectory="..\Debug"
 			ConfigurationType="2">
 			<Tool
 				Name="VCCLCompilerTool"
@@ -20,7 +20,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya6.5\include"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="3"
+				RuntimeLibrary="5"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"/>
 			<Tool
@@ -28,10 +28,10 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin niflib.lib"
-				AdditionalDependencies="Foundation.lib OpenMaya.lib "
+				AdditionalDependencies="Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="../bin/nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya6.5\lib"
-				ProgramDatabaseFile="..Debug/maya_nif_plugin.pdb"
+				ProgramDatabaseFile="../Debug/maya_nif_plugin.pdb"
 				ImportLibrary="Debug/NIF Import/Export.lib"/>
 			<Tool
 				Name="VCMIDLTool"/>
