@@ -20,7 +20,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya6.5\include"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="3"
+				RuntimeLibrary="1"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"/>
 			<Tool
@@ -66,7 +66,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya6.5\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"/>
 			<Tool
