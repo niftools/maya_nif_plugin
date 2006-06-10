@@ -84,6 +84,17 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <cmath>
 
 #include "niflib.h"
+#include "obj/NiObject.h"
+#include "obj/NiNode.h"
+#include "obj/NiTriBasedGeom.h"
+#include "obj/NiProperty.h"
+#include "obj/NiMaterialProperty.h"
+#include "obj/NiTexturingProperty.h"
+#include "obj/NiSourceTexture.h"
+#include "obj/NiTriBasedGeomData.h"
+#include "obj/NiAlphaProperty.h"
+#include "obj/NiTriShapeData.h"
+#include "obj/NiTriStripsData.h"
 
 //--NifTranslator Class--//
 
@@ -103,9 +114,10 @@ public:
 	//Responsible for reading the contents of the given file, and creating Maya objects via API or MEL calls to reflect the data in the file.
 	MStatus reader (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
 	
+	//TODO:  Upgrade the write function for the new Niflib... not to mention make it work at all.
 	//This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
 	//Responsible for traversing all objects in the current Maya scene, and writing a representation to the given file in the supported format.
-	MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
+	//MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
 	
 	//Returns true if the class has a read method and false otherwise
 	bool haveReadMethod () const { return true; }
@@ -114,13 +126,16 @@ public:
 	bool haveReferenceMethod () const { return false; }
 
 	//Returns true if the class has a write method and false otherwise
-	bool haveWriteMethod () const { return true; }
+	bool haveWriteMethod () const { return false; }
 
 	//Returns true if the class can deal with namespaces and false otherwise
 	bool haveNamespaceSupport () const { return false; }
 
 	//Returns a string containing the default extension of the translator, excluding the period at the beginning
-	MString defaultExtension () const { return MString("nif"); }
+	MString  defaultExtension () const { return MString("nif"); }
+
+	//Returns a string which sets the filter in the open file dialog box
+	MString filter () const { return MString("*.nif"); }
 
 	//Returns true if the class can open and import files
 	//Returns false if the class can only import files
@@ -130,10 +145,10 @@ public:
 	MFileKind identifyFile (const MFileObject& fileName, const char* buffer, short size) const;
 
 private:
-	void ImportNodes( blk_ref block, map< blk_ref, MDagPath > & objs, MObject parent = MObject::kNullObj );
-	MDagPath ImportMesh( blk_ref block, MObject parent = MObject::kNullObj );
-	MObject ImportMaterial( blk_ref block );
-	MObject ImportTexture( blk_ref block );
+	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
+	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
+	MObject ImportMaterial( NiMaterialPropertyRef niMatProp );
+	MObject ImportTexture( NiSourceTextureRef niSrcTex );
 
 };
 
