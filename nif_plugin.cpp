@@ -101,7 +101,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		if ( root_node != NULL ) {
 			//Root is a NiNode and may have children
 			vector<NiAVObjectRef> root_children = root_node->GetChildren();
-			cout << "Number of children: " << root_children.size() << endl;
 			
 			for ( uint i = 0; i < root_children.size(); ++i ) {
 				ImportNodes( root_children[i], objs );
@@ -135,7 +134,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			//Create some more friendly names for the block and its type
 			NiObjectRef obj = it->first;
 
-			cout << "Importing " << obj << "..." << endl;
 			//Import the data based on the type of node - NiTriShape only so far
 			if ( obj->IsDerivedType(NiTriBasedGeom::TYPE) ) {
 				//Cast to NiTriBasedGeom
@@ -481,8 +479,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 
 // Recursive function to crawl down tree looking for children and translate those that are understood
 void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )  {
-	cout << "ImportNodes called on:  " << niAVObj << endl;
-	
 	MObject obj;
 
 	//cout << "Importing " << block << endl
@@ -657,13 +653,10 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp ) {
 
 MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	
-	cout << "Importing " << niGeom << "..." << endl;
 	//Get NiTriBAsedGeomData
 	NiTriBasedGeomDataRef niGeomData = niGeom->GetData();
-	cout << "Got Data: " << niGeomData << endl;
 
 	int NumVertices = niGeomData->GetVertexCount();
-	cout << "NumVertices:  " << NumVertices << endl;
 
 	vector<Vector3> nif_verts = niGeomData->GetVertices();
 	MPointArray maya_verts(NumVertices);
@@ -678,7 +671,6 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	triangles = niGeomData->GetTriangles();
 
 	NumPolygons = triangles.size();
-	cout << "Num Polygons:  " << uint(triangles.size()) << endl;
 
 	//Nifs only have triangles, so all polys have 3 verticies
 	//Create an array to tell Maya this
