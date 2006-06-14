@@ -95,6 +95,9 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "obj/NiAlphaProperty.h"
 #include "obj/NiTriShapeData.h"
 #include "obj/NiTriStripsData.h"
+#include "obj/NiSkinInstance.h"
+#include "obj/NiSkinData.h"
+#include "obj/NiSpecularProperty.h"
 
 //--NifTranslator Class--//
 
@@ -147,7 +150,7 @@ public:
 private:
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
-	MObject ImportMaterial( NiMaterialPropertyRef niMatProp );
+	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
 	MObject ImportTexture( NiSourceTextureRef niSrcTex );
 
 };

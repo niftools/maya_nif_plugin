@@ -119,7 +119,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		
 
 		//Report total number of blocks in memory
-		//cout << "Blocks in memory:  " << BlocksInMemory() << endl;
+		//cout << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 		
 		//--Import Data--//
 		//cout << "Importing Data..." << endl;
@@ -127,17 +127,21 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		map< pair<NiMaterialPropertyRef, NiTexturingPropertyRef>, MObject > materials;
 		map< NiSourceTextureRef, MObject > textures;
 
+		//cout << "Itterating through all nodes that were imported" << endl;
 		//Iterate through all nodes that were imported
 		map< NiAVObjectRef, MDagPath >::iterator it;
 		for ( it = objs.begin(); it != objs.end(); ++it ) {
-			
-			//Create some more friendly names for the block and its type
-			NiObjectRef obj = it->first;
-
 			//Import the data based on the type of node - NiTriShape only so far
-			if ( obj->IsDerivedType(NiTriBasedGeom::TYPE) ) {
+			if ( it->first->IsDerivedType(NiTriBasedGeom::TYPE) ) {
+				//cout << "Found NiTriBasedGeom:  " << it->first << endl;
+
 				//Cast to NiTriBasedGeom
-				NiTriBasedGeomRef geom = DynamicCast<NiTriBasedGeom>(obj);
+				NiTriBasedGeomRef geom = DynamicCast<NiTriBasedGeom>(it->first);
+
+				if ( geom == NULL ) {
+					cout << "Failed to cast to NiTriBasedGeom." << endl;
+					return MStatus::kFailure;
+				}
 				
 				
 				////If this is a skinned shape, turn off inherit transform
@@ -150,6 +154,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				//	nodeFn.findPlug("inheritsTransform").setValue(false);
 				//}
 
+				//cout << "Importing mesh..." << endl;
 				//Import Mesh
 				MDagPath meshPath = ImportMesh( geom, it->second.node() );
 
@@ -158,9 +163,12 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				MObject matOb;
 				MObject txOb;
 
+
+				//cout << "Looking for material and texturing properties" << endl;
 				//Get Material and Texturing properties, if any
 				NiMaterialPropertyRef niMatProp = NULL;
 				NiTexturingPropertyRef niTexProp = NULL;
+				NiSpecularPropertyRef niSpecProp = NULL;
 				NiPropertyRef niProp = geom->GetPropertyByType( NiMaterialProperty::TYPE );
 				if ( niProp != NULL ) {
 					niMatProp = DynamicCast<NiMaterialProperty>( niProp );
@@ -169,13 +177,18 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				if ( niProp != NULL ) {
 					niTexProp = DynamicCast<NiTexturingProperty>( niProp );
 				}
+				niProp = geom->GetPropertyByType( NiSpecularProperty::TYPE );
+				if ( niProp != NULL ) {
+					niSpecProp = DynamicCast<NiSpecularProperty>( niProp );
+				}
 							
+				//cout << "Processing material property..." << endl;
 				//Process Material Property
 				if ( niMatProp != NULL ) {
 					//Check to see if material has already been found
 					if ( materials.find( pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp) ) == materials.end() ) {
 						//New material/texture combo  - import and add to the list
-						matOb = ImportMaterial( niMatProp );
+						matOb = ImportMaterial( niMatProp, niSpecProp );
 						materials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ] = matOb;
 					} else {
 						// Use the existing material
@@ -209,6 +222,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 					//Connect outColor to surfaceShader
 					dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
 					
+					//cout << "Looking for textures..." << endl;
 					//--Look for textures--//
 					if ( niTexProp != NULL ) {
 						MFnDependencyNode nodeFn;
@@ -217,11 +231,9 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 
 						//Get TexturingProperty Interface
 						
-						int tx_count = niTexProp->GetTextureCount();
-
 						//Cycle through for each type of texture
 						int uv_set = 0;
-						for (int i = 0; i < tx_count; ++i) {
+						for (int i = 0; i < 8; ++i) {
 							if ( niTexProp->HasTexture( i ) ) {
 								tx = niTexProp->GetTexture( i );
 								niSrcTex = tx.source;
@@ -351,98 +363,107 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						}
 					}
 					
+					//cout << "Invoking dgModifier..." << endl;
 					dgModifier.doIt();
 
-					//TODO: Restore skinning support in Niflib
-					////--Bind Skin if any--//
-					//if ( skin_inst.is_null() == false ) {
-					//	//Get the NIF skin data interface
-					//	blk_ref skin_data = skin_inst["Data"];
-					//	ISkinData * data = (ISkinData*)skin_data->QueryInterface( ID_SKIN_DATA );
+					//--Bind Skin if any--//
+					NiSkinInstanceRef niSkinInst = geom->GetSkinInstance();
+					NiSkinDataRef niSkinData;
+					if ( niSkinInst != NULL ) {
+						//Get the NIF skin data interface
+						niSkinData = niSkinInst->GetSkinData();
+					}
 
-					//	//Build up the MEL command string
-					//	string cmd = "skinCluster -tsb ";
-					//	
-					//	//Add list of bones to the command
-					//	vector<blk_ref> bone_blks = data->GetBones();					
+					if ( niSkinData != NULL ) {
+						//Build up the MEL command string
+						string cmd = "skinCluster -tsb ";
+						
+						//Add list of bones to the command
+						vector<NiNodeRef> bone_nodes = niSkinInst->GetBones();
+						vector<SkinData> bone_data = niSkinData->GetBoneData();
 
-					//	for (unsigned int i = 0; i < bone_blks.size(); ++i) {
-					//		cmd.append( objs[ bone_blks[i] ].partialPathName().asChar() );
-					//		cmd.append( " " );
-					//	}
+						for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
+							cmd.append( objs[ StaticCast<NiAVObject>(bone_nodes[i]) ].partialPathName().asChar() );
+							cmd.append( " " );
+						}
 
-					//	//Add mesh path to the command
-					//	cmd.append( meshPath.partialPathName().asChar() );
+						//Add mesh path to the command
+						cmd.append( meshPath.partialPathName().asChar() );
 
-					//	//Execute command to create skinCluster bound to specific bones
-					//	MStringArray result;
-					//	MGlobal::executeCommand( cmd.c_str(), result );
-					//	MFnSkinCluster clusterFn;
+						//Execute command to create skinCluster bound to specific bones
+						MStringArray result;
+						MGlobal::executeCommand( cmd.c_str(), result );
+						MFnSkinCluster clusterFn;
 
-					//	MSelectionList selList;
-					//	selList.add(result[0]);
-					//	MObject skinOb;
-					//	selList.getDependNode( 0, skinOb );
-					//	clusterFn.setObject(skinOb);
+						MSelectionList selList;
+						selList.add(result[0]);
+						MObject skinOb;
+						selList.getDependNode( 0, skinOb );
+						clusterFn.setObject(skinOb);
 
-					//	//Get a list of all verticies in this mesh
-					//	MFnSingleIndexedComponent compFn;
-					//	MObject vertices = compFn.create( MFn::kMeshVertComponent );
-					//	MItGeometry gIt(meshPath);
-					//	MIntArray vertex_indices( gIt.count() );
-					//	for ( int j = 0; j < gIt.count(); ++j ) {
-					//		vertex_indices[j] = j;
-					//	}
-					//	compFn.addElements(vertex_indices);
+						//Get a list of all verticies in this mesh
+						MFnSingleIndexedComponent compFn;
+						MObject vertices = compFn.create( MFn::kMeshVertComponent );
+						MItGeometry gIt(meshPath);
+						MIntArray vertex_indices( gIt.count() );
+						for ( int j = 0; j < gIt.count(); ++j ) {
+							vertex_indices[j] = j;
+						}
+						compFn.addElements(vertex_indices);
 
-					//	//Set skin weights & bind pose for each bone
-					//	for (unsigned int i = 0; i < bone_blks.size(); ++i) {
-					//		////Get Bind Pose
-					//		//float bind_pose[4][4];
-					//		//INode * node = (INode*)bone_blks[i]->QueryInterface(Node);
-					//		//node->GetWorldBindPos( bind_pose );
-					//		//MFnMatrixData mat;
-					//		//mat.set( MMatrix( bind_pose ) );
+						//Set skin weights & bind pose for each bone
+						for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
+							////Get Bind Pose
+							//float bind_pose[4][4];
+							//INode * node = (INode*)bone_nodes[i]->QueryInterface(Node);
+							//node->GetWorldBindPos( bind_pose );
+							//MFnMatrixData mat;
+							//mat.set( MMatrix( bind_pose ) );
 
-					//		////Set bone bind pose matrix
-					//		//MFnTransform transFn(objs[bone_blks[i]]);
-					//		//MPlug bindPose = transFn.findPlug("bindPose");
-					//		////if ( bindPose != MObject::kNullObj ) {
-					//		//	bindPose.setValue( mat.object() );
-					//		////}
+							////Set bone bind pose matrix
+							//MFnTransform transFn(objs[bone_nodes[i]]);
+							//MPlug bindPose = transFn.findPlug("bindPose");
+							////if ( bindPose != MObject::kNullObj ) {
+							//	bindPose.setValue( mat.object() );
+							////}
 
-					//		//
-					//		//MPlug plugBindPre = clusterFn.findPlug("bindPreMatrix") ;
-					//		//plugBindPre = plugBindPre.elementByPhysicalIndex( i ) ;
-					//		//plugBindPre.setValue( mat.object() );
+							//
+							//MPlug plugBindPre = clusterFn.findPlug("bindPreMatrix") ;
+							//plugBindPre = plugBindPre.elementByPhysicalIndex( i ) ;
+							//plugBindPre.setValue( mat.object() );
 
-					//		//MPlug plugBindPose = transFn.findPlug("bindPose");
-					//		//plugBindPose.setValue( mat.object() ) ;
+							//MPlug plugBindPose = transFn.findPlug("bindPose");
+							//plugBindPose.setValue( mat.object() ) ;
 
-					//		//Get weights from NIF
-					//		map<int, float> weight_map = data->GetWeights( bone_blks[i] );
-					//		
-					//		MFloatArray weight_list( gIt.count() );
-					//		MIntArray influence_list(1);
+							//Get weights from NIF
+							vector<SkinWeight> weights = bone_data[i].vertexWeights;
+							map<int, float> weight_map;
+							for (uint j = 0; j < weights.size(); ++j ) {
+								weight_map[weights[j].index] = weights[j].weight;
+							}
+							
+							MFloatArray weight_list( gIt.count() );
+							MIntArray influence_list(1);
 
-					//		//Add this index to the influence list since we're setting one at a time
-					//		influence_list[0] = i;
-					//		
-					//		//Iterate over all verticies in this mesh, setting the weights
-					//		for ( int j = 0; j < gIt.count(); ++j ) {
-					//			if ( weight_map.find(j) != weight_map.end() ) {
-					//				weight_list[j] = weight_map[j];
-					//			}
-					//			else
-					//				weight_list[j] = 0.0f;
-					//		}
-					//		
-					//		clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
-					//	}
-					//}			
+							//Add this index to the influence list since we're setting one at a time
+							influence_list[0] = i;
+							
+							//Iterate over all verticies in this mesh, setting the weights
+							for ( int j = 0; j < gIt.count(); ++j ) {
+								if ( weight_map.find(j) != weight_map.end() ) {
+									weight_list[j] = weight_map[j];
+								}
+								else
+									weight_list[j] = 0.0f;
+							}
+							
+							clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
+						}
+					}			
 				}
 			}
 		}
+		//cout << "Done searching imported scene graph." << endl;
 
 
 
@@ -472,7 +493,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 	//cout << "Finished Read" << endl;
 
 	//Report total number of blocks in memory (hopfully zero)
-	//cout << "Blocks in memory:  " << BlocksInMemory() << endl;
+	//cout << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 
 	return MStatus::kSuccess;
 }
@@ -481,8 +502,8 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )  {
 	MObject obj;
 
-	//cout << "Importing " << block << endl
-	//	<< "Blocks in memory:  " << BlocksInMemory() << endl;
+	//cout << "Importing " << niAVObj << endl;
+	//cout << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 
 	////Stop at a non-node
 	//if ( node == NULL )
@@ -602,7 +623,7 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 	}
 }
 
-MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp ) {
+MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp ) {
 	//Create the material but don't connect it to parent yet
 	MFnPhongShader phongFn;
 	MObject obj = phongFn.create();
@@ -619,16 +640,11 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp ) {
 	//Set Specular color to 0 unless the mesh has a NiSpecularProperty
 	phongFn.setSpecularColor( MColor( 0.0f, 0.0f, 0.0f) );
 
-	//TODO: Can't get parent of a property anymore.  Maybe a way to get sibling properties?
-	//blk_ref par = block->GetParent();
-	//if (par.is_null() == false ) {
-	//	blk_ref spec_prop = par["Properties"]->FindLink( "NiSpecularProperty");
-	//	if ( spec_prop.is_null() == false && (spec_prop["Flags"] & 1) == true ) {
-	//		//This mesh uses specular color - load it
-	//		color = block["Specular Color"];
-	//		phongFn.setSpecularColor( MColor(color[0], color[1], color[2]) );
-	//	}
-	//}
+	if ( niSpecProp != NULL && (niSpecProp->GetFlags() & 1) == true ) {
+		//This mesh uses specular color - load it
+		color = niMatProp->GetSpecularColor();
+		phongFn.setSpecularColor( MColor(color.r, color.g, color.b) );
+	}
 
 	color = niMatProp->GetEmissiveColor();
 	phongFn.setIncandescence( MColor(color.r, color.g, color.b) );
@@ -652,9 +668,14 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp ) {
 }
 
 MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
-	
+	//cout << "ImportMesh() begin" << endl;
 	//Get NiTriBAsedGeomData
 	NiTriBasedGeomDataRef niGeomData = niGeom->GetData();
+
+	if ( niGeomData == NULL ) {
+		cout << "This mesh has no polygon data." << endl;
+		return MDagPath();
+	}
 
 	int NumVertices = niGeomData->GetVertexCount();
 
@@ -665,6 +686,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		maya_verts[i] = MPoint(nif_verts[i].x, nif_verts[i].y, nif_verts[i].z, 0.0f);
 	}
 
+	//cout << "Getting polygons..." << endl;
 	//Get Polygons
 	int NumPolygons = 0;
 	vector<Triangle> triangles;
@@ -699,6 +721,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	meshFn.create( NumVertices, NumPolygons, maya_verts, maya_poly_counts, maya_connects, parent );
 	meshFn.getPath( meshPath );
 
+	//cout << "Importing vertex colors..." << endl;
 	//Import Vertex Colors
 	vector<Color4> nif_colors = niGeomData->GetColors();
 	if ( nif_colors.size() > 0 ) {
@@ -712,6 +735,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		meshFn.setVertexColors( maya_colors, vert_list );
 	}
 
+	//cout << "Examining properties..." << endl;
 	//--Examine properties--//
 	vector<MString> uv_set_list;
 
@@ -721,6 +745,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		vis.setValue(false);
 	}
 
+	//cout << "Creating a list of the UV sets..." << endl;
 	//Create a list of the UV sets used by the texturing property if there is one
 	NiPropertyRef niProp = niGeom->GetPropertyByType( NiTexturingProperty::TYPE );
 	NiTexturingPropertyRef niTexProp;
@@ -728,9 +753,8 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		niTexProp = DynamicCast<NiTexturingProperty>(niProp);
 	}
 	if ( niTexProp != NULL ) {
-		int tx_count = niTexProp->GetTextureCount();
 
-		for ( int i = 0; i < tx_count; ++i ) {
+		for ( int i = 0; i < 8; ++i ) {
 			if ( niTexProp->HasTexture(i) == true ) {
 				switch(i) {
 					case BASE_MAP:
@@ -754,38 +778,50 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 					case DECAL_0_MAP:
 						uv_set_list.push_back( MString("decal0") );
 						break;
+					case DECAL_1_MAP:
+						uv_set_list.push_back( MString("decal1") );
+						break;
 				}
 			}
 		}
-	}
 
-	
+		//cout << "Getting default UV set..." << endl;
+		// Get default (first) UV Set if there is one		
+		if ( niGeomData->GetUVSetCount() > 0 ) {
+			meshFn.clearUVs();
+			vector<TexCoord> uv_set;
+			//Arrays for maya
+			MFloatArray u_arr(NumVertices), v_arr(NumVertices);
 
-	// Get default (first) UV Set if there is one		
-	if ( niGeomData->GetUVSetCount() > 0 ) {
-		meshFn.clearUVs();
-		vector<TexCoord> uv_set;
-		//Arrays for maya
-		MFloatArray u_arr(NumVertices), v_arr(NumVertices);
+			//cout << "Loop through " << niGeomData->GetUVSetCount() << " UV sets..." << endl;
+			for (int i = 0; i < niGeomData->GetUVSetCount(); ++i) {
+				uv_set = niGeomData->GetUVSet(i);
 
-		for (int i = 0; i < niGeomData->GetUVSetCount(); ++i) {
-			uv_set = niGeomData->GetUVSet(i);
+				for (int j = 0; j < NumVertices; ++j) {
+					u_arr[j] = uv_set[j].u;
+					v_arr[j] = 1.0f - uv_set[j].v;
+				}
+				
+				//Assign the UVs to the object
+				MString uv_set_name("map1");
+				if ( int(uv_set_list.size()) >= i ) {
+					uv_set_name = uv_set_list[i];
+				} else
 
-			for (int j = 0; j < NumVertices; ++j) {
-				u_arr[j] = uv_set[j].u;
-				v_arr[j] = 1.0f - uv_set[j].v;
+				//cout << "Create Maya UV Set " << endl; // << uv_set_name.asChar() << ".." << endl;
+
+				if ( i > 0  ) {
+					meshFn.createUVSet( uv_set_name );
+				}
+		
+				//cout << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << endl;
+				meshFn.setUVs( u_arr, v_arr, &uv_set_name );
+				//cout << "Assign UVs..." << endl;
+				meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_list[i] );
+
+				////Delete default "map1" UV set
+				//meshFn.deleteUVSet( MString("map1") );
 			}
-			
-			//Assign the UVs to the object
-			if (i > 0) {
-				meshFn.createUVSet( uv_set_list[i] );
-			}
-	
-			meshFn.setUVs( u_arr, v_arr, &uv_set_list[i] );
-			meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_list[i] );
-
-			////Delete default "map1" UV set
-			//meshFn.deleteUVSet( MString("map1") );
 		}
 	}
 
@@ -803,10 +839,11 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	//meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
 
-
+	//cout << "Deleting poly_counts..." << endl;
 	//Delete everything that was used to load verticies
 	delete [] poly_counts;
 
+	//cout << "ImportMesh() end" << endl;
 	return meshPath;
 }
 
