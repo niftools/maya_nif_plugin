@@ -112,8 +112,8 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				ImportNodes( rootAVObj, objs );
 			} else {
 				//Root cannot be imported
-				cout << "The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported.";
-				MStatus::kFailure;
+				MGlobal::displayError( "The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported." );
+				return MStatus::kFailure;
 			}
 		}
 		
@@ -139,7 +139,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				NiTriBasedGeomRef geom = DynamicCast<NiTriBasedGeom>(it->first);
 
 				if ( geom == NULL ) {
-					cout << "Failed to cast to NiTriBasedGeom." << endl;
+					MGlobal::displayError( "Failed to cast to NiTriBasedGeom." );
 					return MStatus::kFailure;
 				}
 				
@@ -229,8 +229,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						NiSourceTextureRef niSrcTex;
 						TexDesc tx;
 
-						//Get TexturingProperty Interface
-						
+						//Get TexturingProperty Interface						
 						//Cycle through for each type of texture
 						int uv_set = 0;
 						for (int i = 0; i < 8; ++i) {
@@ -242,23 +241,24 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 								switch(i) {
 									case DARK_MAP:
 										//Temporary until/if Dark Textures are supported
-										cout << "Warning:  Dark Textures are not yet supported." << endl;
+										MGlobal::displayWarning( "Dark Textures are not yet supported." );
 										continue;
 									case DETAIL_MAP:
 										//Temporary until/if Detail Textures are supported
-										cout << "Warning:  Detail Textures are not yet supported." << endl;
+										MGlobal::displayWarning( "Detail Textures are not yet supported." );
 										continue;
 									case GLOSS_MAP:
 										//Temporary until/if Detail Textures are supported
-										cout << "Warning:  Gloss Textures are not yet supported." << endl;
+										MGlobal::displayWarning( "Gloss Textures are not yet supported." );
 										continue;
 									case BUMP_MAP:
 										//Temporary until/if Bump Map Textures are supported
-										cout << "Warning:  Bump Map Textures are not yet supported." << endl;
+										MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
 										continue;
 									case DECAL_0_MAP:
+									case DECAL_1_MAP:
 										//Temporary until/if Decal Textures are supported
-										cout << "Warning:  Decal Textures are not yet supported." << endl;
+										MGlobal::displayWarning( "Decal Textures are not yet supported." );
 										continue;
 								};
 
@@ -482,11 +482,11 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 
 	}
 	catch( exception & e ) {
-		cout << "Error:  " << e.what() << endl;
+		MGlobal::displayError( e.what() );
 		return MStatus::kFailure;
 	}
 	catch( ... ) {
-		cout << "Error:  Unknown Exception." << endl;
+		MGlobal::displayError( "Error:  Unknown Exception." );
 		return MStatus::kFailure;
 	}
 	
@@ -673,7 +673,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	NiTriBasedGeomDataRef niGeomData = niGeom->GetData();
 
 	if ( niGeomData == NULL ) {
-		cout << "This mesh has no polygon data." << endl;
+		MGlobal::displayError( "This mesh has no polygon data." );
 		return MDagPath();
 	}
 
@@ -784,47 +784,59 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 				}
 			}
 		}
-
-		//cout << "Getting default UV set..." << endl;
-		// Get default (first) UV Set if there is one		
-		if ( niGeomData->GetUVSetCount() > 0 ) {
-			meshFn.clearUVs();
-			vector<TexCoord> uv_set;
-			//Arrays for maya
-			MFloatArray u_arr(NumVertices), v_arr(NumVertices);
-
-			//cout << "Loop through " << niGeomData->GetUVSetCount() << " UV sets..." << endl;
-			for (int i = 0; i < niGeomData->GetUVSetCount(); ++i) {
-				uv_set = niGeomData->GetUVSet(i);
-
-				for (int j = 0; j < NumVertices; ++j) {
-					u_arr[j] = uv_set[j].u;
-					v_arr[j] = 1.0f - uv_set[j].v;
-				}
-				
-				//Assign the UVs to the object
-				MString uv_set_name("map1");
-				if ( int(uv_set_list.size()) >= i ) {
-					uv_set_name = uv_set_list[i];
-				} else
-
-				//cout << "Create Maya UV Set " << endl; // << uv_set_name.asChar() << ".." << endl;
-
-				if ( i > 0  ) {
-					meshFn.createUVSet( uv_set_name );
-				}
-		
-				//cout << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << endl;
-				meshFn.setUVs( u_arr, v_arr, &uv_set_name );
-				//cout << "Assign UVs..." << endl;
-				meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_list[i] );
-
-				////Delete default "map1" UV set
-				//meshFn.deleteUVSet( MString("map1") );
-			}
-		}
 	}
 
+	//cout << "UV Set List:  "  << endl;
+	//for (uint i = 0; i < uv_set_list.size(); ++i ) {
+	//	cout << uv_set_list[i].asChar() << endl;
+	//}
+
+	//cout << "Getting default UV set..." << endl;
+	// Get default (first) UV Set if there is one		
+	if ( niGeomData->GetUVSetCount() > 0 ) {
+		meshFn.clearUVs();
+		vector<TexCoord> uv_set;
+		//Arrays for maya
+		MFloatArray u_arr(NumVertices), v_arr(NumVertices);
+
+		//cout << "Loop through " << niGeomData->GetUVSetCount() << " UV sets..." << endl;
+		for (int i = 0; i < niGeomData->GetUVSetCount(); ++i) {
+			uv_set = niGeomData->GetUVSet(i);
+
+			//cout << "uv_set_list.size():  " << uv_set_list.size() << endl;
+			//cout << "i:  " << i << endl;
+
+
+			for (int j = 0; j < NumVertices; ++j) {
+				u_arr[j] = uv_set[j].u;
+				v_arr[j] = 1.0f - uv_set[j].v;
+			}
+			
+			//Assign the UVs to the object
+			MString uv_set_name("map1");
+			if ( i < int(uv_set_list.size()) ) {
+				//cout << "Entered if statement." << endl;
+				uv_set_name = uv_set_list[i];
+			}
+
+			
+
+			//cout << "Create Maya UV Set " << endl; // << uv_set_name.asChar() << ".." << endl;
+
+			if ( uv_set_name != MString("map1") ) {
+				meshFn.createUVSet( uv_set_name );
+				//cout << "Creating UV Set:  " << uv_set_name.asChar() << endl;
+			}
+	
+			//cout << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << endl;
+			meshFn.setUVs( u_arr, v_arr, &uv_set_name );
+			//cout << "Assign UVs..." << endl;
+			meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_name );
+
+			////Delete default "map1" UV set
+			//meshFn.deleteUVSet( MString("map1") );
+		}
+	}
 	// Don't load the normals now because they glitch up the skinning (sigh)
 	//// Load Normals
 	//vector<Vector3> nif_normals(NumVertices);

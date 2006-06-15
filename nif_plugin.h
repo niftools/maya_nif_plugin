@@ -120,7 +120,7 @@ public:
 	//TODO:  Upgrade the write function for the new Niflib... not to mention make it work at all.
 	//This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
 	//Responsible for traversing all objects in the current Maya scene, and writing a representation to the given file in the supported format.
-	//MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
+	MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) { return MStatus::kFailure; };
 	
 	//Returns true if the class has a read method and false otherwise
 	bool haveReadMethod () const { return true; }
@@ -133,6 +133,8 @@ public:
 
 	//Returns true if the class can deal with namespaces and false otherwise
 	bool haveNamespaceSupport () const { return false; }
+
+	MStatus doIt (const MArgList& rkArgs) { return MS::kSuccess; }
 
 	//Returns a string containing the default extension of the translator, excluding the period at the beginning
 	MString  defaultExtension () const { return MString("nif"); }

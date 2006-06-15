@@ -6,6 +6,7 @@ Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		PyNiflib|Win32 = PyNiflib|Win32
+		Release - 7.0|Win32 = Release - 7.0|Win32
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
@@ -13,8 +14,10 @@ Global
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug|Win32.Build.0 = Debug|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.PyNiflib|Win32.ActiveCfg = PyNiflib|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.PyNiflib|Win32.Build.0 = PyNiflib|Win32
-		{DE2F121F-8326-4144-A766-444451895AFA}.Release|Win32.ActiveCfg = Release|Win32
-		{DE2F121F-8326-4144-A766-444451895AFA}.Release|Win32.Build.0 = Release|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Release - 7.0|Win32.ActiveCfg = Release - 7.0|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Release - 7.0|Win32.Build.0 = Release - 7.0|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Release|Win32.ActiveCfg = Release - 6.5|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Release|Win32.Build.0 = Release - 6.5|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
