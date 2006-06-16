@@ -132,7 +132,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		map< NiAVObjectRef, MDagPath >::iterator it;
 		for ( it = objs.begin(); it != objs.end(); ++it ) {
 			//Import the data based on the type of node - NiTriShape only so far
-			if ( it->first->IsDerivedType(NiTriBasedGeom::TYPE) ) {
+			if ( it->first->IsDerivedType(NiTriBasedGeom::TypeConst()) ) {
 				//cout << "Found NiTriBasedGeom:  " << it->first << endl;
 
 				//Cast to NiTriBasedGeom
@@ -169,15 +169,15 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				NiMaterialPropertyRef niMatProp = NULL;
 				NiTexturingPropertyRef niTexProp = NULL;
 				NiSpecularPropertyRef niSpecProp = NULL;
-				NiPropertyRef niProp = geom->GetPropertyByType( NiMaterialProperty::TYPE );
+				NiPropertyRef niProp = geom->GetPropertyByType( NiMaterialProperty::TypeConst() );
 				if ( niProp != NULL ) {
 					niMatProp = DynamicCast<NiMaterialProperty>( niProp );
 				}
-				niProp = geom->GetPropertyByType( NiTexturingProperty::TYPE );
+				niProp = geom->GetPropertyByType( NiTexturingProperty::TypeConst());
 				if ( niProp != NULL ) {
 					niTexProp = DynamicCast<NiTexturingProperty>( niProp );
 				}
-				niProp = geom->GetPropertyByType( NiSpecularProperty::TYPE );
+				niProp = geom->GetPropertyByType( NiSpecularProperty::TypeConst() );
 				if ( niProp != NULL ) {
 					niSpecProp = DynamicCast<NiSpecularProperty>( niProp );
 				}
@@ -282,7 +282,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 											//Check if Alpha needs to be used
 											{
 												NiAlphaPropertyRef niAlphaProp;
-												niProp = geom->GetPropertyByType(NiAlphaProperty::TYPE);
+												niProp = geom->GetPropertyByType(NiAlphaProperty::TypeConst() );
 												if ( niProp != NULL ) {
 													niAlphaProp = DynamicCast<NiAlphaProperty>(niProp);
 												}
@@ -513,7 +513,7 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	MFnTransform transFn;
 	string name = niAVObj->GetName();
 	int flags = niAVObj->GetFlags();
-	if ( niAVObj->IsSameType(NiNode::TYPE) && ( (strstr(name.c_str(), "Bip") != NULL ) || ((flags & 8) == 0) ) ) {
+	if ( niAVObj->IsSameType(NiNode::TypeConst() ) && ( (strstr(name.c_str(), "Bip") != NULL ) || ((flags & 8) == 0) ) ) {
 		// This is a bone, create an IK joint parented to the given parent
 		MFnIkJoint IKjointFn;
 		obj = IKjointFn.create( parent );
@@ -747,7 +747,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	//cout << "Creating a list of the UV sets..." << endl;
 	//Create a list of the UV sets used by the texturing property if there is one
-	NiPropertyRef niProp = niGeom->GetPropertyByType( NiTexturingProperty::TYPE );
+	NiPropertyRef niProp = niGeom->GetPropertyByType( NiTexturingProperty::TypeConst() );
 	NiTexturingPropertyRef niTexProp;
 	if ( niProp != NULL ) {
 		niTexProp = DynamicCast<NiTexturingProperty>(niProp);
