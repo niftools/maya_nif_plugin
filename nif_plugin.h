@@ -99,6 +99,8 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "obj/NiSkinData.h"
 #include "obj/NiSpecularProperty.h"
 
+using namespace Niflib;
+
 //--NifTranslator Class--//
 
 //This class implements the file translation functionality of the plug-in

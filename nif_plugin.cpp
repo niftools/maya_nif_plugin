@@ -1,6 +1,6 @@
 #include "nif_plugin.h"
 
-const char PLUGIN_VERSION [] = "pre-alpha";	
+const char PLUGIN_VERSION [] = "0.3.0";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
@@ -102,7 +102,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			//Root is a NiNode and may have children
 			vector<NiAVObjectRef> root_children = root_node->GetChildren();
 			
-			for ( uint i = 0; i < root_children.size(); ++i ) {
+			for ( unsigned int i = 0; i < root_children.size(); ++i ) {
 				ImportNodes( root_children[i], objs );
 			}
 		} else {
@@ -438,7 +438,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 							//Get weights from NIF
 							vector<SkinWeight> weights = bone_data[i].vertexWeights;
 							map<int, float> weight_map;
-							for (uint j = 0; j < weights.size(); ++j ) {
+							for (unsigned int j = 0; j < weights.size(); ++j ) {
 								weight_map[weights[j].index] = weights[j].weight;
 							}
 							
@@ -563,7 +563,7 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	NiNodeRef niNode = DynamicCast<NiNode>(niAVObj);
 	if ( niNode != NULL ) {
 		vector<NiAVObjectRef> children = niNode->GetChildren();
-		for ( uint i = 0; i < children.size(); ++i ) {
+		for ( unsigned int i = 0; i < children.size(); ++i ) {
 			ImportNodes( children[i], objs, obj );
 		}
 	}
