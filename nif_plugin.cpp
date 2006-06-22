@@ -1,6 +1,6 @@
 #include "nif_plugin.h"
 
-const char PLUGIN_VERSION [] = "0.3.0";	
+const char PLUGIN_VERSION [] = "0.3.1";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
@@ -35,7 +35,7 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 MStatus initializePlugin( MObject obj ) {
 	//cout << "Initializing Plugin..." << endl;
 	MStatus   status;
-	MFnPlugin plugin( obj, "NifTools", PLUGIN_VERSION, "Any");
+	MFnPlugin plugin( obj, "NifTools", PLUGIN_VERSION );
 
 	// Register the translator with the system
 	status =  plugin.registerFileTranslator( TRANSLATOR_NAME,  //File Translator Name
@@ -380,7 +380,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						
 						//Add list of bones to the command
 						vector<NiNodeRef> bone_nodes = niSkinInst->GetBones();
-						vector<SkinData> bone_data = niSkinData->GetBoneData();
 
 						for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
 							cmd.append( objs[ StaticCast<NiAVObject>(bone_nodes[i]) ].partialPathName().asChar() );
@@ -411,54 +410,44 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						}
 						compFn.addElements(vertex_indices);
 
+						//Get weight data from NIF
+						vector< vector<float> > nif_weights( bone_nodes.size() );
+
 						//Set skin weights & bind pose for each bone
 						for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
-							////Get Bind Pose
-							//float bind_pose[4][4];
-							//INode * node = (INode*)bone_nodes[i]->QueryInterface(Node);
-							//node->GetWorldBindPos( bind_pose );
-							//MFnMatrixData mat;
-							//mat.set( MMatrix( bind_pose ) );
-
-							////Set bone bind pose matrix
-							//MFnTransform transFn(objs[bone_nodes[i]]);
-							//MPlug bindPose = transFn.findPlug("bindPose");
-							////if ( bindPose != MObject::kNullObj ) {
-							//	bindPose.setValue( mat.object() );
-							////}
-
-							//
-							//MPlug plugBindPre = clusterFn.findPlug("bindPreMatrix") ;
-							//plugBindPre = plugBindPre.elementByPhysicalIndex( i ) ;
-							//plugBindPre.setValue( mat.object() );
-
-							//MPlug plugBindPose = transFn.findPlug("bindPose");
-							//plugBindPose.setValue( mat.object() ) ;
-
-							//Get weights from NIF
-							vector<SkinWeight> weights = bone_data[i].vertexWeights;
-							map<int, float> weight_map;
-							for (unsigned int j = 0; j < weights.size(); ++j ) {
-								weight_map[weights[j].index] = weights[j].weight;
-							}
-							
-							MFloatArray weight_list( gIt.count() );
-							MIntArray influence_list(1);
-
-							//Add this index to the influence list since we're setting one at a time
-							influence_list[0] = i;
-							
-							//Iterate over all verticies in this mesh, setting the weights
+							nif_weights[i].resize( gIt.count() );
+							//Init all values to zero
 							for ( int j = 0; j < gIt.count(); ++j ) {
-								if ( weight_map.find(j) != weight_map.end() ) {
-									weight_list[j] = weight_map[j];
-								}
-								else
-									weight_list[j] = 0.0f;
+								nif_weights[i][j] = 0.0f;
 							}
+
+							//Get weight data
+							vector<SkinWeight> weights = niSkinData->GetBoneWeights(i);
 							
-							clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
+							//Put data in proper slots in the 2D array
+							for (unsigned int j = 0; j < weights.size(); ++j ) {
+								nif_weights[i][weights[j].index] = weights[j].weight;
+							}
 						}
+
+						//Build Maya influence list
+						MIntArray influence_list( bone_nodes.size() );
+						for ( unsigned int i = 0; i < bone_nodes.size(); ++i ) {
+							influence_list[i] = i;
+						}
+
+						//Build Maya weight list
+						MFloatArray weight_list(  gIt.count() * int(bone_nodes.size()) );
+						int k = 0;
+						for ( int i = 0; i < gIt.count(); ++i ) {
+							for ( int j = 0; j < int(bone_nodes.size()); ++j ) {
+								weight_list[k] = nif_weights[j][i];
+								++k;
+							}
+						}
+
+						//Send the weights to Maya
+						clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
 					}			
 				}
 			}
