@@ -848,5 +848,5 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	return meshPath;
 }
 
-void ExportNodes( map< string, blk_ref > & objs, blk_ref root );
-void ExportFileTextures( map< string, blk_ref > & textures );
+void ExportNodes( map< string, NiObjectRef > & objs, NiObjectRef root );
+void ExportFileTextures( map< string, NiObjectRef > & textures );
