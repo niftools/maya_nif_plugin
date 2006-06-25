@@ -668,7 +668,14 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	int NumVertices = niGeomData->GetVertexCount();
 
-	vector<Vector3> nif_verts = niGeomData->GetVertices();
+	vector<Vector3> nif_verts;
+	
+	//If this is a skin influenced mesh, get vertices from niGeom
+	if ( niGeom->GetSkinInstance() != NULL ) {
+		nif_verts = niGeom->GetSkinInfluencedVertices();
+	} else {
+		nif_verts = niGeomData->GetVertices();
+	}
 	MPointArray maya_verts(NumVertices);
 
 	for (int i = 0; i < NumVertices; ++i) {
