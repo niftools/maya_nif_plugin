@@ -26,17 +26,18 @@
 //		0 otherwise.
 //
 global proc int nifTranslatorOpts ( string $parent,
-									string $action,
-									string $initialSettings,
-									string $resultCallback )
+				    string $action,
+				    string $initialSettings,
+				    string $resultCallback )
 {
-	int		$bResult;
-	string	$currentOptions;
-	string	$optionList[];
-	string	$optionBreakDown[];
-	int		$index;
+	int $bResult;
+	string $currentOptions;
+	string $optionList[];
+	string $optionBreakDown[];
+	int $index;
 	
-	$defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
+	string $defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
+	string $defaultVersion = "4.0.0.2";
 	
 	if ($action == "post") {
 		setParent $parent;
@@ -44,14 +45,22 @@ global proc int nifTranslatorOpts ( string $parent,
 			text -label "Texture Source Directory:";
 		setParent $parent;
 		rowLayout -numberOfColumns 2
-					 -columnWidth2 400 50
-					 -columnAttach2 "both" "left";
-			textField -editable true 
-						 -text $defaultPath
-						 nifTxPath;
+				  -columnWidth2 400 50
+				  -columnAttach2 "both" "left";
+			  textField -editable true 
+						-text $defaultPath
+						nifTxPath;
 			button -label "Browse"
-					 -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
-			   
+				   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
+		setParent $parent;
+		rowLayout -numberOfColumns 2
+				  -columnWidth2 100 70
+				  -columnAttach2 "both" "both";
+				  text -label "Export NIF Version:";
+				  textField -editable true
+				  		    -text $defaultVersion
+							nifVersion;
+							
 		// Now set to current settings.
 		$currentOptions = $initialSettings;
 		if (size($currentOptions) > 0) {
@@ -61,6 +70,9 @@ global proc int nifTranslatorOpts ( string $parent,
 				if ($optionBreakDown[0] == "texturePath") {
 					textField -edit -text $optionBreakDown[1] nifTxPath;
 				}
+				if ($optionBreakDown[0] == "exportVersion") {
+					textField -edit -text $optionBreakDown[1] nifVersion;
+				}
 			}
 		}
 		$bResult = 1;
@@ -69,11 +81,17 @@ global proc int nifTranslatorOpts ( string $parent,
 		// Set verbose option
 		string $texturePath = `textField -query -text nifTxPath`;
 		if ($texturePath != "") {
-			$currentOptions = $currentOptions + "texturePath=" + $texturePath;
+			$currentOptions = $currentOptions + "texturePath=" + $texturePath + ";";
+		}
+		string $version = `textField -query -text nifVersion`;
+		if ($version != "") {
+			$currentOptions = $currentOptions + "exportVersion=" + $version + ";";
 		}
 		else {
 			//Use Default path
-			$currentOptions = $currentOptions + "texturePath=" + $defaultPath;
+			$currentOptions = $currentOptions + "texturePath=" + $defaultPath + ";";
+			//Use Default version
+			$currentOptions = $currentOptions + "exportVersion=" + $defaultVersion + ";";
 		}
 		eval($resultCallback+" \""+$currentOptions+"\"");
 		$bResult = 1;
