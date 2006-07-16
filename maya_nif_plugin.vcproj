@@ -4,6 +4,7 @@
 	Version="8.00"
 	Name="Maya NIF Plugin"
 	ProjectGUID="{DE2F121F-8326-4144-A766-444451895AFA}"
+	RootNamespace="Maya NIF Plugin"
 	>
 	<Platforms>
 		<Platform

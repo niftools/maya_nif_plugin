@@ -5,6 +5,7 @@ const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
 string texture_path; // Path to textures gotten from option string
+unsigned int export_version = VER_4_0_0_2; //Version of NIF file to export
 
 //--Function Definitions--//
 
@@ -19,12 +20,20 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 	const char *name = fileName.name().asChar();
 	int nameLength = (int)strlen(name);
 
-	
-	if ((nameLength > 4) && !_stricmp(name+nameLength-4, ".nif")) {
-		return kIsMyFileType;
+	if ( name[nameLength-4] != '.' ) {
+		return kNotMyFileType;
+	}
+	if ( name[nameLength-3] != 'n' && name[nameLength-3] != 'N' ) {
+		return kNotMyFileType;
+	}
+	if ( name[nameLength-2] != 'i' && name[nameLength-2] != 'I' ) {
+		return kNotMyFileType;
+	}
+	if ( name[nameLength-1] != 'f' && name[nameLength-1] != 'F' ) {
+		return kNotMyFileType;
 	}
 
-	return	kNotMyFileType;
+	return kIsMyFileType;
 }
 
 //--Plug-in Load/Unload--//
@@ -77,17 +86,8 @@ MStatus uninitializePlugin( MObject obj )
 MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
 	//cout << "Begining Read..." << endl;
 	try {
-		//Parse Options String
-		MStringArray options;
-		optionsString.split( ';', options );
-		for (unsigned int i = 0; i < options.length(); ++i) {
-			MStringArray tokens;
-			options[i].split( '=', tokens );
-			if ( tokens[0] == "texturePath" ) {
-				texture_path = tokens[1].asChar();
-				texture_path.append("/");
-			}
-		}
+		//Get user preferences
+		ParseOptionString( optionsString );
 
 		//cout << "Reading NIF File..." << endl;
 		//Read NIF file
@@ -736,7 +736,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	vector<MString> uv_set_list;
 
 	//Make invisible if bit flag 1 is set
-	if ( (niGeom->GetFlags() & 1) == true ) {
+	if ( niGeom->GetVisibility() == false ) {
 		MPlug vis = meshFn.findPlug( MString("visibility") );
 		vis.setValue(false);
 	}
@@ -855,5 +855,1035 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	return meshPath;
 }
 
-void ExportNodes( map< string, NiObjectRef > & objs, NiObjectRef root );
-void ExportFileTextures( map< string, NiObjectRef > & textures );
+//--NifTranslator::writer--//
+
+//This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
+//Responsible for traversing all objects in the current Maya scene, and writing a representation to the given
+//file in the supported format.
+MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
+	
+	try {
+		//Get user preferences
+		ParseOptionString( optionsString );
+
+		out << "Creating root node...";
+		//Create new root node
+		NiNodeRef root = new NiNode;
+		root->SetName( "Scene Root" );
+		out << root << endl;
+
+	
+
+		out << "Exporting file textures..." << endl;
+		textures.clear();
+		
+		//Export file textures and get back a map of DAG path to Nif block
+		ExportFileTextures();
+
+		shaders.clear();
+		out << "Exporting shaders..." << endl;
+		ExportShaders();
+
+		out << "Exporting nodes..." << endl;
+		//A map to hold associations between DAG paths and NIF object
+		map< string, NiAVObjectRef > nodes;
+
+		//Export nodes and get back a map of DAG path to NIf objects
+		ExportNodes( nodes, root );
+
+		
+		//--Write finished NIF file--//
+
+		out << "Writing Finished NIF file..." << endl;
+		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(root), export_version );
+
+		out << "Export Complete." << endl;
+	}
+	catch( exception & e ) {
+		stringstream out;
+		out << "Error:  " << e.what() << endl;
+		MGlobal::displayError( out.str().c_str() );
+		return MStatus::kFailure;
+	}
+	catch( ... ) {
+		MGlobal::displayError( "Error:  Unknown Exception." );
+		return MStatus::kFailure;
+	}
+	
+	return MS::kSuccess;
+}
+
+void NifTranslator::ExportMesh( NiTriShapeRef tri_shape, MObject mesh ) {
+	out << "NifTranslator::ExportMesh (" << tri_shape << ", ";
+	MStatus stat;
+
+	NiTriShapeDataRef niTriShapeData = new NiTriShapeData;
+	tri_shape->SetData( StaticCast<NiTriBasedGeomData>(niTriShapeData) );
+
+	MFnMesh visibleMeshFn(mesh, &stat);
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to create visibleMeshFn.");
+	}
+
+	//If polygon mesh is hidden, hide tri_shape
+	MPlug vis = visibleMeshFn.findPlug( MString("visibility") );
+	bool value;
+	vis.getValue(value);
+	out << "Visibility of " << visibleMeshFn.name().asChar() << " is " << value << endl;
+	tri_shape->SetVisibility(value);
+	
+	out << visibleMeshFn.name().asChar() << ") {" << endl;
+	MFnMesh meshFn;
+	MObject dataObj;
+	MObject clusterObj;
+	MFnSkinCluster skinCluster;
+	MPlugArray inMeshPlugArray;
+	MPlug childPlug;
+	MPlug geomPlug;
+	MPlug inputPlug;
+
+	// this will hold the returned vertex positions
+	MPointArray vts;
+
+	out << "Getting inMesh Plug" << endl;
+
+	MPlug inMeshPlug = visibleMeshFn.findPlug("inMesh", &stat);
+
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Unable to find inMesh plug");
+	}
+
+	bool use_visible_mesh = true;
+	out << "Checking inMesh Plug Connection" << endl;
+	if ( inMeshPlug.isConnected( &stat ) )
+	{
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("failed to check whether inMeshPlug is connected.");
+		}
+
+		out << "inMesh Plug is connected, search for skin cluster" << endl;
+		inMeshPlug.connectedTo(inMeshPlugArray,true,false,&stat);
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("failed to get inMeshPlug connection array.");
+		}
+
+		if (inMeshPlugArray.length() > 1) {
+			MGlobal::displayWarning("Multiple input meshes for geometry.");
+		}
+
+		if ( inMeshPlugArray[0].node().apiType() == MFn::kSkinClusterFilter ) {
+			// Skin controller output directly connected to input mesh.
+			clusterObj = inMeshPlugArray[0].node( &stat );
+			if ( stat != MS::kSuccess ) {
+				out << stat.errorString().asChar() << endl;
+				throw runtime_error("Failed to get clusterObj.");
+			}
+		} else {
+			// Do a more thorough search for skin cluster.
+			//if (FindSkinCluster(rkMesh,kClusterObj)) {
+				// At this point, indirectly attached skin clusters are not
+				// completely supported.  Connections, such as through a
+				// polyTriangulate node, will be ignored and the skin cluster
+				// and output geometry will be treated as if they were
+				// directly connected.
+					MGlobal::displayWarning("Intermediate nodes between cluster "\
+						"and output mesh will not be converted.");
+			//}
+		}
+	}
+		
+		//// walk the tree of stuff upstream from this plug
+		//MItDependencyGraph dgIt(inMeshPlug,
+		//						MFn::kInvalid,
+		//						MItDependencyGraph::kUpstream,
+		//						MItDependencyGraph::kDepthFirst,
+		//						MItDependencyGraph::kPlugLevel,
+		//						&stat);
+
+		//if ( stat != MS::kSuccess ) {
+		//	throw runtime_error("Unable to create MItDependencyGraph");
+		//}
+		//
+		//out << "Disable pruning on filter" << endl;
+		//dgIt.disablePruningOnFilter();
+		//int count = 0;
+
+		//out << "Loop through Dependency Graph" << endl;
+		//for ( ; ! dgIt.isDone(); dgIt.next() )
+		//{
+		//	MObject thisNode = dgIt.thisNode();
+
+		//	// go until we find a skinCluster
+
+		//	if (thisNode.apiType() == MFn::kSkinClusterFilter)
+		//	{
+
+	if ( clusterObj.isNull() == false ) {
+				out << "Skin Cluster Found:  ";
+				stat = skinCluster.setObject( clusterObj );
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("could not set MFnSkinCluster.");
+				}
+
+				out << skinCluster.name().asChar() << endl;
+
+				// get the mesh coming into the skinCluster.  This
+				// is the mesh before being deformed but after
+				// being edited/tweaked/etc.
+
+				out << "Get input plug" << endl;
+				inputPlug = skinCluster.findPlug("input", &stat);
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("Unable to find input plug");
+				}
+
+				unsigned int meshIndex = skinCluster.indexForOutputShape( visibleMeshFn.object(),&stat );
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("Failed to get index for output shape");
+				}
+
+				childPlug = inputPlug.elementByLogicalIndex( meshIndex, &stat ); 
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("Failed to get element by logical index");
+				}
+				geomPlug = childPlug.child(0,&stat); 
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("failed to get geomPlug");
+				}
+
+				stat = geomPlug.getValue(dataObj);
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("Failed to get value from geomPlug.");
+				}
+
+				out << "Use input mesh instead of the visible one." << endl;
+				// let use this mesh instead of the visible one
+				if ( dataObj.hasFn( MFn::kMesh ) == true ) {
+					out << "Data has MeshFN function set." << endl;
+					stat = meshFn.setObject(dataObj);
+					if ( stat != MS::kSuccess ) {
+						out << stat.errorString().asChar() << endl;
+						throw runtime_error("Failed to set new object");
+					}
+					
+					use_visible_mesh = false;
+				} else {
+					out << "Data does not have meshFn function set" << endl;
+				}
+			}
+		//}
+		//out << "Loop Complete" << endl;
+	//}
+
+	if ( use_visible_mesh == true ) {
+		stat = meshFn.setObject( visibleMeshFn.object() );
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("failed to set meshFn to visibleMeshFn.");
+		}
+	}
+
+	out << "Use the function set to get the points" << endl;
+	// use the function set to get the points
+	stat = meshFn.getPoints(vts);
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to get points.");
+	}
+
+	vector<Vector3> nif_vts( vts.length() );
+
+	// only want non-history items
+	for( int i=0; i != vts.length(); ++i ) {
+		nif_vts[i].x = float(vts[i].x);
+		nif_vts[i].y = float(vts[i].y);
+		nif_vts[i].z = float(vts[i].z);
+	}
+
+	// this will hold the returned vertex positions
+	MFloatVectorArray nmls;
+
+	out << "Use the function set to get the normals" << endl;
+	// use the function set to get the normals
+	stat = meshFn.getNormals( nmls, MSpace::kTransform );
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to get normals");
+	}
+	
+	out << "Prepare NIF normal vector" << endl;
+	vector<Vector3> nif_nmls( nif_vts.size() );
+
+	out << "Use the function set to get the UV set names" << endl;
+	MStringArray uvSetNames;
+	MString baseUVSet;
+	MFloatArray myUCoords;
+	MFloatArray myVCoords;
+	bool has_uvs = false;
+
+	// get the names of the uv sets on the mesh
+	meshFn.getUVSetNames(uvSetNames);
+
+	//TODO:  Support multiple UV sets.  For now just get the first one with any data
+	for ( unsigned int i = 0; i < uvSetNames.length(); ++i ) {
+		if ( meshFn.numUVs( uvSetNames[i] ) > 0 ) {
+			meshFn.getUVs( myUCoords, myVCoords, &uvSetNames[i] );
+
+			//Make sure coords are positive and Flip the V coords
+			for ( unsigned int j = 0; j < myVCoords.length(); ++j ) {
+				myVCoords[j] = 1.0f - myVCoords[j];
+				//if ( myVCoords[j] < 0.0f ) {
+				//	myVCoords[j] = myVCoords[j] + 1.0f;
+				//}
+				//if ( myUCoords[j] < 0.0f ) {
+				//	myUCoords[j] = myUCoords[j] + 1.0f;
+				//}
+			}
+
+			baseUVSet = uvSetNames[i];
+			has_uvs = true;
+			break; //Just get the first set right now
+		}
+	}
+
+	vector<TexCoord> nif_uvs( nif_vts.size() );
+
+	vector<Triangle> nif_tris;
+
+	// this will hold references to the shaders used on the meshes
+	MObjectArray Shaders;
+
+	// this is used to hold indices to the materials returned in the object array
+	MIntArray    FaceIndices;
+
+	out << "Get the connected shaders" << endl;
+	// get the shaders used by the i'th mesh instance
+	// Assume this is not instanced for now
+	// TODO support instanceing properly
+	stat = visibleMeshFn.getConnectedShaders(0,Shaders,FaceIndices);
+
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to get connected shader list.");
+		
+	}
+
+	if ( Shaders.length() <= 1 ) {
+
+		//Shaders[0] holds material for all faces if Shaders.length() == 1
+		if (Shaders.length() == 1 ) {
+			out << "This mesh has a shader attached:  ";
+			//Attach all properties previously associated with this shader to
+			//this NiTriShape
+			MFnDependencyNode fnDep(Shaders[0]);
+
+			//Find the shader that this shading group connects to
+			MPlug p = fnDep.findPlug("surfaceShader");
+			MPlugArray plugs;
+			p.connectedTo( plugs, true, false );
+			for ( unsigned int i = 0; i < plugs.length(); ++i ) {
+				if ( plugs[i].node().hasFn( MFn::kLambert ) ) {
+					fnDep.setObject( plugs[i].node() );
+					break;
+				}
+			}
+
+			out << fnDep.name().asChar() << endl;
+			vector<NiPropertyRef> niProps = shaders[ fnDep.name().asChar() ];
+
+			for ( unsigned int i = 0; i < niProps.size(); ++i ) {
+				out << "Adding " << niProps[0] << " to " << tri_shape << endl;
+				tri_shape->AddProperty( niProps[i] );
+			}
+		}
+		
+		out << "Export vertex and normal data" << endl;
+		// attach an iterator to the mesh
+		MItMeshPolygon itPoly(mesh, &stat);
+		if ( stat != MS::kSuccess ) {
+			throw runtime_error("Failed to create polygon iterator.");
+		}
+
+		//int face = 0;
+
+		// Create a list of faces with vertex IDs, and duplicate normals so they have the same ID
+		for ( ; !itPoly.isDone() ; itPoly.next() ) {
+
+			//cout << "Face " << face << ":" << endl;
+			//++face;
+
+			int poly_vert_count = itPoly.polygonVertexCount(&stat);
+
+			if ( stat != MS::kSuccess ) {
+				throw runtime_error("Failed to get vertex count.");
+			}
+
+			//Ignore polygons with less than 3 vertices
+			if ( poly_vert_count < 3 ) {
+				continue;
+			}
+
+			//duplicate vertices when necessary
+			vector<unsigned short> new_verts;
+			for( int i = 0; i < poly_vert_count; ++i ) {
+
+				//out << "   Vertex " << i << ":" << endl;
+
+                int v = itPoly.vertexIndex(i);
+				int n = itPoly.normalIndex(i);
+
+				bool clone = false;
+
+				//out << "Check if the vertex needs to be cloned." << endl;
+				//Make a new vertex if the normal has already been set
+				if ( nif_nmls[v] != Vector3( 0.0f, 0.0f, 0.0f) ) {
+					//Make sure new normal isn't basically the same as the old one before we make a new vertex for it
+					if ( abs( nif_nmls[v].x - float(nmls[n].x)) > 0.00001f && abs( nif_nmls[v].y - float(nmls[n].y)) > 0.00001f && abs( nif_nmls[v].z - float(nmls[n].z)) > 0.00001f ) {
+						//out << "      Normal has already been set.  Cloning vertex." << endl;
+						clone = true;
+					}
+				} else {
+					//Set the normal at the original location
+					nif_nmls[v].Set( float(nmls[n].x), float(nmls[n].y), float(nmls[n].z) );
+				}
+
+				int u;
+				if ( has_uvs ) {
+					//out << "Get UV Index at vertex "  << i << " from " << baseUVSet.asChar() << endl;
+					itPoly.getUVIndex(i, u, &baseUVSet ); 
+
+					//out << "niv_uvs.size():  " << nif_uvs.size() << "  v:  " << v << endl;
+					//Make a new vertex if the UV Coord has already been set
+					if ( nif_uvs[v].u != 0.0f && nif_uvs[v].u != 0.0f ) {
+						//out << "Compare UV to existing one at index " << u << endl;
+						//Make sure new UV isn't basically the same as the old one before we make a new vertex for it
+						if ( abs( nif_uvs[v].u - myUCoords[u]) > 0.00001f && abs( nif_uvs[v].v - myVCoords[u]) > 0.00001f ) {
+							//out << "      UV Coord has already been set.  Cloning vertex." << endl;
+							clone = true;
+						}
+					} else {
+						//Set the UV coord at the original location
+						nif_uvs[v].Set( myUCoords[u], myVCoords[u] );
+					}
+				}
+
+				if ( clone ) {
+					//out << "Cloning Vertex" << endl;
+					//Clone this vertex so it can have its own normal
+					nif_vts.push_back( nif_vts[v] );
+
+					//Set the new vertex index
+					v = nif_vts.size() - 1;
+
+					//Add a new normal to the end of the nif_nmls list
+					nif_nmls.resize( nif_vts.size() );
+					
+					if ( has_uvs ) {
+						//Add a new uv slo to the end of the nif_uvs list
+						nif_uvs.resize( nif_vts.size() );
+					}
+
+					//out << "      New vertex count:  " << nif_vts.size() << endl;
+				}
+
+				//out << "Put normal values into the same index as the new or existing vertex" << endl;
+				//Put normal values into the same index as the new or existing vertex
+				nif_nmls[v].Set( float(nmls[n].x), float(nmls[n].y), float(nmls[n].z) );
+				
+				//out << "Put UV values into the same index as the new or existing vertex" << endl;
+				//out << "U:  " << u << "  myUCoords.length():  " << myUCoords.length() << "  myVCoords.length():  " << myVCoords.length() << endl;
+				if ( has_uvs ) {
+					//Put UV values into the same index as the new or existing vertex
+					nif_uvs[v].Set( myUCoords[u], myVCoords[u] );
+				}
+				
+				//TODO: UV Coordinates
+				//if(bUvs) {
+				//  	
+
+				//	// have to get the uv index seperately
+				//	int uv_index;
+
+				//	// ouput each uv index
+				//	for(int k=0;k<sets.length();++k) {
+				//	  	
+
+				//		itPoly.getUVIndex(i,uv_index,&sets[k]);
+
+				//		cout << " " << uv_index;
+				//	}
+				//}
+
+				//out << "Push the new vertex into the list" << endl;
+				new_verts.push_back( unsigned short(v) );
+			}
+
+			//out << "Fill in face with triangles." << endl;
+			//Starting from vertex 0, create a fan of triangles to fill
+			//in non-triangle polygons
+			Triangle new_face;
+			for ( unsigned int i = 0; i < new_verts.size() - 2; ++i ) {
+				new_face[0] = new_verts[0];
+				new_face[1] = new_verts[i+1];
+				new_face[2] = new_verts[i+2];
+
+				//Push the face into the face list
+				nif_tris.push_back(new_face);
+			}
+		}
+		
+		out << "Set data in NIF object" << endl;
+		//Set data in NIF object
+		niTriShapeData->SetVertices( nif_vts );
+		niTriShapeData->SetNormals( nif_nmls );
+		niTriShapeData->SetTriangles( nif_tris );
+		if ( has_uvs ) {
+			niTriShapeData->SetUVSetCount(1);
+			niTriShapeData->SetUVSet( 0, nif_uvs );
+		}
+	} else {
+		throw runtime_error( "For now you must use only one material per mesh." );
+		// if more than one material is used, write out the face indices the materials
+		// are applied to.
+
+			//TODO Break up mesh into sub-meshes in this case
+		//	cout << "\t\tmaterials " << Shaders.length() << endl;
+
+		//	// i'm going to sort the face indicies into groups based on
+		//	// the applied material - might as well... ;)
+		//	vector< vector< int > > FacesByMatID;
+
+		//	// set to same size as num of shaders
+		//	FacesByMatID.resize(Shaders.length());
+
+		//	// put face index into correct array
+		//	for(int j=0;j < FaceIndices.length();++j)
+		//	{
+		//		FacesByMatID[ FaceIndices[j] ].push_back(j);
+		//	}
+
+		//	// now write each material and the face indices that use them
+		//	for(int j=0;j < Shaders.length();++j)
+		//	{
+		//		cout << "\t\t\t"
+		//			<< GetShaderName( Shaders[j] ).asChar()
+		//			<< "\n\t\t\t"
+		//			<< FacesByMatID[j].size()
+		//			<< "\n\t\t\t\t";
+
+		//		vector< int >::iterator it = FacesByMatID[j].begin();
+		//		for( ; it != FacesByMatID[j].end(); ++it )
+		//		{
+		//			cout << *it << " ";
+		//		}
+		//		cout << endl;
+		//	}
+		//}
+		//break;
+	}
+	out << "}" << endl;
+}
+
+//--Itterate through all of the Maya DAG nodes, adding them to the tree--//
+void NifTranslator::ExportNodes( map< string, NiAVObjectRef > & objs, NiNodeRef root ) {
+
+	out << "NifTranslator::ExportNodes {" << endl
+		<< "Creating DAG iterator..." << endl;
+	//Create iterator to go through all DAG nodes depth first
+	MItDag it(MItDag::kDepthFirst);
+
+	out << "Looping through all DAG nodes..." << endl;
+	while(!it.isDone()) {
+		out << "Attaching function set for DAG node to the object." << endl;
+
+		// attach a function set for a dag node to the
+		// object. Rather than access data directly,
+		// we access it via the function set.
+		MFnDagNode nodeFn(it.item());
+
+		// only want non-history items
+		if( !nodeFn.isIntermediateObject() ) {
+			out << "Object is not a history item" << endl;
+
+			//Check if this is a transform node
+			if ( it.item().hasFn(MFn::kTransform) ) {
+				//This is a transform node, check if it is an IK joint or a shape
+				out << "Object is a transform node." << endl;
+
+				NiAVObjectRef avObj;
+
+				bool tri_shape = false;
+				MObject matching_child;
+
+				//Check to see what kind of node we should create
+				for( int i = 0; i != nodeFn.childCount(); ++i ) {
+					// get a handle to the child
+					if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
+						out << "Object is a mesh." << endl;
+						tri_shape = true;
+						matching_child = nodeFn.child(i);
+						break;
+					}
+
+				}
+	
+				if ( tri_shape == true ) {
+					out << "Exporting Mesh..." << endl;
+					//NiTriShape
+					NiTriShapeRef niTriShape = new NiTriShape;
+					ExportMesh( niTriShape, matching_child );
+					avObj = StaticCast<NiAVObject>(niTriShape);
+				} else {
+					out << "Creating a NiNode..." << endl;
+					//NiNode
+					NiNodeRef niNode = new NiNode;
+					avObj = StaticCast<NiAVObject>(niNode);
+				}
+
+				out << "Fixing name" << endl;
+				//Fix name
+				string name = string( nodeFn.name().asChar() );
+				replace(name.begin(), name.end(), '_', ' ');
+				avObj->SetName( name );
+				MMatrix my_trans= nodeFn.transformationMatrix();
+
+				//Set visibility
+				MPlug vis = nodeFn.findPlug( MString("visibility") );
+				bool value;
+				vis.getValue(value);
+				out << "Visibility of " << nodeFn.name().asChar() << " is " << value << endl;
+				if ( value == false ) {
+					avObj->SetVisibility(false);
+				}
+
+				out << "Copying Maya matrix to Niflib matrix" << endl;
+				//Copy Maya matrix to Niflib matrix
+				Matrix44 ni_trans( 
+					(float)my_trans[0][0], (float)my_trans[0][1], (float)my_trans[0][2], (float)my_trans[0][3],
+					(float)my_trans[1][0], (float)my_trans[1][1], (float)my_trans[1][2], (float)my_trans[1][3],
+					(float)my_trans[2][0], (float)my_trans[2][1], (float)my_trans[2][2], (float)my_trans[2][3],
+					(float)my_trans[3][0], (float)my_trans[3][1], (float)my_trans[3][2], (float)my_trans[3][3]
+				);
+
+
+				////--Extract Scale from first 3 rows--//
+				//double scale[3];
+				//for (int r = 0; r < 3; ++r) {
+				//	//Get scale for this row
+				//	scale[r] = sqrt(my_trans[r][0] * my_trans[r][0] + my_trans[r][1] * my_trans[r][1] + my_trans[r][2] * my_trans[r][2] + my_trans[r][3] * my_trans[r][3]);
+				//
+				//	//Normalize the row by dividing each factor by scale
+				//	my_trans[r][0] /= scale[r];
+				//	my_trans[r][1] /= scale[r];
+				//	my_trans[r][2] /= scale[r];
+				//	my_trans[r][3] /= scale[r];
+				//}
+
+				////Get Rotatoin
+				//Matrix33 nif_rotate;
+				//for ( int r = 0; r < 3; ++r ) {
+				//	for ( int c = 0; c < 3; ++c ) {
+				//		nif_rotate[r][c] = float(my_trans[r][c]);
+				//	}
+				//}
+				////Get Translation
+				//Float3 nif_trans;
+				//nif_trans[0] = float(my_trans[3][0]);
+				//nif_trans[1] = float(my_trans[3][1]);
+				//nif_trans[2] = float(my_trans[3][2]);
+				////nif_trans.Set( float(my_trans[3][0]), float(my_trans[3][1]), float(my_trans[3][2]) );
+				//
+				out << "Storing local transform values..." << endl;
+				//Store Transform Values
+				avObj->SetLocalTransform( ni_trans );
+
+				out << "Associating NIF object with node DagPath..." << endl;
+				//Associate NIF object with node DagPath
+				string path = nodeFn.fullPathName().asChar();
+				objs[path] = avObj;
+			}
+		}
+
+		out << "Moving to next DAG node." << endl;
+		// move to next node
+		it.next();
+	}
+	out << "Loop complete" << endl;
+
+
+						////Is this a joint and therefore has bind pose info?
+					//if ( it.item().hasFn(MFn::kJoint) ) {
+					//}
+				/*}*/
+		//}
+
+		//// get the name of the node
+		//MString name = meshFn.name();
+
+		//// write the node type found
+		//cout << "node: " << name.asChar() << endl;
+
+		//// write the info about the children
+		//cout <<"num_kids " << meshFn.childCount() << endl;
+
+		//for(int i=0;i<meshFn.childCount();++i) {
+//			// get the MObject for the i'th child
+		//MObject child = meshFn.child(i);
+
+		//// attach a function set to it
+		//MFnDagNode fnChild(child);
+
+		//// write the child name
+		//cout << "\t" << fnChild.name().asChar();
+		//cout << endl;
+
+	out << "Looping through again, now connecting parents to children..." << endl;
+	//Loop through again, this time connecting the parents to the children
+	it.reset();
+	while(!it.isDone()) {
+		out << "Attaching MFnDagNode function set." << endl;
+		MFnDagNode nodeFn(it.item());
+
+		out << "Getting Maya path" << endl;
+		//Get path to this block
+		string blk_path = nodeFn.fullPathName().asChar();
+
+		out << "Looping through all Maya parents." << endl;
+		for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
+  			out << "Get the MObject for the i'th parent and attach a fnction set to it." << endl;
+			// get the MObject for the i'th parent
+			MObject parent = nodeFn.parent(i);
+
+			// attach a function set to it
+			MFnDagNode parentFn(parent);
+
+			out << "Get Parent Path." << endl;
+			string par_path = parentFn.fullPathName().asChar();
+
+			out << "Check if parent exists in the map we've built." << endl;
+			//Check if object was converted
+			if ( objs.find( blk_path ) != objs.end() ) {
+				//Check if parent exists in map we've built
+				if ( objs.find( par_path ) != objs.end() ) {
+					out << "Parent found." << endl;
+					//Object found
+					NiNodeRef niNode = DynamicCast<NiNode>( objs[par_path] );
+					if ( niNode != NULL ) {
+						out << "Attaching child to NiNode parent." << endl;
+						niNode->AddChild( objs[blk_path] );
+					}
+				} else {
+					//Block was created, parent to scene root
+					out << "Attaching child to scene root." << endl;
+					root->AddChild( objs[blk_path] );
+				}
+			}
+		}
+		out << "Parent Loop complete." << endl;
+
+		out << "Moving to next node" << endl;
+		// move to next node
+		it.next();
+	}
+	out << "Loop complete" << endl;
+	out << "}" << endl;
+}
+
+void NifTranslator::GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ) {
+	//out << "NifTranslator::GetColor( " << fn.name().asChar() << ", " << name.asChar() << ", (" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "), " << texture.apiType() << " ) {" << endl;
+	MPlug p;
+
+	//out << "Get a plug to the attribute" << endl;
+	// get a plug to the attribute
+	p = fn.findPlug( name + "R" );
+	p.getValue(color.r);
+	p = fn.findPlug( name + "G" );
+	p.getValue(color.g);
+	p = fn.findPlug( name + "B" );
+	p.getValue(color.b);
+	p = fn.findPlug( name + "A" );
+	p.getValue(color.a);
+	p = fn.findPlug(name);
+
+	//out << "Get plugs connected to color attribute" << endl;
+	// get plugs connected to color attribute
+	MPlugArray plugs;
+	p.connectedTo(plugs,true,false);
+
+	//out << "See if any file textures are present" << endl;
+	// see if any file textures are present
+	for( int i = 0; i != plugs.length(); ++i ) {
+
+  		// if file texture found
+		if( plugs[i].node().apiType() == MFn::kFileTexture ) {
+			//out << "File texture found" << endl;
+			texture = plugs[i].node();
+
+			// stop looping
+			break;
+		}
+	}
+
+	//out << "Special processing for base color?" << endl;
+	if( name == "color" && color.r < 0.01 && color.g < 0.01 && color.b < 0.01) {
+  		color.r = color.g = color.b = 0.6f;
+	}
+
+	// output the name, color and texture ID
+	out << "\t" << name.asChar() << ":  ("
+		<< color.r << ", "
+		<< color.g << ", "
+		<< color.b << ", "
+		<< color.a << ")" << endl;
+
+	out << "}" << endl;
+} 
+
+//--Iterate through all shaders, creating property sets for each one--//
+void NifTranslator::ExportShaders() {
+	out << "NifTranslator::ExportShaders {" << endl;
+	// iterate through the shaders in the scene
+	MItDependencyNodes itDep(MFn::kLambert);
+
+	out << "Iterating through all shaders in scehe..." << endl;
+	// we have to keep iterating until we get through
+	// all of the nodes in the scene
+	//
+	for ( ; !itDep.isDone(); itDep.next() ) {
+
+		//We will at least need a NiMaterialProperty
+		NiMaterialPropertyRef niMatProp = new NiMaterialProperty;
+		//Only create these if necessary
+		NiTexturingPropertyRef niTexProp = NULL;  
+		NiAlphaPropertyRef niAlphaProp = NULL;
+		NiSpecularPropertyRef niSpecProp = NULL;
+
+		MColor color;
+		MObject texture;
+
+		out << "Testing for MFnLambertShader function set." << endl;
+		if ( itDep.item().hasFn( MFn::kLambert ) ) {
+			out << "Attaching MFnLambertShader function set." << endl;
+			//All shaders inherit from lambert
+			MFnLambertShader lambertFn( itDep.item() );
+
+			out << "Getting base color" << endl;
+			GetColor( lambertFn, "color", color, texture );
+			out << "Checking whether base texture is used" << endl;
+			//If a texture is used, the color is white and the texture is used
+			if ( texture.isNull() == true ) {
+				//No texture
+				niMatProp->SetDiffuseColor( Color3( color.r, color.g, color.b ) );
+			} else {
+				niMatProp->SetDiffuseColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+				
+				out << "Base texture is used.  Create NiTexturingProperty." << endl;
+				//Base texture is used.  Create NiTexturingProperty.
+				if ( niTexProp == NULL ) {
+					niTexProp = new NiTexturingProperty;
+				}
+				//Find texture with the same maya name
+				if ( texture.hasFn( MFn::kDependencyNode ) ) {
+					MFnDependencyNode depFn(texture);
+					string texname = depFn.name().asChar();
+					out << "Texture found:  " << texname << endl;
+					if ( textures.find( texname ) != textures.end() ) {
+						TexDesc td;
+						td.source = textures[texname];
+						niTexProp->SetTexture( BASE_MAP, td );
+					}
+				}
+			}
+
+			out << "Getting ambient color" << endl;
+			GetColor( lambertFn,"ambientColor", color, texture );
+			//Textures are not supported
+			if ( texture.isNull() == true ) {
+				//No texture
+				niMatProp->SetAmbientColor( Color3( color.r, color.g, color.b ) );
+			} else {
+				niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+				MGlobal::displayWarning("Ambient textures are not supported by the NIF format.  Ignored.");
+			}
+
+			out << "Getting incandescence color" << endl;
+			GetColor( lambertFn,"incandescence", color, texture );
+			//Textures are not supported
+			if ( texture.isNull() == true ) {
+				//No texture
+				niMatProp->SetEmissiveColor( Color3( color.r, color.g, color.b ) );
+			} else {
+				niMatProp->SetEmissiveColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+				MGlobal::displayWarning("Incandescence textures are not supported by the NIF format.  Ignored.");
+			}
+
+			out << "Getting transparency color" << endl;
+			GetColor( lambertFn,"transparency", color, texture );
+			//Textures are not supported
+			if ( texture.isNull() == true ) {
+				//No texture
+				float trans = (color.r + color.g + color.b) / 3.0f;
+				if ( trans != color.r ) {
+					MGlobal::displayWarning("Colored transparency is not supported by the NIF format.  An average of the color channels will be used.");
+				}
+				//Maya trans is reverse of NIF trans
+				trans = 1.0f - trans;
+				niMatProp->SetTransparency( trans );
+
+				if ( trans < 1.0f ) {
+					if ( niAlphaProp == NULL ) {
+						out << "Transparency is used, so create a NiAlphaProperty" << endl;
+						//Transparency is used, so create a NiAlphaProperty
+						niAlphaProp = new NiAlphaProperty;
+						niAlphaProp->SetFlags(237);
+					}
+				}
+			} else {
+				niMatProp->SetTransparency( 1.0f ); // opaque
+				MGlobal::displayWarning("Transparency textures are not supported by the NIF format.  Ignored.");
+			}
+
+			//TODO: Support bump maps and environment maps
+		}
+
+		out << "Testing for MFnReflectShader function set" << endl;
+		//Shader may also have specular color
+		if ( itDep.item().hasFn( MFn::kReflect ) ) {
+			out << "Attaching MFnReflectShader function set" << endl;
+			MFnReflectShader reflectFn( itDep.item() );
+
+			out << "Getting specular color" << endl;
+			GetColor( reflectFn, "specularColor", color, texture );
+			//Textures are not supported
+			if ( texture.isNull() == true ) {
+				//No texture
+				niMatProp->SetSpecularColor( Color3( color.r, color.g, color.b ) );
+
+				//Specularity is used, so create a NiSpecularProperty and put it in the list
+				if ( niSpecProp == NULL ) {
+					niSpecProp = new NiSpecularProperty;
+					niSpecProp->SetFlags(1);
+					
+				}
+
+			} else {
+				niMatProp->SetSpecularColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+				MGlobal::displayWarning("Specular textures are not supported by the NIF format.  Ignored.");
+			}
+		}
+
+		//TODO:  Figure out if glossiness is specular rolloff, ecentricity, reflectivity, or what.
+
+
+		out << "Putting created properties into a vector" << endl;
+		//Put properties into a vector
+		vector<NiPropertyRef> niProps;
+
+		//We will at least need a NiMaterialProperty
+		if ( niMatProp != NULL ) {
+			niProps.push_back( StaticCast<NiProperty>(niMatProp) );
+		}
+		if ( niTexProp != NULL ) {
+			niProps.push_back( StaticCast<NiProperty>(niTexProp) );
+		}
+		if ( niAlphaProp != NULL ) {
+			out << "Adding " << niAlphaProp << " to vector" << endl;
+			niProps.push_back( StaticCast<NiProperty>(niAlphaProp) );
+		}
+		if ( niSpecProp != NULL ) {
+			niProps.push_back( StaticCast<NiProperty>(niSpecProp) );
+		}
+
+		out << "Associating proprety vector with Maya shader name: ";
+		//Associate property vector with Maya shader name
+		MFnDependencyNode depFn( itDep.item() );
+		out << depFn.name().asChar() << endl;
+		shaders[ depFn.name().asChar() ] = niProps;
+	}
+
+	out << "}" << endl;
+}
+
+//--Iterate through all file textures, creating NiSourceTexture blocks for each one--//
+void NifTranslator::ExportFileTextures() {
+	// create an iterator to go through all file textures
+	MItDependencyNodes it(MFn::kFileTexture);
+
+	//iterate through all textures
+	while(!it.isDone())
+	{
+		// attach a dependency node to the file node
+		MFnDependencyNode fn(it.item());
+
+		// get the attribute for the full texture path
+		MPlug ftn = fn.findPlug("fileTextureName");
+
+		// get the filename from the attribute
+		MString filename;
+		ftn.getValue(filename);
+
+		//Create the NiSourceTexture block
+		NiSourceTextureRef ni_tex = new NiSourceTexture;
+
+		MString fname;
+		ftn.getValue(fname);
+		string fileName = fname.asChar();
+
+		ni_tex->SetExternalTexture( fileName, NULL );
+
+		//Associate NIF object with fileTexture DagPath
+		string path = fn.name().asChar();
+		textures[path] = ni_tex;
+
+		//TEMP: Write the block so we can see it worked
+		//out << ni_tex->asString();
+
+		// get next fileTexture
+		it.next();
+	} 
+}
+
+void NifTranslator::ParseOptionString( const MString & optionsString ) {
+		//Parse Options String
+		MStringArray options;
+		cout << "optionsString:  " << optionsString.asChar() << endl;
+		optionsString.split( ';', options );
+		for (unsigned int i = 0; i < options.length(); ++i) {
+			MStringArray tokens;
+			options[i].split( '=', tokens );
+			cout << "tokens[0]:  " << tokens[0].asChar() << endl;
+			cout << "tokens[1]:  " << tokens[1].asChar() << endl;
+			if ( tokens[0] == "texturePath" ) {
+				texture_path = tokens[1].asChar();
+				cout << "Texture Path:  " << texture_path << endl;
+				texture_path.append("/");
+			}
+			if ( tokens[0] == "exportVersion" ) {
+				MStringArray versionParts;
+				tokens[1].split( '.', versionParts );
+
+				if ( versionParts.length() != 4 ) {
+					MGlobal::displayWarning( "Invalid export version specified.  Using default of 4.0.0.2." );
+					export_version = VER_4_0_0_2;
+				} else {
+					unsigned char verBits[4];
+					for ( int i = 0; i < 4; ++i ) {
+						verBits[3-i] = unsigned char( atoi( versionParts[i].asChar() ) );
+					}
+					export_version = *((unsigned int *)verBits);
+				}
+				cout << "Export Version:  0x" << hex << export_version << endl;
+				texture_path.append("/");
+			}
+		}
+}

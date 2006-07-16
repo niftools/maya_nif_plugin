@@ -60,6 +60,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <maya/MIOStream.h> 
 #include <maya/MItDag.h>
 #include <maya/MItDependencyNodes.h>
+#include <maya/MItDependencyGraph.h>
 #include <maya/MItGeometry.h>
 #include <maya/MItSelectionList.h>
 #include <maya/MMatrix.h>
@@ -79,9 +80,12 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <maya/MFloatVectorArray.h>
 #include <maya/MItMeshPolygon.h>
 
-#include <string.h> 
+#include <string> 
 #include <vector>
+#include <sstream>
 #include <cmath>
+#include <iomanip>
+#include <iostream>
 
 #include "niflib.h"
 #include "obj/NiObject.h"
@@ -98,6 +102,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "obj/NiSkinInstance.h"
 #include "obj/NiSkinData.h"
 #include "obj/NiSpecularProperty.h"
+#include "obj/NiTriShape.h"
 
 using namespace Niflib;
 
@@ -107,7 +112,7 @@ using namespace Niflib;
 class NifTranslator : public MPxFileTranslator {
 public:
 	//Constructor
-	NifTranslator () {};
+	NifTranslator () {}//: out( "C:\\NIF Export Log.txt", ofstream::binary ) {};
 
 	//Destructor
 	virtual ~NifTranslator () {};
@@ -122,7 +127,7 @@ public:
 	//TODO:  Upgrade the write function for the new Niflib... not to mention make it work at all.
 	//This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
 	//Responsible for traversing all objects in the current Maya scene, and writing a representation to the given file in the supported format.
-	MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) { return MStatus::kFailure; };
+	MStatus writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode);
 	
 	//Returns true if the class has a read method and false otherwise
 	bool haveReadMethod () const { return true; }
@@ -131,7 +136,7 @@ public:
 	bool haveReferenceMethod () const { return false; }
 
 	//Returns true if the class has a write method and false otherwise
-	bool haveWriteMethod () const { return false; }
+	bool haveWriteMethod () const { return true; }
 
 	//Returns true if the class can deal with namespaces and false otherwise
 	bool haveNamespaceSupport () const { return false; }
@@ -152,16 +157,21 @@ public:
 	MFileKind identifyFile (const MFileObject& fileName, const char* buffer, short size) const;
 
 private:
+	stringstream out;
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
 	MObject ImportTexture( NiSourceTextureRef niSrcTex );
-
+	void ExportNodes( map< string, NiAVObjectRef > & objs, NiNodeRef root );
+	//A map to hold associations between names and NIF objects
+	map< string, NiSourceTextureRef > textures;
+	void ExportFileTextures();
+	void ExportMesh( NiTriShapeRef tri_shape, MObject mesh );
+	//A map to hold associations between NIF property lists and Shaders
+	map< string, vector<NiPropertyRef> > shaders;
+	void ExportShaders();
+	void GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture );
+	void ParseOptionString( const MString & optionString );
 };
-
-
-
-
-
 
 #endif
