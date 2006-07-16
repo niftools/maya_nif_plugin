@@ -1,0 +1,29 @@
+=Version 0.1=
+
+* Initial Release
+
+=Version 0.2=
+
+* Updated to Niflib 0.4.  Now most Nif files from version 4.0.0.0 to 10.2.0.0
+  can be imported.
+* Added support for importing vertex colors.
+* Scene Root no longer translated to a Maya transform node on import.
+
+=Version 0.3=
+
+* Expanded NIF support including Oblivion and Civ4
+* Filter now works correctly in open dialog box (only NIF files are shown when
+  NetImmerse Format is selected)
+* Errors and warnings show in Maya's main window instead of the Output Window.
+
+=Version 0.3.1=
+
+* Sped up loading of skinned meshes significantly.  These now load almost as
+  fast as NIF files without skins.
+* Included Pre-release Niflib code in source archive to make it easier for
+  people to compile the plug-in themselves.
+  
+=Version 0.4=
+
+* Added experimental export support.
+  
