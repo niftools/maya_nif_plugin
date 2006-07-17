@@ -113,7 +113,7 @@ using namespace Niflib;
 class NifTranslator : public MPxFileTranslator {
 public:
 	//Constructor
-	NifTranslator () {}//: out( "C:\\NIF Export Log.txt", ofstream::binary ) {};
+	NifTranslator () : out( "C:\\NIF Export Log.txt", ofstream::binary ) {};
 
 	//Destructor
 	virtual ~NifTranslator () {};
@@ -158,7 +158,7 @@ public:
 	MFileKind identifyFile (const MFileObject& fileName, const char* buffer, short size) const;
 
 private:
-	stringstream out;
+	ofstream out;
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
@@ -173,7 +173,7 @@ private:
 	map<string, NiNodeRef> nodes; 
 	void ExportAV( NiAVObjectRef avObj, MObject dagNode );
 	NiNodeRef GetDAGParent( MObject dagNode );
-	void ExportMesh( MObject mesh );
+	void ExportMesh( MObject dagNode );
 	//A map to hold associations between NIF property lists and Shaders
 	map< string, vector<NiPropertyRef> > shaders;
 	void ExportShaders();

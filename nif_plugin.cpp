@@ -643,7 +643,7 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecul
 	}
 
 	float glossiness = niMatProp->GetGlossiness();
-	phongFn.setReflectivity( glossiness );
+	phongFn.setCosPower( glossiness );
 
 	float alpha = niMatProp->GetTransparency();
 	//Maya's concept of alpha is the reverse of the NIF's concept
@@ -919,34 +919,29 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	return MS::kSuccess;
 }
 
-void NifTranslator::ExportMesh( MObject mesh ) {
+void NifTranslator::ExportMesh( MObject dagNode ) {
 	out << "NifTranslator::ExportMesh {";
+	ComplexShape cs;
 	MStatus stat;
+	MObject mesh;
 
-	NiTriShapeRef tri_shape = new NiTriShape;
+	//Find Mesh child of given transform objet
+	MFnDagNode nodeFn(dagNode);
 
-	//Get the NiAVObject portion of the NiTriShape
-	ExportAV( StaticCast<NiAVObject>(tri_shape), mesh );
-
-	//Connect to parent
-	NiNodeRef parNode = GetDAGParent( mesh );
-	parNode->AddChild( StaticCast<NiAVObject>(tri_shape) );
-
-	NiTriShapeDataRef niTriShapeData = new NiTriShapeData;
-	tri_shape->SetData( StaticCast<NiTriBasedGeomData>(niTriShapeData) );
+	for( int i = 0; i != nodeFn.childCount(); ++i ) {
+		// get a handle to the child
+		if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
+			out << "Found a mesh child." << endl;
+			mesh = nodeFn.child(i);
+			break;
+		}
+	}
 
 	MFnMesh visibleMeshFn(mesh, &stat);
 	if ( stat != MS::kSuccess ) {
 		out << stat.errorString().asChar() << endl;
 		throw runtime_error("Failed to create visibleMeshFn.");
 	}
-
-	//If polygon mesh is hidden, hide tri_shape
-	MPlug vis = visibleMeshFn.findPlug( MString("visibility") );
-	bool value;
-	vis.getValue(value);
-	out << "Visibility of " << visibleMeshFn.name().asChar() << " is " << value << endl;
-	tri_shape->SetVisibility(value);
 	
 	out << visibleMeshFn.name().asChar() << ") {" << endl;
 	MFnMesh meshFn;
@@ -1116,14 +1111,16 @@ void NifTranslator::ExportMesh( MObject mesh ) {
 		throw runtime_error("Failed to get points.");
 	}
 
-	vector<Vector3> nif_vts( vts.length() );
-
-	// only want non-history items
+	vector<ComplexShape::WeightedVertex> nif_vts( vts.length() );
 	for( int i=0; i != vts.length(); ++i ) {
-		nif_vts[i].x = float(vts[i].x);
-		nif_vts[i].y = float(vts[i].y);
-		nif_vts[i].z = float(vts[i].z);
+		nif_vts[i].position.x = float(vts[i].x);
+		nif_vts[i].position.y = float(vts[i].y);
+		nif_vts[i].position.z = float(vts[i].z);
 	}
+
+	//TODO:  Get Skin weights too
+
+	cs.SetVertices( nif_vts );
 
 	// this will hold the returned vertex positions
 	MFloatVectorArray nmls;
@@ -1138,6 +1135,12 @@ void NifTranslator::ExportMesh( MObject mesh ) {
 	
 	out << "Prepare NIF normal vector" << endl;
 	vector<Vector3> nif_nmls( nif_vts.size() );
+	for( int i=0; i != nmls.length(); ++i ) {
+		nif_nmls[i].x = float(nmls[i].x);
+		nif_nmls[i].y = float(nmls[i].y);
+		nif_nmls[i].z = float(nmls[i].z);
+	}
+	cs.SetNormals( nif_nmls );
 
 	out << "Use the function set to get the UV set names" << endl;
 	MStringArray uvSetNames;
@@ -1149,31 +1152,70 @@ void NifTranslator::ExportMesh( MObject mesh ) {
 	// get the names of the uv sets on the mesh
 	meshFn.getUVSetNames(uvSetNames);
 
+	vector<ComplexShape::TexCoordSet> nif_uvs;
+
+	//Record assotiation between name and uv set index for later
+	map<string,int> uvSetNums;
+
 	//TODO:  Support multiple UV sets.  For now just get the first one with any data
 	for ( unsigned int i = 0; i < uvSetNames.length(); ++i ) {
 		if ( meshFn.numUVs( uvSetNames[i] ) > 0 ) {
+			TexType tt;
+			string set_name = uvSetNames[i].asChar();
+			if ( set_name == "base" || set_name == "map1" ) {
+				tt = BASE_MAP;
+			} else if ( set_name == "dark" ) {
+				tt = DARK_MAP;
+			} else if ( set_name == "detail" ) {
+				tt = DETAIL_MAP;
+			} else if ( set_name == "gloss" ) {
+				tt = GLOSS_MAP;
+			} else if ( set_name == "glow" ) {
+				tt = GLOW_MAP;
+			} else if ( set_name == "bump" ) {
+				tt = BUMP_MAP;
+			} else if ( set_name == "decal0" ) {
+				tt = DECAL_0_MAP;
+			} else if ( set_name == "decal1" ) {
+				tt = DECAL_1_MAP;
+			} else {
+				tt = BASE_MAP;
+			}
+
+			//Record the assotiation
+			uvSetNums[set_name] = i;
+
+			//Get the UVs
 			meshFn.getUVs( myUCoords, myVCoords, &uvSetNames[i] );
 
-			//Make sure coords are positive and Flip the V coords
-			for ( unsigned int j = 0; j < myVCoords.length(); ++j ) {
-				myVCoords[j] = 1.0f - myVCoords[j];
-				//if ( myVCoords[j] < 0.0f ) {
-				//	myVCoords[j] = myVCoords[j] + 1.0f;
-				//}
-				//if ( myUCoords[j] < 0.0f ) {
-				//	myUCoords[j] = myUCoords[j] + 1.0f;
-				//}
+			//Store the data
+			ComplexShape::TexCoordSet tcs;
+			tcs.texType = tt;
+			tcs.texCoords.resize( myUCoords.length() );
+			for ( unsigned int j = 0; j < myUCoords.length(); ++j ) {
+				tcs.texCoords[j].u = myUCoords[j];
+				//Flip the V coords
+				tcs.texCoords[j].v = 1.0f - myVCoords[j];
 			}
+			nif_uvs.push_back(tcs);
 
 			baseUVSet = uvSetNames[i];
 			has_uvs = true;
-			break; //Just get the first set right now
 		}
 	}
 
-	vector<TexCoord> nif_uvs( nif_vts.size() );
+	cs.SetTexCoordSets( nif_uvs );
 
-	vector<Triangle> nif_tris;
+	out << "===Exported UV Data===" << endl;
+
+	for ( unsigned int i = 0; i < nif_uvs.size(); ++i ) {
+		out << "   UV Set:  " << nif_uvs[i].texType << endl;
+		for ( unsigned int j = 0; j < nif_uvs[i].texCoords.size(); ++j ) {
+			out << "      (" << nif_uvs[i].texCoords[j].u << ", " << nif_uvs[i].texCoords[j].u << ")" << endl;
+		}
+	}
+
+	//vector<Triangle> nif_tris;
 
 	// this will hold references to the shaders used on the meshes
 	MObjectArray Shaders;
@@ -1193,219 +1235,133 @@ void NifTranslator::ExportMesh( MObject mesh ) {
 		
 	}
 
-	if ( Shaders.length() <= 1 ) {
+	vector<ComplexShape::ComplexFace> nif_faces;
 
-		//Shaders[0] holds material for all faces if Shaders.length() == 1
-		if (Shaders.length() == 1 ) {
-			out << "This mesh has a shader attached:  ";
-			//Attach all properties previously associated with this shader to
-			//this NiTriShape
-			MFnDependencyNode fnDep(Shaders[0]);
 
-			//Find the shader that this shading group connects to
-			MPlug p = fnDep.findPlug("surfaceShader");
-			MPlugArray plugs;
-			p.connectedTo( plugs, true, false );
-			for ( unsigned int i = 0; i < plugs.length(); ++i ) {
-				if ( plugs[i].node().hasFn( MFn::kLambert ) ) {
-					fnDep.setObject( plugs[i].node() );
-					break;
-				}
-			}
-
-			out << fnDep.name().asChar() << endl;
-			vector<NiPropertyRef> niProps = shaders[ fnDep.name().asChar() ];
-
-			for ( unsigned int i = 0; i < niProps.size(); ++i ) {
-				out << "Adding " << niProps[0] << " to " << tri_shape << endl;
-				tri_shape->AddProperty( niProps[i] );
-			}
-		}
+	//Add shaders to propGroup array
+	vector< vector<NiPropertyRef> > propGroups;
+	for ( unsigned int shader_num = 0; shader_num < Shaders.length(); ++shader_num ) {
 		
-		out << "Export vertex and normal data" << endl;
-		// attach an iterator to the mesh
-		MItMeshPolygon itPoly(mesh, &stat);
-		if ( stat != MS::kSuccess ) {
-			throw runtime_error("Failed to create polygon iterator.");
-		}
+		out << "Found attached shader:  ";
+		//Attach all properties previously associated with this shader to
+		//this NiTriShape
+		MFnDependencyNode fnDep(Shaders[shader_num]);
 
-		//int face = 0;
-
-		// Create a list of faces with vertex IDs, and duplicate normals so they have the same ID
-		for ( ; !itPoly.isDone() ; itPoly.next() ) {
-
-			//cout << "Face " << face << ":" << endl;
-			//++face;
-
-			int poly_vert_count = itPoly.polygonVertexCount(&stat);
-
-			if ( stat != MS::kSuccess ) {
-				throw runtime_error("Failed to get vertex count.");
-			}
-
-			//Ignore polygons with less than 3 vertices
-			if ( poly_vert_count < 3 ) {
-				continue;
-			}
-
-			//duplicate vertices when necessary
-			vector<unsigned short> new_verts;
-			for( int i = 0; i < poly_vert_count; ++i ) {
-
-				//out << "   Vertex " << i << ":" << endl;
-
-                int v = itPoly.vertexIndex(i);
-				int n = itPoly.normalIndex(i);
-
-				bool clone = false;
-
-				//out << "Check if the vertex needs to be cloned." << endl;
-				//Make a new vertex if the normal has already been set
-				if ( nif_nmls[v] != Vector3( 0.0f, 0.0f, 0.0f) ) {
-					//Make sure new normal isn't basically the same as the old one before we make a new vertex for it
-					if ( abs( nif_nmls[v].x - float(nmls[n].x)) > 0.00001f && abs( nif_nmls[v].y - float(nmls[n].y)) > 0.00001f && abs( nif_nmls[v].z - float(nmls[n].z)) > 0.00001f ) {
-						//out << "      Normal has already been set.  Cloning vertex." << endl;
-						clone = true;
-					}
-				} else {
-					//Set the normal at the original location
-					nif_nmls[v].Set( float(nmls[n].x), float(nmls[n].y), float(nmls[n].z) );
-				}
-
-				int u;
-				if ( has_uvs ) {
-					//out << "Get UV Index at vertex "  << i << " from " << baseUVSet.asChar() << endl;
-					itPoly.getUVIndex(i, u, &baseUVSet ); 
-
-					//out << "niv_uvs.size():  " << nif_uvs.size() << "  v:  " << v << endl;
-					//Make a new vertex if the UV Coord has already been set
-					if ( nif_uvs[v].u != 0.0f && nif_uvs[v].u != 0.0f ) {
-						//out << "Compare UV to existing one at index " << u << endl;
-						//Make sure new UV isn't basically the same as the old one before we make a new vertex for it
-						if ( abs( nif_uvs[v].u - myUCoords[u]) > 0.00001f && abs( nif_uvs[v].v - myVCoords[u]) > 0.00001f ) {
-							//out << "      UV Coord has already been set.  Cloning vertex." << endl;
-							clone = true;
-						}
-					} else {
-						//Set the UV coord at the original location
-						nif_uvs[v].Set( myUCoords[u], myVCoords[u] );
-					}
-				}
-
-				if ( clone ) {
-					//out << "Cloning Vertex" << endl;
-					//Clone this vertex so it can have its own normal
-					nif_vts.push_back( nif_vts[v] );
-
-					//Set the new vertex index
-					v = nif_vts.size() - 1;
-
-					//Add a new normal to the end of the nif_nmls list
-					nif_nmls.resize( nif_vts.size() );
-					
-					if ( has_uvs ) {
-						//Add a new uv slo to the end of the nif_uvs list
-						nif_uvs.resize( nif_vts.size() );
-					}
-
-					//out << "      New vertex count:  " << nif_vts.size() << endl;
-				}
-
-				//out << "Put normal values into the same index as the new or existing vertex" << endl;
-				//Put normal values into the same index as the new or existing vertex
-				nif_nmls[v].Set( float(nmls[n].x), float(nmls[n].y), float(nmls[n].z) );
-				
-				//out << "Put UV values into the same index as the new or existing vertex" << endl;
-				//out << "U:  " << u << "  myUCoords.length():  " << myUCoords.length() << "  myVCoords.length():  " << myVCoords.length() << endl;
-				if ( has_uvs ) {
-					//Put UV values into the same index as the new or existing vertex
-					nif_uvs[v].Set( myUCoords[u], myVCoords[u] );
-				}
-				
-				//TODO: UV Coordinates
-				//if(bUvs) {
-				//  	
-
-				//	// have to get the uv index seperately
-				//	int uv_index;
-
-				//	// ouput each uv index
-				//	for(int k=0;k<sets.length();++k) {
-				//	  	
-
-				//		itPoly.getUVIndex(i,uv_index,&sets[k]);
-
-				//		cout << " " << uv_index;
-				//	}
-				//}
-
-				//out << "Push the new vertex into the list" << endl;
-				new_verts.push_back( unsigned short(v) );
-			}
-
-			//out << "Fill in face with triangles." << endl;
-			//Starting from vertex 0, create a fan of triangles to fill
-			//in non-triangle polygons
-			Triangle new_face;
-			for ( unsigned int i = 0; i < new_verts.size() - 2; ++i ) {
-				new_face[0] = new_verts[0];
-				new_face[1] = new_verts[i+1];
-				new_face[2] = new_verts[i+2];
-
-				//Push the face into the face list
-				nif_tris.push_back(new_face);
+		//Find the shader that this shading group connects to
+		MPlug p = fnDep.findPlug("surfaceShader");
+		MPlugArray plugs;
+		p.connectedTo( plugs, true, false );
+		for ( unsigned int i = 0; i < plugs.length(); ++i ) {
+			if ( plugs[i].node().hasFn( MFn::kLambert ) ) {
+				fnDep.setObject( plugs[i].node() );
+				break;
 			}
 		}
-		
-		out << "Set data in NIF object" << endl;
-		//Set data in NIF object
-		niTriShapeData->SetVertices( nif_vts );
-		niTriShapeData->SetNormals( nif_nmls );
-		niTriShapeData->SetTriangles( nif_tris );
-		if ( has_uvs ) {
-			niTriShapeData->SetUVSetCount(1);
-			niTriShapeData->SetUVSet( 0, nif_uvs );
-		}
-	} else {
-		throw runtime_error( "For now you must use only one material per mesh." );
-		// if more than one material is used, write out the face indices the materials
-		// are applied to.
 
-			//TODO Break up mesh into sub-meshes in this case
-		//	cout << "\t\tmaterials " << Shaders.length() << endl;
+		out << fnDep.name().asChar() << endl;
+		vector<NiPropertyRef> niProps = shaders[ fnDep.name().asChar() ];
 
-		//	// i'm going to sort the face indicies into groups based on
-		//	// the applied material - might as well... ;)
-		//	vector< vector< int > > FacesByMatID;
-
-		//	// set to same size as num of shaders
-		//	FacesByMatID.resize(Shaders.length());
-
-		//	// put face index into correct array
-		//	for(int j=0;j < FaceIndices.length();++j)
-		//	{
-		//		FacesByMatID[ FaceIndices[j] ].push_back(j);
-		//	}
-
-		//	// now write each material and the face indices that use them
-		//	for(int j=0;j < Shaders.length();++j)
-		//	{
-		//		cout << "\t\t\t"
-		//			<< GetShaderName( Shaders[j] ).asChar()
-		//			<< "\n\t\t\t"
-		//			<< FacesByMatID[j].size()
-		//			<< "\n\t\t\t\t";
-
-		//		vector< int >::iterator it = FacesByMatID[j].begin();
-		//		for( ; it != FacesByMatID[j].end(); ++it )
-		//		{
-		//			cout << *it << " ";
-		//		}
-		//		cout << endl;
-		//	}
-		//}
-		//break;
+		propGroups.push_back( niProps );
 	}
+	cs.SetPropGroups( propGroups );
+	
+	out << "Export vertex and normal data" << endl;
+	// attach an iterator to the mesh
+	MItMeshPolygon itPoly(mesh, &stat);
+	if ( stat != MS::kSuccess ) {
+		throw runtime_error("Failed to create polygon iterator.");
+	}
+
+	//int face = 0;
+
+	// Create a list of faces with vertex IDs, and duplicate normals so they have the same ID
+	for ( ; !itPoly.isDone() ; itPoly.next() ) {
+
+		//cout << "Face " << face << ":" << endl;
+		//++face;
+
+		int poly_vert_count = itPoly.polygonVertexCount(&stat);
+
+		if ( stat != MS::kSuccess ) {
+			throw runtime_error("Failed to get vertex count.");
+		}
+
+		//Ignore polygons with less than 3 vertices
+		if ( poly_vert_count < 3 ) {
+			continue;
+		}
+
+		ComplexShape::ComplexFace cf;
+
+		//Assume all faces use material 0 for now
+		cf.propGroupIndex = 0;
+		
+		for( int i = 0; i < poly_vert_count; ++i ) {
+			ComplexShape::ComplexPoint cp;
+
+			cp.vertexIndex = itPoly.vertexIndex(i);
+			cp.normalIndex = itPoly.normalIndex(i);
+			//TODO:  Get colors
+
+			for ( unsigned int j = 0; j < uvSetNames.length(); ++j ) {
+				ComplexShape::TexCoordIndex tci;
+				tci.texCoordSetIndex  = uvSetNums[ uvSetNames[j].asChar() ];
+				int uv_index;
+				itPoly.getUVIndex(i, uv_index, &uvSetNames[j] );
+				tci.texCoordIndex  = uv_index;
+				cp.texCoordIndices.push_back( tci );
+			}
+			cf.points.push_back(cp);
+		}
+		nif_faces.push_back( cf );
+	}
+
+	//Set shader/face association
+	if ( nif_faces.size() != FaceIndices.length() ) {
+		throw runtime_error("Num faces found do not match num faces reported.");
+	}
+	for ( unsigned int face_index = 0; face_index < nif_faces.size(); ++face_index ) {
+		nif_faces[face_index].propGroupIndex = FaceIndices[face_index];
+	}
+
+	cs.SetFaces( nif_faces );
+
+	out << "===Exported Face Data===" << endl;
+	for ( unsigned int i = 0; i < nif_faces.size(); ++i ) {
+		out << "Face " << i << endl
+			<< "   propGroupIndex:  " << nif_faces[i].propGroupIndex << endl
+			<< "   Points:" << endl;
+		for ( unsigned int j = 0; j < nif_faces[i].points.size(); ++j ) {
+			out << "      colorIndex:  "  << nif_faces[i].points[j].colorIndex << endl
+				<< "      normalIndex:  "  << nif_faces[i].points[j].normalIndex << endl
+				<< "      vertexIndex:  "  << nif_faces[i].points[j].vertexIndex << endl
+				<< "      texCoordIndices:  "  << endl;
+			for ( unsigned int k = 0; k < nif_faces[i].points[j].texCoordIndices.size(); ++k ) {
+				out << "         texCoordIndex:  " <<  nif_faces[i].points[j].texCoordIndices[k].texCoordIndex << endl
+					<< "         texCoordSetIndex:  " <<  nif_faces[i].points[j].texCoordIndices[k].texCoordSetIndex << endl;
+			}
+		}
+	}
+
+	//ComplexShape is now complete, so split it
+
+	//Get parent
+	NiNodeRef parNode = GetDAGParent( dagNode );
+
+	out << "Split ComplexShape" <<endl;
+	NiAVObjectRef avObj = cs.Split( parNode );
+
+	out << "Get the NiAVObject portion of the root of the split" <<endl;
+	//Get the NiAVObject portion of the root of the split
+	ExportAV( avObj, mesh );
+
+	//If polygon mesh is hidden, hide tri_shape
+	MPlug vis = visibleMeshFn.findPlug( MString("visibility") );
+	bool value;
+	vis.getValue(value);
+	out << "Visibility of " << visibleMeshFn.name().asChar() << " is " << value << endl;
+	avObj->SetVisibility(value);
+
 	out << "}" << endl;
 }
 
@@ -1449,7 +1405,6 @@ void NifTranslator::ExportDAGNodes() {
 						matching_child = nodeFn.child(i);
 						break;
 					}
-
 				}
 	
 				if ( tri_shape == true ) {
@@ -1608,6 +1563,8 @@ NiNodeRef NifTranslator::GetDAGParent( MObject dagNode ) {
 void NifTranslator::GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ) {
 	//out << "NifTranslator::GetColor( " << fn.name().asChar() << ", " << name.asChar() << ", (" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "), " << texture.apiType() << " ) {" << endl;
 	MPlug p;
+	texture = MObject();
+	color = MColor();
 
 	//out << "Get a plug to the attribute" << endl;
 	// get a plug to the attribute
@@ -1727,6 +1684,7 @@ void NifTranslator::ExportShaders() {
 			//Textures are not supported
 			if ( texture.isNull() == true ) {
 				//No texture
+				//This color is reversed
 				niMatProp->SetEmissiveColor( Color3( color.r, color.g, color.b ) );
 			} else {
 				niMatProp->SetEmissiveColor( Color3(1.0f, 1.0f, 1.0f) ); // white
@@ -1786,7 +1744,51 @@ void NifTranslator::ExportShaders() {
 				niMatProp->SetSpecularColor( Color3(1.0f, 1.0f, 1.0f) ); // white
 				MGlobal::displayWarning("Specular textures are not supported by the NIF format.  Ignored.");
 			}
+
+			//Handle cosine power/glossiness
+			out << "Testing for MFnPhongShader function set" << endl;
+			if ( itDep.item().hasFn( MFn::kPhong ) ) {
+				out << "Attaching MFnReflectShader function set" << endl;
+				MFnPhongShader phongFn( itDep.item() );
+
+				out << "Getting cosine power" << endl;
+				MPlug p = phongFn.findPlug("cosinePower");
+
+				//out << "Get plugs connected to cosinePower attribute" << endl;
+				// get plugs connected to cosinePower attribute
+				MPlugArray plugs;
+				p.connectedTo(plugs,true,false);
+
+				//out << "See if any file textures are present" << endl;
+				// see if any file textures are present
+				for( int i = 0; i != plugs.length(); ++i ) {
+
+  					// if file texture found
+					if( plugs[i].node().apiType() == MFn::kFileTexture ) {
+						//out << "File texture found" << endl;
+						texture = plugs[i].node();
+
+						// stop looping
+						break;
+					}
+				}
+
+				//Textures are not supported
+				if ( texture.isNull() == true ) {
+					//No texture
+					niMatProp->SetGlossiness( phongFn.cosPower() );
+				} else {
+					niMatProp->SetGlossiness( 20.0f );
+					MGlobal::displayWarning("Gloss textures are not yet supported.  Ignored.");
+				}
+			} else {
+				//Not a phong texture so not currently supported
+				MGlobal::displayWarning("Only Shaders with Cosine Power, such as Phong, can currently be used to set exported glossiness.  Default value of 20.0 used.");
+				niMatProp->SetGlossiness( 20.0f );
+			}
 		}
+
+		
 
 		//TODO:  Figure out if glossiness is specular rolloff, ecentricity, reflectivity, or what.
 
