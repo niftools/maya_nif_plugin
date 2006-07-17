@@ -162,11 +162,16 @@ private:
 	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
 	MObject ImportTexture( NiSourceTextureRef niSrcTex );
-	void ExportNodes( map< string, NiAVObjectRef > & objs, NiNodeRef root );
+	void ExportDAGNodes();
 	//A map to hold associations between names and NIF objects
-	map< string, NiSourceTextureRef > textures;
+	map<string, NiSourceTextureRef> textures;
+	NiNodeRef sceneRoot;
 	void ExportFileTextures();
-	void ExportMesh( NiTriShapeRef tri_shape, MObject mesh );
+	list< MObject > meshes;
+	//A map to hold associations between DAG paths and NIF object
+	map<string, NiNodeRef> nodes; 
+	void ExportAV( NiAVObjectRef avObj, MObject dagNode );
+	void ExportMesh( MObject mesh );
 	//A map to hold associations between NIF property lists and Shaders
 	map< string, vector<NiPropertyRef> > shaders;
 	void ExportShaders();

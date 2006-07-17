@@ -868,34 +868,40 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 
 		out << "Creating root node...";
 		//Create new root node
-		NiNodeRef root = new NiNode;
-		root->SetName( "Scene Root" );
-		out << root << endl;
+		sceneRoot = new NiNode;
+		sceneRoot->SetName( "Scene Root" );
+		out << sceneRoot << endl;
 
 	
 
 		out << "Exporting file textures..." << endl;
 		textures.clear();
-		
 		//Export file textures and get back a map of DAG path to Nif block
 		ExportFileTextures();
 
-		shaders.clear();
+		
 		out << "Exporting shaders..." << endl;
+		shaders.clear();
+		//Export shaders
 		ExportShaders();
 
-		out << "Exporting nodes..." << endl;
-		//A map to hold associations between DAG paths and NIF object
-		map< string, NiAVObjectRef > nodes;
 
-		//Export nodes and get back a map of DAG path to NIf objects
-		ExportNodes( nodes, root );
+		out << "Exporting nodes..." << endl;
+		nodes.clear();
+		meshes.clear();
+		//Export nodes
+		ExportDAGNodes();
+
+		out << "Exporting meshes..." << endl;
+		for ( list<MObject>::iterator mesh = meshes.begin(); mesh != meshes.end(); ++mesh ) {
+			ExportMesh( *mesh );
+		}
 
 		
 		//--Write finished NIF file--//
 
 		out << "Writing Finished NIF file..." << endl;
-		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(root), export_version );
+		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), export_version );
 
 		out << "Export Complete." << endl;
 	}
@@ -913,9 +919,14 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	return MS::kSuccess;
 }
 
-void NifTranslator::ExportMesh( NiTriShapeRef tri_shape, MObject mesh ) {
-	out << "NifTranslator::ExportMesh (" << tri_shape << ", ";
+void NifTranslator::ExportMesh( MObject mesh ) {
+	out << "NifTranslator::ExportMesh {";
 	MStatus stat;
+
+	NiTriShapeRef tri_shape = new NiTriShape;
+
+	//Get the NiAVObject portion of the NiTriShape
+	ExportAV( StaticCast<NiAVObject>(tri_shape), mesh );
 
 	NiTriShapeDataRef niTriShapeData = new NiTriShapeData;
 	tri_shape->SetData( StaticCast<NiTriBasedGeomData>(niTriShapeData) );
@@ -1395,9 +1406,9 @@ void NifTranslator::ExportMesh( NiTriShapeRef tri_shape, MObject mesh ) {
 }
 
 //--Itterate through all of the Maya DAG nodes, adding them to the tree--//
-void NifTranslator::ExportNodes( map< string, NiAVObjectRef > & objs, NiNodeRef root ) {
+void NifTranslator::ExportDAGNodes() {
 
-	out << "NifTranslator::ExportNodes {" << endl
+	out << "NifTranslator::ExportDAGNodes {" << endl
 		<< "Creating DAG iterator..." << endl;
 	//Create iterator to go through all DAG nodes depth first
 	MItDag it(MItDag::kDepthFirst);
@@ -1438,79 +1449,20 @@ void NifTranslator::ExportNodes( map< string, NiAVObjectRef > & objs, NiNodeRef 
 				}
 	
 				if ( tri_shape == true ) {
-					out << "Exporting Mesh..." << endl;
+					out << "Adding Mesh to list to be exported later..." << endl;
+					meshes.push_back( it.item() );
 					//NiTriShape
-					NiTriShapeRef niTriShape = new NiTriShape;
-					ExportMesh( niTriShape, matching_child );
-					avObj = StaticCast<NiAVObject>(niTriShape);
 				} else {
 					out << "Creating a NiNode..." << endl;
 					//NiNode
 					NiNodeRef niNode = new NiNode;
-					avObj = StaticCast<NiAVObject>(niNode);
+					ExportAV( StaticCast<NiAVObject>(niNode), matching_child );
+					
+					out << "Associating NiNode with node DagPath..." << endl;
+					//Associate NIF object with node DagPath
+					string path = nodeFn.fullPathName().asChar();
+					nodes[path] = niNode;
 				}
-
-				out << "Fixing name" << endl;
-				//Fix name
-				string name = string( nodeFn.name().asChar() );
-				replace(name.begin(), name.end(), '_', ' ');
-				avObj->SetName( name );
-				MMatrix my_trans= nodeFn.transformationMatrix();
-
-				//Set visibility
-				MPlug vis = nodeFn.findPlug( MString("visibility") );
-				bool value;
-				vis.getValue(value);
-				out << "Visibility of " << nodeFn.name().asChar() << " is " << value << endl;
-				if ( value == false ) {
-					avObj->SetVisibility(false);
-				}
-
-				out << "Copying Maya matrix to Niflib matrix" << endl;
-				//Copy Maya matrix to Niflib matrix
-				Matrix44 ni_trans( 
-					(float)my_trans[0][0], (float)my_trans[0][1], (float)my_trans[0][2], (float)my_trans[0][3],
-					(float)my_trans[1][0], (float)my_trans[1][1], (float)my_trans[1][2], (float)my_trans[1][3],
-					(float)my_trans[2][0], (float)my_trans[2][1], (float)my_trans[2][2], (float)my_trans[2][3],
-					(float)my_trans[3][0], (float)my_trans[3][1], (float)my_trans[3][2], (float)my_trans[3][3]
-				);
-
-
-				////--Extract Scale from first 3 rows--//
-				//double scale[3];
-				//for (int r = 0; r < 3; ++r) {
-				//	//Get scale for this row
-				//	scale[r] = sqrt(my_trans[r][0] * my_trans[r][0] + my_trans[r][1] * my_trans[r][1] + my_trans[r][2] * my_trans[r][2] + my_trans[r][3] * my_trans[r][3]);
-				//
-				//	//Normalize the row by dividing each factor by scale
-				//	my_trans[r][0] /= scale[r];
-				//	my_trans[r][1] /= scale[r];
-				//	my_trans[r][2] /= scale[r];
-				//	my_trans[r][3] /= scale[r];
-				//}
-
-				////Get Rotatoin
-				//Matrix33 nif_rotate;
-				//for ( int r = 0; r < 3; ++r ) {
-				//	for ( int c = 0; c < 3; ++c ) {
-				//		nif_rotate[r][c] = float(my_trans[r][c]);
-				//	}
-				//}
-				////Get Translation
-				//Float3 nif_trans;
-				//nif_trans[0] = float(my_trans[3][0]);
-				//nif_trans[1] = float(my_trans[3][1]);
-				//nif_trans[2] = float(my_trans[3][2]);
-				////nif_trans.Set( float(my_trans[3][0]), float(my_trans[3][1]), float(my_trans[3][2]) );
-				//
-				out << "Storing local transform values..." << endl;
-				//Store Transform Values
-				avObj->SetLocalTransform( ni_trans );
-
-				out << "Associating NIF object with node DagPath..." << endl;
-				//Associate NIF object with node DagPath
-				string path = nodeFn.fullPathName().asChar();
-				objs[path] = avObj;
 			}
 		}
 
@@ -1547,56 +1499,100 @@ void NifTranslator::ExportNodes( map< string, NiAVObjectRef > & objs, NiNodeRef 
 		//cout << "\t" << fnChild.name().asChar();
 		//cout << endl;
 
-	out << "Looping through again, now connecting parents to children..." << endl;
-	//Loop through again, this time connecting the parents to the children
-	it.reset();
-	while(!it.isDone()) {
-		out << "Attaching MFnDagNode function set." << endl;
-		MFnDagNode nodeFn(it.item());
+	//out << "Looping through again, now connecting parents to children..." << endl;
+	////Loop through again, this time connecting the parents to the children
+	//it.reset();
+	//while(!it.isDone()) {
+	//	out << "Attaching MFnDagNode function set." << endl;
+	//	MFnDagNode nodeFn(it.item());
 
-		out << "Getting Maya path" << endl;
-		//Get path to this block
-		string blk_path = nodeFn.fullPathName().asChar();
+	//	out << "Getting Maya path" << endl;
+	//	//Get path to this block
+	//	string blk_path = nodeFn.fullPathName().asChar();
 
-		out << "Looping through all Maya parents." << endl;
-		for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
-  			out << "Get the MObject for the i'th parent and attach a fnction set to it." << endl;
-			// get the MObject for the i'th parent
-			MObject parent = nodeFn.parent(i);
+	//	out << "Looping through all Maya parents." << endl;
+	//	for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
+ // 			out << "Get the MObject for the i'th parent and attach a fnction set to it." << endl;
+	//		// get the MObject for the i'th parent
+	//		MObject parent = nodeFn.parent(i);
 
-			// attach a function set to it
-			MFnDagNode parentFn(parent);
+	//		// attach a function set to it
+	//		MFnDagNode parentFn(parent);
 
-			out << "Get Parent Path." << endl;
-			string par_path = parentFn.fullPathName().asChar();
+	//		
+	//	}
+	//	out << "Parent Loop complete." << endl;
 
-			out << "Check if parent exists in the map we've built." << endl;
-			//Check if object was converted
-			if ( objs.find( blk_path ) != objs.end() ) {
-				//Check if parent exists in map we've built
-				if ( objs.find( par_path ) != objs.end() ) {
-					out << "Parent found." << endl;
-					//Object found
-					NiNodeRef niNode = DynamicCast<NiNode>( objs[par_path] );
-					if ( niNode != NULL ) {
-						out << "Attaching child to NiNode parent." << endl;
-						niNode->AddChild( objs[blk_path] );
-					}
-				} else {
-					//Block was created, parent to scene root
-					out << "Attaching child to scene root." << endl;
-					root->AddChild( objs[blk_path] );
-				}
-			}
-		}
-		out << "Parent Loop complete." << endl;
-
-		out << "Moving to next node" << endl;
-		// move to next node
-		it.next();
-	}
-	out << "Loop complete" << endl;
+	//	out << "Moving to next node" << endl;
+	//	// move to next node
+	//	it.next();
+	//}
+	//out << "Loop complete" << endl;
 	out << "}" << endl;
+}
+
+void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
+	// attach a function set for a dag node to the object.
+	MFnDagNode nodeFn(dagNode);
+
+	out << "Fixing name" << endl;
+
+	//Fix name
+	string name = string( nodeFn.name().asChar() );
+	replace(name.begin(), name.end(), '_', ' ');
+	avObj->SetName( name );
+	MMatrix my_trans= nodeFn.transformationMatrix();
+
+	//Set visibility
+	MPlug vis = nodeFn.findPlug( MString("visibility") );
+	bool value;
+	vis.getValue(value);
+	out << "Visibility of " << nodeFn.name().asChar() << " is " << value << endl;
+	if ( value == false ) {
+		avObj->SetVisibility(false);
+	}
+
+	out << "Copying Maya matrix to Niflib matrix" << endl;
+	//Copy Maya matrix to Niflib matrix
+	Matrix44 ni_trans( 
+		(float)my_trans[0][0], (float)my_trans[0][1], (float)my_trans[0][2], (float)my_trans[0][3],
+		(float)my_trans[1][0], (float)my_trans[1][1], (float)my_trans[1][2], (float)my_trans[1][3],
+		(float)my_trans[2][0], (float)my_trans[2][1], (float)my_trans[2][2], (float)my_trans[2][3],
+		(float)my_trans[3][0], (float)my_trans[3][1], (float)my_trans[3][2], (float)my_trans[3][3]
+	);
+
+	out << "Storing local transform values..." << endl;
+	//Store Transform Values
+	avObj->SetLocalTransform( ni_trans );
+
+	//Parent should have already been created since we used a depth first
+	//iterator in ExportDAGNodes
+	out << "Looping through all Maya parents." << endl;
+	for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
+		out << "Get the MObject for the i'th parent and attach a fnction set to it." << endl;
+		// get the MObject for the i'th parent
+		MObject parent = nodeFn.parent(i);
+
+		// attach a function set to it
+		MFnDagNode parentFn(parent);
+
+		out << "Get Parent Path." << endl;
+		string par_path = parentFn.fullPathName().asChar();
+
+		out << "Check if parent exists in the map we've built." << endl;
+
+		//Check if parent exists in map we've built
+		if ( nodes.find( par_path ) != nodes.end() ) {
+			out << "Parent found." << endl;
+			//Object found
+			out << "Attaching " << avObj << " to " << nodes[par_path] << endl;
+			nodes[par_path]->AddChild( avObj );
+		} else {
+			//Block was created, parent to scene root
+			out << "Attaching child to scene root." << endl;
+			sceneRoot->AddChild( avObj );
+		}
+	}
 }
 
 void NifTranslator::GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ) {
