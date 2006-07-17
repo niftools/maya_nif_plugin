@@ -103,6 +103,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "obj/NiSkinData.h"
 #include "obj/NiSpecularProperty.h"
 #include "obj/NiTriShape.h"
+#include "ComplexShape.h"
 
 using namespace Niflib;
 
@@ -171,6 +172,7 @@ private:
 	//A map to hold associations between DAG paths and NIF object
 	map<string, NiNodeRef> nodes; 
 	void ExportAV( NiAVObjectRef avObj, MObject dagNode );
+	NiNodeRef GetDAGParent( MObject dagNode );
 	void ExportMesh( MObject mesh );
 	//A map to hold associations between NIF property lists and Shaders
 	map< string, vector<NiPropertyRef> > shaders;

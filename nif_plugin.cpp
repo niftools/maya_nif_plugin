@@ -928,6 +928,10 @@ void NifTranslator::ExportMesh( MObject mesh ) {
 	//Get the NiAVObject portion of the NiTriShape
 	ExportAV( StaticCast<NiAVObject>(tri_shape), mesh );
 
+	//Connect to parent
+	NiNodeRef parNode = GetDAGParent( mesh );
+	parNode->AddChild( StaticCast<NiAVObject>(tri_shape) );
+
 	NiTriShapeDataRef niTriShapeData = new NiTriShapeData;
 	tri_shape->SetData( StaticCast<NiTriBasedGeomData>(niTriShapeData) );
 
@@ -1462,6 +1466,11 @@ void NifTranslator::ExportDAGNodes() {
 					//Associate NIF object with node DagPath
 					string path = nodeFn.fullPathName().asChar();
 					nodes[path] = niNode;
+
+					//Parent should have already been created since we used a
+					//depth first iterator in ExportDAGNodes
+					NiNodeRef parNode = GetDAGParent( it.item() );
+					parNode->AddChild( StaticCast<NiAVObject>(niNode) );
 				}
 			}
 		}
@@ -1564,9 +1573,12 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 	out << "Storing local transform values..." << endl;
 	//Store Transform Values
 	avObj->SetLocalTransform( ni_trans );
+}
 
-	//Parent should have already been created since we used a depth first
-	//iterator in ExportDAGNodes
+NiNodeRef NifTranslator::GetDAGParent( MObject dagNode ) {
+	// attach a function set for a dag node to the object.
+	MFnDagNode nodeFn(dagNode);
+
 	out << "Looping through all Maya parents." << endl;
 	for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
 		out << "Get the MObject for the i'th parent and attach a fnction set to it." << endl;
@@ -1585,12 +1597,10 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 		if ( nodes.find( par_path ) != nodes.end() ) {
 			out << "Parent found." << endl;
 			//Object found
-			out << "Attaching " << avObj << " to " << nodes[par_path] << endl;
-			nodes[par_path]->AddChild( avObj );
+			return nodes[par_path];
 		} else {
 			//Block was created, parent to scene root
-			out << "Attaching child to scene root." << endl;
-			sceneRoot->AddChild( avObj );
+			return sceneRoot;
 		}
 	}
 }
