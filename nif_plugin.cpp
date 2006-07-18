@@ -389,7 +389,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						//Add mesh path to the command
 						cmd.append( meshPath.partialPathName().asChar() );
 
-						//Execute command to create skinCluster bound to specific bones
+						//Execute command to create skin cluster bound to specific bones
 						MStringArray result;
 						MGlobal::executeCommand( cmd.c_str(), result );
 						MFnSkinCluster clusterFn;
@@ -928,12 +928,18 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Find Mesh child of given transform objet
 	MFnDagNode nodeFn(dagNode);
 
+	cs.SetName( nodeFn.name().asChar() );
+
 	for( int i = 0; i != nodeFn.childCount(); ++i ) {
 		// get a handle to the child
 		if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
-			out << "Found a mesh child." << endl;
-			mesh = nodeFn.child(i);
-			break;
+			MFnMesh tempFn( nodeFn.child(i) );
+			//No history items
+			if ( !tempFn.isIntermediateObject() ) {
+				out << "Found a mesh child." << endl;
+				mesh = nodeFn.child(i);
+				break;
+			}
 		}
 	}
 
@@ -947,7 +953,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	MFnMesh meshFn;
 	MObject dataObj;
 	MObject clusterObj;
-	MFnSkinCluster skinCluster;
+	MFnSkinCluster clusterFn;
 	MPlugArray inMeshPlugArray;
 	MPlug childPlug;
 	MPlug geomPlug;
@@ -1027,33 +1033,33 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		//{
 		//	MObject thisNode = dgIt.thisNode();
 
-		//	// go until we find a skinCluster
+		//	// go until we find a clusterFn
 
 		//	if (thisNode.apiType() == MFn::kSkinClusterFilter)
 		//	{
 
 	if ( clusterObj.isNull() == false ) {
 				out << "Skin Cluster Found:  ";
-				stat = skinCluster.setObject( clusterObj );
+				stat = clusterFn.setObject( clusterObj );
 				if ( stat != MS::kSuccess ) {
 					out << stat.errorString().asChar() << endl;
 					throw runtime_error("could not set MFnSkinCluster.");
 				}
 
-				out << skinCluster.name().asChar() << endl;
+				out << clusterFn.name().asChar() << endl;
 
-				// get the mesh coming into the skinCluster.  This
+				// get the mesh coming into the clusterFn.  This
 				// is the mesh before being deformed but after
 				// being edited/tweaked/etc.
 
 				out << "Get input plug" << endl;
-				inputPlug = skinCluster.findPlug("input", &stat);
+				inputPlug = clusterFn.findPlug("input", &stat);
 				if ( stat != MS::kSuccess ) {
 					out << stat.errorString().asChar() << endl;
 					throw runtime_error("Unable to find input plug");
 				}
 
-				unsigned int meshIndex = skinCluster.indexForOutputShape( visibleMeshFn.object(),&stat );
+				unsigned int meshIndex = clusterFn.indexForOutputShape( visibleMeshFn.object(),&stat );
 				if ( stat != MS::kSuccess ) {
 					out << stat.errorString().asChar() << endl;
 					throw runtime_error("Failed to get index for output shape");
@@ -1080,13 +1086,13 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 				// let use this mesh instead of the visible one
 				if ( dataObj.hasFn( MFn::kMesh ) == true ) {
 					out << "Data has MeshFN function set." << endl;
-					stat = meshFn.setObject(dataObj);
+					//stat = meshFn.setObject(dataObj);
 					if ( stat != MS::kSuccess ) {
 						out << stat.errorString().asChar() << endl;
 						throw runtime_error("Failed to set new object");
 					}
 					
-					use_visible_mesh = false;
+					//use_visible_mesh = false;
 				} else {
 					out << "Data does not have meshFn function set" << endl;
 				}
@@ -1120,7 +1126,8 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	//TODO:  Get Skin weights too
 
-	cs.SetVertices( nif_vts );
+	//Set vertex info later since it includes skin weights
+	//cs.SetVertices( nif_vts );
 
 	// this will hold the returned vertex positions
 	MFloatVectorArray nmls;
@@ -1134,7 +1141,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	}
 	
 	out << "Prepare NIF normal vector" << endl;
-	vector<Vector3> nif_nmls( nif_vts.size() );
+	vector<Vector3> nif_nmls( nmls.length() );
 	for( int i=0; i != nmls.length(); ++i ) {
 		nif_nmls[i].x = float(nmls[i].x);
 		nif_nmls[i].y = float(nmls[i].y);
@@ -1206,14 +1213,14 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	cs.SetTexCoordSets( nif_uvs );
 
-	out << "===Exported UV Data===" << endl;
+	//out << "===Exported UV Data===" << endl;
 
-	for ( unsigned int i = 0; i < nif_uvs.size(); ++i ) {
-		out << "   UV Set:  " << nif_uvs[i].texType << endl;
-		for ( unsigned int j = 0; j < nif_uvs[i].texCoords.size(); ++j ) {
-			out << "      (" << nif_uvs[i].texCoords[j].u << ", " << nif_uvs[i].texCoords[j].u << ")" << endl;
-		}
-	}
+	//for ( unsigned int i = 0; i < nif_uvs.size(); ++i ) {
+	//	out << "   UV Set:  " << nif_uvs[i].texType << endl;
+	//	for ( unsigned int j = 0; j < nif_uvs[i].texCoords.size(); ++j ) {
+	//		out << "      (" << nif_uvs[i].texCoords[j].u << ", " << nif_uvs[i].texCoords[j].u << ")" << endl;
+	//	}
+	//}
 
 	//vector<Triangle> nif_tris;
 
@@ -1326,22 +1333,97 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	cs.SetFaces( nif_faces );
 
-	out << "===Exported Face Data===" << endl;
-	for ( unsigned int i = 0; i < nif_faces.size(); ++i ) {
-		out << "Face " << i << endl
-			<< "   propGroupIndex:  " << nif_faces[i].propGroupIndex << endl
-			<< "   Points:" << endl;
-		for ( unsigned int j = 0; j < nif_faces[i].points.size(); ++j ) {
-			out << "      colorIndex:  "  << nif_faces[i].points[j].colorIndex << endl
-				<< "      normalIndex:  "  << nif_faces[i].points[j].normalIndex << endl
-				<< "      vertexIndex:  "  << nif_faces[i].points[j].vertexIndex << endl
-				<< "      texCoordIndices:  "  << endl;
-			for ( unsigned int k = 0; k < nif_faces[i].points[j].texCoordIndices.size(); ++k ) {
-				out << "         texCoordIndex:  " <<  nif_faces[i].points[j].texCoordIndices[k].texCoordIndex << endl
-					<< "         texCoordSetIndex:  " <<  nif_faces[i].points[j].texCoordIndices[k].texCoordSetIndex << endl;
+	//out << "===Exported Face Data===" << endl;
+	//for ( unsigned int i = 0; i < nif_faces.size(); ++i ) {
+	//	out << "Face " << i << endl
+	//		<< "   propGroupIndex:  " << nif_faces[i].propGroupIndex << endl
+	//		<< "   Points:" << endl;
+	//	for ( unsigned int j = 0; j < nif_faces[i].points.size(); ++j ) {
+	//		out << "      colorIndex:  "  << nif_faces[i].points[j].colorIndex << endl
+	//			<< "      normalIndex:  "  << nif_faces[i].points[j].normalIndex << endl
+	//			<< "      vertexIndex:  "  << nif_faces[i].points[j].vertexIndex << endl
+	//			<< "      texCoordIndices:  "  << endl;
+	//		for ( unsigned int k = 0; k < nif_faces[i].points[j].texCoordIndices.size(); ++k ) {
+	//			out << "         texCoordIndex:  " <<  nif_faces[i].points[j].texCoordIndices[k].texCoordIndex << endl
+	//				<< "         texCoordSetIndex:  " <<  nif_faces[i].points[j].texCoordIndices[k].texCoordSetIndex << endl;
+	//		}
+	//	}
+	//}
+
+	//--Skin Processing--//
+
+	if ( clusterObj.isNull() == false ) {
+		out << "Processing skin..." << endl;
+		//Get path to visible mesh
+		MDagPath meshPath;
+		visibleMeshFn.getPath( meshPath );
+
+		out << "Getting a list of all verticies in this mesh" << endl;
+		//Get a list of all verticies in this mesh
+		MFnSingleIndexedComponent compFn;
+		MObject vertices = compFn.create( MFn::kMeshVertComponent );
+		MItGeometry gIt(meshPath);
+		MIntArray vertex_indices( gIt.count() );
+		for ( int vert_index = 0; vert_index < gIt.count(); ++vert_index ) {
+			vertex_indices[vert_index] = vert_index;
+		}
+		compFn.addElements(vertex_indices);
+
+		out << "Getting Influences" << endl;
+		//Get influences
+		MDagPathArray myBones;
+		clusterFn.influenceObjects( myBones, &stat );
+		
+		out << "Creating a list of NiNodeRefs of influences." << endl;
+		//Create list of NiNodeRefs of influences
+		vector<NiNodeRef> niBones( myBones.length() );
+		for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
+			if ( nodes.find( myBones[0].fullPathName().asChar() ) == nodes.end() ) {
+				//There is a problem; one of the joints was not exported.  Abort.
+				throw runtime_error("One of the joints necessary to export a bound skin was not exported.");
+			}
+			niBones[bone_index] = nodes[ myBones[bone_index].fullPathName().asChar() ];
+		}
+
+		out << "Getting weights from Maya" << endl;
+		//Get weights from Maya
+		MDoubleArray myWeights;
+		unsigned int bone_count = myBones.length();
+		stat = clusterFn.getWeights( meshPath, vertices, myWeights, bone_count );
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("Failed to get vertex weights.");
+		}
+
+		out << "Setting skin influence list in ComplexShape" << endl;
+		//Set skin information in ComplexShape
+		cs.SetSkinInfluences( niBones );
+		
+		out << "Adding weights to ComplexShape vertices" << endl;
+		out << "Number of weights:  " << myWeights.length() << endl;
+		out << "Number of bones:  " << myBones.length() << endl;
+		out << "Number of Maya vertices:  " << gIt.count() << endl;
+		out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
+		unsigned int weight_index = 0;
+		ComplexShape::SkinInfluence sk;
+		for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
+			for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
+				//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
+				// Only bother with weights that are significant
+				if ( myWeights[weight_index] > 0.0 ) {
+					sk.influenceIndex = bone_index;
+					sk.weight = float(myWeights[weight_index]);
+					
+					nif_vts[vert_index].weights.push_back(sk);
+				}
+				++weight_index;
 			}
 		}
 	}
+
+	out << "Setting vertex info" << endl;
+	//Set vertex info now that any skins have been processed
+	cs.SetVertices( nif_vts );
 
 	//ComplexShape is now complete, so split it
 
@@ -1353,14 +1435,16 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
-	ExportAV( avObj, mesh );
+	ExportAV( avObj, dagNode );
 
 	//If polygon mesh is hidden, hide tri_shape
 	MPlug vis = visibleMeshFn.findPlug( MString("visibility") );
 	bool value;
 	vis.getValue(value);
-	out << "Visibility of " << visibleMeshFn.name().asChar() << " is " << value << endl;
-	avObj->SetVisibility(value);
+	if ( value == false ) {
+		out << "Visibility of " << visibleMeshFn.name().asChar() << " is " << value << endl;
+		avObj->SetVisibility(false);
+	}
 
 	out << "}" << endl;
 }
@@ -1382,6 +1466,8 @@ void NifTranslator::ExportDAGNodes() {
 		// we access it via the function set.
 		MFnDagNode nodeFn(it.item());
 
+		out << "Object name is:  " << nodeFn.name().asChar() << endl;
+
 		// only want non-history items
 		if( !nodeFn.isIntermediateObject() ) {
 			out << "Object is not a history item" << endl;
@@ -1394,38 +1480,51 @@ void NifTranslator::ExportDAGNodes() {
 				NiAVObjectRef avObj;
 
 				bool tri_shape = false;
+				bool intermediate = false;
 				MObject matching_child;
 
 				//Check to see what kind of node we should create
 				for( int i = 0; i != nodeFn.childCount(); ++i ) {
 					// get a handle to the child
 					if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
-						out << "Object is a mesh." << endl;
-						tri_shape = true;
-						matching_child = nodeFn.child(i);
-						break;
+						MFnMesh meshFn( nodeFn.child(i) );
+						//history items don't count
+						if ( !meshFn.isIntermediateObject() ) {
+							out << "Object is a mesh." << endl;
+							tri_shape = true;
+							matching_child = nodeFn.child(i);
+							break;
+						} else {
+							//This has an intermediate mesh under it.  Don't export it at all.
+							intermediate = true;
+							break;
+						}
+
 					}
 				}
-	
-				if ( tri_shape == true ) {
-					out << "Adding Mesh to list to be exported later..." << endl;
-					meshes.push_back( it.item() );
-					//NiTriShape
-				} else {
-					out << "Creating a NiNode..." << endl;
-					//NiNode
-					NiNodeRef niNode = new NiNode;
-					ExportAV( StaticCast<NiAVObject>(niNode), matching_child );
-					
-					out << "Associating NiNode with node DagPath..." << endl;
-					//Associate NIF object with node DagPath
-					string path = nodeFn.fullPathName().asChar();
-					nodes[path] = niNode;
 
-					//Parent should have already been created since we used a
-					//depth first iterator in ExportDAGNodes
-					NiNodeRef parNode = GetDAGParent( it.item() );
-					parNode->AddChild( StaticCast<NiAVObject>(niNode) );
+				if ( !intermediate ) {
+	
+					if ( tri_shape == true ) {
+						out << "Adding Mesh to list to be exported later..." << endl;
+						meshes.push_back( it.item() );
+						//NiTriShape
+					} else {
+						out << "Creating a NiNode..." << endl;
+						//NiNode
+						NiNodeRef niNode = new NiNode;
+						ExportAV( StaticCast<NiAVObject>(niNode), it.item() );
+						
+						out << "Associating NiNode with node DagPath..." << endl;
+						//Associate NIF object with node DagPath
+						string path = nodeFn.fullPathName().asChar();
+						nodes[path] = niNode;
+
+						//Parent should have already been created since we used a
+						//depth first iterator in ExportDAGNodes
+						NiNodeRef parNode = GetDAGParent( it.item() );
+						parNode->AddChild( StaticCast<NiAVObject>(niNode) );
+					}
 				}
 			}
 		}
@@ -1463,35 +1562,7 @@ void NifTranslator::ExportDAGNodes() {
 		//cout << "\t" << fnChild.name().asChar();
 		//cout << endl;
 
-	//out << "Looping through again, now connecting parents to children..." << endl;
-	////Loop through again, this time connecting the parents to the children
-	//it.reset();
-	//while(!it.isDone()) {
-	//	out << "Attaching MFnDagNode function set." << endl;
-	//	MFnDagNode nodeFn(it.item());
 
-	//	out << "Getting Maya path" << endl;
-	//	//Get path to this block
-	//	string blk_path = nodeFn.fullPathName().asChar();
-
-	//	out << "Looping through all Maya parents." << endl;
-	//	for( unsigned int i = 0; i < nodeFn.parentCount(); ++i ) {
- // 			out << "Get the MObject for the i'th parent and attach a fnction set to it." << endl;
-	//		// get the MObject for the i'th parent
-	//		MObject parent = nodeFn.parent(i);
-
-	//		// attach a function set to it
-	//		MFnDagNode parentFn(parent);
-
-	//		
-	//	}
-	//	out << "Parent Loop complete." << endl;
-
-	//	out << "Moving to next node" << endl;
-	//	// move to next node
-	//	it.next();
-	//}
-	//out << "Loop complete" << endl;
 	out << "}" << endl;
 }
 
@@ -1499,12 +1570,14 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 	// attach a function set for a dag node to the object.
 	MFnDagNode nodeFn(dagNode);
 
-	out << "Fixing name" << endl;
+	out << "Fixing name from " << nodeFn.name().asChar() << " to ";
 
 	//Fix name
 	string name = string( nodeFn.name().asChar() );
 	replace(name.begin(), name.end(), '_', ' ');
 	avObj->SetName( name );
+	out << name << endl;
+
 	MMatrix my_trans= nodeFn.transformationMatrix();
 
 	//Set visibility
@@ -1640,6 +1713,9 @@ void NifTranslator::ExportShaders() {
 			//All shaders inherit from lambert
 			MFnLambertShader lambertFn( itDep.item() );
 
+			//Set Name
+			niMatProp->SetName( lambertFn.name().asChar() );
+
 			out << "Getting base color" << endl;
 			GetColor( lambertFn, "color", color, texture );
 			out << "Checking whether base texture is used" << endl;
@@ -1733,11 +1809,15 @@ void NifTranslator::ExportShaders() {
 				//No texture
 				niMatProp->SetSpecularColor( Color3( color.r, color.g, color.b ) );
 
-				//Specularity is used, so create a NiSpecularProperty and put it in the list
-				if ( niSpecProp == NULL ) {
-					niSpecProp = new NiSpecularProperty;
-					niSpecProp->SetFlags(1);
-					
+				//Only build a NiSpecularProperty if specular color is not black
+
+				if ( color.r != 0.0f || color.g != 0.0f || color.b != 0.0f ) {
+					//Specularity is used, so create a NiSpecularProperty and put it in the list
+					if ( niSpecProp == NULL ) {
+						niSpecProp = new NiSpecularProperty;
+						niSpecProp->SetFlags(1);
+						
+					}
 				}
 
 			} else {
@@ -1786,6 +1866,10 @@ void NifTranslator::ExportShaders() {
 				MGlobal::displayWarning("Only Shaders with Cosine Power, such as Phong, can currently be used to set exported glossiness.  Default value of 20.0 used.");
 				niMatProp->SetGlossiness( 20.0f );
 			}
+		} else {
+			//No reflecting shader used, so set some defautls
+			niMatProp->SetSpecularColor( Color3( 0.0f, 0.0f, 0.0f) );
+			niMatProp->SetGlossiness( 20.0f );
 		}
 
 		

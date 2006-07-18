@@ -39,12 +39,14 @@ POSSIBILITY OF SUCH DAMAGE. */
 
 //--Includes--//
 #include <maya/MDagPath.h>
+#include <maya/MDagPathArray.h>
 #include <maya/MEulerRotation.h>
 #include <maya/MFloatArray.h>
+#include <maya/MFloatVectorArray.h>
 #include <maya/MFnBase.h>
 #include <maya/MFnComponent.h>
-#include <maya/MFnData.h>
 #include <maya/MFnDagNode.h>
+#include <maya/MFnData.h>
 #include <maya/MFnDependencyNode.h>
 #include <maya/MFnIkJoint.h>
 #include <maya/MFnMatrixData.h>
@@ -53,15 +55,18 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <maya/MFnPhongShader.h>
 #include <maya/MFnPlugin.h>
 #include <maya/MFnSet.h>
+#include <maya/MFnSingleIndexedComponent.h>
+#include <maya/MFnSkinCluster.h>
 #include <maya/MFnTransform.h>
 #include <maya/MFStream.h>
 #include <maya/MGlobal.h>
 #include <maya/MIntArray.h>
 #include <maya/MIOStream.h> 
 #include <maya/MItDag.h>
-#include <maya/MItDependencyNodes.h>
 #include <maya/MItDependencyGraph.h>
+#include <maya/MItDependencyNodes.h>
 #include <maya/MItGeometry.h>
+#include <maya/MItMeshPolygon.h>
 #include <maya/MItSelectionList.h>
 #include <maya/MMatrix.h>
 #include <maya/MObject.h>
@@ -71,14 +76,10 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <maya/MPxFileTranslator.h>
 #include <maya/MQuaternion.h>
 #include <maya/MSelectionList.h>
-#include <maya/MFnSingleIndexedComponent.h>
-#include <maya/MFnSkinCluster.h>
 #include <maya/MStatus.h>
 #include <maya/MString.h>
 #include <maya/MStringArray.h>
 #include <maya/MVector.h>
-#include <maya/MFloatVectorArray.h>
-#include <maya/MItMeshPolygon.h>
 
 #include <string> 
 #include <vector>
@@ -87,23 +88,23 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <iomanip>
 #include <iostream>
 
+#include "ComplexShape.h"
 #include "niflib.h"
-#include "obj/NiObject.h"
-#include "obj/NiNode.h"
-#include "obj/NiTriBasedGeom.h"
-#include "obj/NiProperty.h"
-#include "obj/NiMaterialProperty.h"
-#include "obj/NiTexturingProperty.h"
-#include "obj/NiSourceTexture.h"
-#include "obj/NiTriBasedGeomData.h"
 #include "obj/NiAlphaProperty.h"
+#include "obj/NiMaterialProperty.h"
+#include "obj/NiNode.h"
+#include "obj/NiObject.h"
+#include "obj/NiProperty.h"
+#include "obj/NiSkinData.h"
+#include "obj/NiSkinInstance.h"
+#include "obj/NiSourceTexture.h"
+#include "obj/NiSpecularProperty.h"
+#include "obj/NiTexturingProperty.h"
+#include "obj/NiTriBasedGeom.h"
+#include "obj/NiTriBasedGeomData.h"
+#include "obj/NiTriShape.h"
 #include "obj/NiTriShapeData.h"
 #include "obj/NiTriStripsData.h"
-#include "obj/NiSkinInstance.h"
-#include "obj/NiSkinData.h"
-#include "obj/NiSpecularProperty.h"
-#include "obj/NiTriShape.h"
-#include "ComplexShape.h"
 
 using namespace Niflib;
 
