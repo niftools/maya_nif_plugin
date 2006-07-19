@@ -930,8 +930,6 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	out << visibleMeshFn.name().asChar() << ") {" << endl;
 	MFnMesh meshFn;
 	MObject dataObj;
-	MObject clusterObj;
-	MFnSkinCluster clusterFn;
 	MPlugArray inMeshPlugArray;
 	MPlug childPlug;
 	MPlug geomPlug;
@@ -939,13 +937,6 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	// this will hold the returned vertex positions
 	MPointArray vts;
-
-	//Look up any skin clusters
-	if ( meshClusters.find( visibleMeshFn.fullPathName().asChar() ) != meshClusters.end() ) {
-		//Skin cluster found
-		clusterObj = meshClusters[ visibleMeshFn.fullPathName().asChar() ];
-		clusterFn.setObject(clusterObj);
-	}
 
 	//For now always use the visible mesh
 	meshFn.setObject(mesh);
@@ -1258,74 +1249,89 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	//--Skin Processing--//
 
-	if ( clusterObj.isNull() == false ) {
-		out << "Processing skin..." << endl;
-		//Get path to visible mesh
-		MDagPath meshPath;
-		visibleMeshFn.getPath( meshPath );
-
-		out << "Getting a list of all verticies in this mesh" << endl;
-		//Get a list of all verticies in this mesh
-		MFnSingleIndexedComponent compFn;
-		MObject vertices = compFn.create( MFn::kMeshVertComponent );
-		MItGeometry gIt(meshPath);
-		MIntArray vertex_indices( gIt.count() );
-		for ( int vert_index = 0; vert_index < gIt.count(); ++vert_index ) {
-			vertex_indices[vert_index] = vert_index;
-		}
-		compFn.addElements(vertex_indices);
-
-		out << "Getting Influences" << endl;
-		//Get influences
-		MDagPathArray myBones;
-		clusterFn.influenceObjects( myBones, &stat );
-		
-		out << "Creating a list of NiNodeRefs of influences." << endl;
-		//Create list of NiNodeRefs of influences
-		vector<NiNodeRef> niBones( myBones.length() );
-		for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
-			if ( nodes.find( myBones[0].fullPathName().asChar() ) == nodes.end() ) {
-				//There is a problem; one of the joints was not exported.  Abort.
-				throw runtime_error("One of the joints necessary to export a bound skin was not exported.");
+	//Look up any skin clusters
+	if ( meshClusters.find( visibleMeshFn.fullPathName().asChar() ) != meshClusters.end() ) {
+		const vector<MObject> & clusters = meshClusters[ visibleMeshFn.fullPathName().asChar() ];
+		//for ( vector<MObject>::const_iterator cluster = clusters.begin(); cluster != clusters.end(); ++cluster ) {
+			//TODO:  Support shapes with more than one skin cluster affecting them
+			if ( clusters.size() > 1 ) {
+				throw runtime_error("Objects with multiple skin clusters affecting them are not currently supported.  Try deleting the history and re-binding them.");
 			}
-			niBones[bone_index] = nodes[ myBones[bone_index].fullPathName().asChar() ];
-		}
 
-		out << "Getting weights from Maya" << endl;
-		//Get weights from Maya
-		MDoubleArray myWeights;
-		unsigned int bone_count = myBones.length();
-		stat = clusterFn.getWeights( meshPath, vertices, myWeights, bone_count );
-		if ( stat != MS::kSuccess ) {
-			out << stat.errorString().asChar() << endl;
-			throw runtime_error("Failed to get vertex weights.");
-		}
+			vector<MObject>::const_iterator cluster = clusters.begin();
+			if ( cluster->isNull() != true ) {	
+				MFnSkinCluster clusterFn(*cluster);
+			
 
-		out << "Setting skin influence list in ComplexShape" << endl;
-		//Set skin information in ComplexShape
-		cs.SetSkinInfluences( niBones );
-		
-		out << "Adding weights to ComplexShape vertices" << endl;
-		out << "Number of weights:  " << myWeights.length() << endl;
-		out << "Number of bones:  " << myBones.length() << endl;
-		out << "Number of Maya vertices:  " << gIt.count() << endl;
-		out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
-		unsigned int weight_index = 0;
-		ComplexShape::SkinInfluence sk;
-		for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
-			for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
-				//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
-				// Only bother with weights that are significant
-				if ( myWeights[weight_index] > 0.0 ) {
-					sk.influenceIndex = bone_index;
-					sk.weight = float(myWeights[weight_index]);
-					
-					nif_vts[vert_index].weights.push_back(sk);
+				out << "Processing skin..." << endl;
+				//Get path to visible mesh
+				MDagPath meshPath;
+				visibleMeshFn.getPath( meshPath );
+
+				out << "Getting a list of all verticies in this mesh" << endl;
+				//Get a list of all verticies in this mesh
+				MFnSingleIndexedComponent compFn;
+				MObject vertices = compFn.create( MFn::kMeshVertComponent );
+				MItGeometry gIt(meshPath);
+				MIntArray vertex_indices( gIt.count() );
+				for ( int vert_index = 0; vert_index < gIt.count(); ++vert_index ) {
+					vertex_indices[vert_index] = vert_index;
 				}
-				++weight_index;
+				compFn.addElements(vertex_indices);
+
+				out << "Getting Influences" << endl;
+				//Get influences
+				MDagPathArray myBones;
+				clusterFn.influenceObjects( myBones, &stat );
+				
+				out << "Creating a list of NiNodeRefs of influences." << endl;
+				//Create list of NiNodeRefs of influences
+				vector<NiNodeRef> niBones( myBones.length() );
+				for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
+					if ( nodes.find( myBones[0].fullPathName().asChar() ) == nodes.end() ) {
+						//There is a problem; one of the joints was not exported.  Abort.
+						throw runtime_error("One of the joints necessary to export a bound skin was not exported.");
+					}
+					niBones[bone_index] = nodes[ myBones[bone_index].fullPathName().asChar() ];
+				}
+
+				out << "Getting weights from Maya" << endl;
+				//Get weights from Maya
+				MDoubleArray myWeights;
+				unsigned int bone_count = myBones.length();
+				stat = clusterFn.getWeights( meshPath, vertices, myWeights, bone_count );
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("Failed to get vertex weights.");
+				}
+
+				out << "Setting skin influence list in ComplexShape" << endl;
+				//Set skin information in ComplexShape
+				cs.SetSkinInfluences( niBones );
+				
+				out << "Adding weights to ComplexShape vertices" << endl;
+				out << "Number of weights:  " << myWeights.length() << endl;
+				out << "Number of bones:  " << myBones.length() << endl;
+				out << "Number of Maya vertices:  " << gIt.count() << endl;
+				out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
+				unsigned int weight_index = 0;
+				ComplexShape::SkinInfluence sk;
+				for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
+					for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
+						//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
+						// Only bother with weights that are significant
+						if ( myWeights[weight_index] > 0.0 ) {
+							sk.influenceIndex = bone_index;
+							sk.weight = float(myWeights[weight_index]);
+							
+							nif_vts[vert_index].weights.push_back(sk);
+						}
+						++weight_index;
+					}
+				}
 			}
-		}
-	}
+	//}
+}
 
 	out << "Setting vertex info" << endl;
 	//Set vertex info now that any skins have been processed
@@ -1953,7 +1959,9 @@ void NifTranslator::EnumerateSkinClusters() {
 			if ( shapes[i].hasFn( MFn::kMesh ) ) {
 				MFnMesh meshFn( shapes[i] );
 
-				meshClusters[ meshFn.fullPathName().asChar() ] = clusterObj;
+				meshClusters[ meshFn.fullPathName().asChar() ].push_back( clusterObj );
+
+				out << "Cluster:  "  << clusterFn.name().asChar() << "  Mesh:  " << meshFn.fullPathName().asChar() <<endl;
 			}
 		}
 	} 

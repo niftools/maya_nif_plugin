@@ -177,7 +177,7 @@ private:
 	void ExportMesh( MObject dagNode );
 	//A mapping to hold assotiation between the name of a mesh objects and
 	//the skin cluster that deforms it.
-	map< string, MObject > meshClusters;
+	map< string, vector<MObject> > meshClusters;
 	void EnumerateSkinClusters();
 	//A map to hold associations between NIF property lists and Shaders
 	map< string, vector<NiPropertyRef> > shaders;
