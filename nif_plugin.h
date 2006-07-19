@@ -114,7 +114,7 @@ using namespace Niflib;
 class NifTranslator : public MPxFileTranslator {
 public:
 	//Constructor
-	NifTranslator () : out( "C:\\NIF Export Log.txt", ofstream::binary ) {};
+	NifTranslator () : out( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary ) {};
 
 	//Destructor
 	virtual ~NifTranslator () {};
