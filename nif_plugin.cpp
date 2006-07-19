@@ -1733,6 +1733,7 @@ void NifTranslator::ExportShaders() {
 			//Set Name
 			niMatProp->SetName( lambertFn.name().asChar() );
 
+			//--Get info from Color slots--//
 			out << "Getting base color" << endl;
 			GetColor( lambertFn, "color", color, texture );
 			out << "Checking whether base texture is used" << endl;
@@ -1757,6 +1758,18 @@ void NifTranslator::ExportShaders() {
 						TexDesc td;
 						td.source = textures[texname];
 						niTexProp->SetTexture( BASE_MAP, td );
+						//Check if texture has alpha
+						MPlug fha = depFn.findPlug("fileHasAlpha");
+						bool value;
+						fha.getValue( value );
+						if ( value == true ) {
+							if ( niAlphaProp == NULL ) {
+								out << "Base texture has alpha, so create a NiAlphaProperty" << endl;
+								//Base texture has alpha, so create a NiAlphaProperty
+								niAlphaProp = new NiAlphaProperty;
+								niAlphaProp->SetFlags(237);
+							}
+						}
 					}
 				}
 			}
@@ -1781,36 +1794,49 @@ void NifTranslator::ExportShaders() {
 				niMatProp->SetEmissiveColor( Color3( color.r, color.g, color.b ) );
 			} else {
 				niMatProp->SetEmissiveColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				MGlobal::displayWarning("Incandescence textures are not supported by the NIF format.  Ignored.");
+				
+				out << "Glow texture is used.  Create NiTexturingProperty." << endl;
+				//Glow texture is used.  Create NiTexturingProperty.
+				if ( niTexProp == NULL ) {
+					niTexProp = new NiTexturingProperty;
+				}
+				//Find texture with the same maya name
+				if ( texture.hasFn( MFn::kDependencyNode ) ) {
+					MFnDependencyNode depFn(texture);
+					string texname = depFn.name().asChar();
+					out << "Texture found:  " << texname << endl;
+					if ( textures.find( texname ) != textures.end() ) {
+						TexDesc td;
+						td.source = textures[texname];
+						niTexProp->SetTexture( GLOW_MAP, td );
+					}
+				}			
 			}
 
 			out << "Getting transparency color" << endl;
 			GetColor( lambertFn,"transparency", color, texture );
-			//Textures are not supported
-			if ( texture.isNull() == true ) {
-				//No texture
-				float trans = (color.r + color.g + color.b) / 3.0f;
-				if ( trans != color.r ) {
-					MGlobal::displayWarning("Colored transparency is not supported by the NIF format.  An average of the color channels will be used.");
-				}
-				//Maya trans is reverse of NIF trans
-				trans = 1.0f - trans;
-				niMatProp->SetTransparency( trans );
+			//Textures are probably set because the base texture has
+			//alpha which is connected to this node.  So just set the
+			//transparency and don't worry about whethere there's a
+			//texture connected or not.
+			float trans = (color.r + color.g + color.b) / 3.0f;
+			if ( trans != color.r ) {
+				MGlobal::displayWarning("Colored transparency is not supported by the NIF format.  An average of the color channels will be used.");
+			}
+			//Maya trans is reverse of NIF trans
+			trans = 1.0f - trans;
+			niMatProp->SetTransparency( trans );
 
-				if ( trans < 1.0f ) {
-					if ( niAlphaProp == NULL ) {
-						out << "Transparency is used, so create a NiAlphaProperty" << endl;
-						//Transparency is used, so create a NiAlphaProperty
-						niAlphaProp = new NiAlphaProperty;
-						niAlphaProp->SetFlags(237);
-					}
+			if ( trans < 1.0f ) {
+				if ( niAlphaProp == NULL ) {
+					out << "Transparency is used, so create a NiAlphaProperty" << endl;
+					//Transparency is used, so create a NiAlphaProperty
+					niAlphaProp = new NiAlphaProperty;
+					niAlphaProp->SetFlags(237);
 				}
-			} else {
-				niMatProp->SetTransparency( 1.0f ); // opaque
-				MGlobal::displayWarning("Transparency textures are not supported by the NIF format.  Ignored.");
 			}
 
-			//TODO: Support bump maps and environment maps
+			//TODO: Support bump maps, environment maps, gloss maps, and multi-texturing (detail, dark, and decal?)
 		}
 
 		out << "Testing for MFnReflectShader function set" << endl;
