@@ -16,7 +16,7 @@ unsigned int export_version = VER_4_0_0_2; //Version of NIF file to export
 // Code adapted from animImportExport example that comes with Maya 6.5
 
 MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fileName, const char* buffer, short size) const {
-	//cout << "Checking File Type..." << endl;
+	//out << "Checking File Type..." << endl;
 	const char *name = fileName.name().asChar();
 	int nameLength = (int)strlen(name);
 
@@ -42,7 +42,7 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 
 // Code adapted from lepTranslator example that comes with Maya 6.5
 MStatus initializePlugin( MObject obj ) {
-	//cout << "Initializing Plugin..." << endl;
+	//out << "Initializing Plugin..." << endl;
 	MStatus   status;
 	MFnPlugin plugin( obj, "NifTools", PLUGIN_VERSION );
 
@@ -58,7 +58,7 @@ MStatus initializePlugin( MObject obj ) {
 		return status;
 	}
 
-	//cout << "Done Initializing." << endl;
+	//out << "Done Initializing." << endl;
 	return status;
 }
 
@@ -84,16 +84,16 @@ MStatus uninitializePlugin( MObject obj )
 //This routine is called by Maya when it is necessary to load a file of a type supported by this translator.
 //Responsible for reading the contents of the given file, and creating Maya objects via API or MEL calls to reflect the data in the file.
 MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
-	//cout << "Begining Read..." << endl;
+	//out << "Begining Read..." << endl;
 	try {
 		//Get user preferences
 		ParseOptionString( optionsString );
 
-		//cout << "Reading NIF File..." << endl;
+		//out << "Reading NIF File..." << endl;
 		//Read NIF file
 		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
 
-		//cout << "Importing Nodes..." << endl;
+		//out << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
 		map< NiAVObjectRef, MDagPath > objs;
 
@@ -119,21 +119,21 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		
 
 		//Report total number of blocks in memory
-		//cout << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
+		//out << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 		
 		//--Import Data--//
-		//cout << "Importing Data..." << endl;
+		//out << "Importing Data..." << endl;
 		//maps to hold information about what has already been imported
 		map< pair<NiMaterialPropertyRef, NiTexturingPropertyRef>, MObject > materials;
 		map< NiSourceTextureRef, MObject > textures;
 
-		//cout << "Itterating through all nodes that were imported" << endl;
+		//out << "Itterating through all nodes that were imported" << endl;
 		//Iterate through all nodes that were imported
 		map< NiAVObjectRef, MDagPath >::iterator it;
 		for ( it = objs.begin(); it != objs.end(); ++it ) {
 			//Import the data based on the type of node - NiTriShape only so far
 			if ( it->first->IsDerivedType(NiTriBasedGeom::TypeConst()) ) {
-				//cout << "Found NiTriBasedGeom:  " << it->first << endl;
+				//out << "Found NiTriBasedGeom:  " << it->first << endl;
 
 				//Cast to NiTriBasedGeom
 				NiTriBasedGeomRef geom = DynamicCast<NiTriBasedGeom>(it->first);
@@ -154,7 +154,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				//	nodeFn.findPlug("inheritsTransform").setValue(false);
 				//}
 
-				//cout << "Importing mesh..." << endl;
+				//out << "Importing mesh..." << endl;
 				//Import Mesh
 				MDagPath meshPath = ImportMesh( geom, it->second.node() );
 
@@ -164,7 +164,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				MObject txOb;
 
 
-				//cout << "Looking for material and texturing properties" << endl;
+				//out << "Looking for material and texturing properties" << endl;
 				//Get Material and Texturing properties, if any
 				NiMaterialPropertyRef niMatProp = NULL;
 				NiTexturingPropertyRef niTexProp = NULL;
@@ -182,7 +182,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 					niSpecProp = DynamicCast<NiSpecularProperty>( niProp );
 				}
 							
-				//cout << "Processing material property..." << endl;
+				//out << "Processing material property..." << endl;
 				//Process Material Property
 				if ( niMatProp != NULL ) {
 					//Check to see if material has already been found
@@ -222,7 +222,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 					//Connect outColor to surfaceShader
 					dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
 					
-					//cout << "Looking for textures..." << endl;
+					//out << "Looking for textures..." << endl;
 					//--Look for textures--//
 					if ( niTexProp != NULL ) {
 						MFnDependencyNode nodeFn;
@@ -363,7 +363,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 						}
 					}
 					
-					//cout << "Invoking dgModifier..." << endl;
+					//out << "Invoking dgModifier..." << endl;
 					dgModifier.doIt();
 
 					//--Bind Skin if any--//
@@ -452,7 +452,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				}
 			}
 		}
-		//cout << "Done searching imported scene graph." << endl;
+		//out << "Done searching imported scene graph." << endl;
 
 
 
@@ -479,10 +479,10 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		return MStatus::kFailure;
 	}
 	
-	//cout << "Finished Read" << endl;
+	//out << "Finished Read" << endl;
 
 	//Report total number of blocks in memory (hopfully zero)
-	//cout << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
+	//out << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 
 	return MStatus::kSuccess;
 }
@@ -491,8 +491,8 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )  {
 	MObject obj;
 
-	//cout << "Importing " << niAVObj << endl;
-	//cout << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
+	//out << "Importing " << niAVObj << endl;
+	//out << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 
 	////Stop at a non-node
 	//if ( node == NULL )
@@ -502,7 +502,8 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	MFnTransform transFn;
 	string name = niAVObj->GetName();
 	int flags = niAVObj->GetFlags();
-	if ( niAVObj->IsSameType(NiNode::TypeConst() ) && ( (strstr(name.c_str(), "Bip") != NULL ) || ((flags & 8) == 0) ) ) {
+	NiNodeRef niNode = DynamicCast<NiNode>(niAVObj);
+	if ( niNode != NULL && niNode->IsSkinInfluence() == true ) {
 		// This is a bone, create an IK joint parented to the given parent
 		MFnIkJoint IKjointFn;
 		obj = IKjointFn.create( parent );
@@ -549,7 +550,6 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	objs[niAVObj] = path;
 
 	//Call this function for any children
-	NiNodeRef niNode = DynamicCast<NiNode>(niAVObj);
 	if ( niNode != NULL ) {
 		vector<NiAVObjectRef> children = niNode->GetChildren();
 		for ( unsigned int i = 0; i < children.size(); ++i ) {
@@ -617,12 +617,11 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecul
 	MFnPhongShader phongFn;
 	MObject obj = phongFn.create();
 
-	//Don't mess with Ambient right now... ugly white
 	//TODO: Make this optional?
-	//block->["Ambient Color"]->asFloat3( color );
-	//phongFn.setAmbientColor( MColor(color[0], color[1], color[2]) );
+	Color3 color = niMatProp->GetAmbientColor();
+	phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
 
-	Color3 color = niMatProp->GetDiffuseColor();
+	color = niMatProp->GetDiffuseColor();
 	phongFn.setColor( MColor(color.r, color.g, color.b) );
 
 	
@@ -657,7 +656,7 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecul
 }
 
 MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
-	//cout << "ImportMesh() begin" << endl;
+	//out << "ImportMesh() begin" << endl;
 	//Get NiTriBAsedGeomData
 	NiTriBasedGeomDataRef niGeomData = niGeom->GetData();
 
@@ -682,7 +681,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		maya_verts[i] = MPoint(nif_verts[i].x, nif_verts[i].y, nif_verts[i].z, 0.0f);
 	}
 
-	//cout << "Getting polygons..." << endl;
+	//out << "Getting polygons..." << endl;
 	//Get Polygons
 	int NumPolygons = 0;
 	vector<Triangle> triangles;
@@ -717,7 +716,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	meshFn.create( NumVertices, NumPolygons, maya_verts, maya_poly_counts, maya_connects, parent );
 	meshFn.getPath( meshPath );
 
-	//cout << "Importing vertex colors..." << endl;
+	//out << "Importing vertex colors..." << endl;
 	//Import Vertex Colors
 	vector<Color4> nif_colors = niGeomData->GetColors();
 	if ( nif_colors.size() > 0 ) {
@@ -731,7 +730,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		meshFn.setVertexColors( maya_colors, vert_list );
 	}
 
-	//cout << "Examining properties..." << endl;
+	//out << "Examining properties..." << endl;
 	//--Examine properties--//
 	vector<MString> uv_set_list;
 
@@ -741,7 +740,7 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		vis.setValue(false);
 	}
 
-	//cout << "Creating a list of the UV sets..." << endl;
+	//out << "Creating a list of the UV sets..." << endl;
 	//Create a list of the UV sets used by the texturing property if there is one
 	NiPropertyRef niProp = niGeom->GetPropertyByType( NiTexturingProperty::TypeConst() );
 	NiTexturingPropertyRef niTexProp;
@@ -782,12 +781,12 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		}
 	}
 
-	//cout << "UV Set List:  "  << endl;
+	//out << "UV Set List:  "  << endl;
 	//for (uint i = 0; i < uv_set_list.size(); ++i ) {
-	//	cout << uv_set_list[i].asChar() << endl;
+	//	out << uv_set_list[i].asChar() << endl;
 	//}
 
-	//cout << "Getting default UV set..." << endl;
+	//out << "Getting default UV set..." << endl;
 	// Get default (first) UV Set if there is one		
 	if ( niGeomData->GetUVSetCount() > 0 ) {
 		meshFn.clearUVs();
@@ -795,12 +794,12 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 		//Arrays for maya
 		MFloatArray u_arr(NumVertices), v_arr(NumVertices);
 
-		//cout << "Loop through " << niGeomData->GetUVSetCount() << " UV sets..." << endl;
+		//out << "Loop through " << niGeomData->GetUVSetCount() << " UV sets..." << endl;
 		for (int i = 0; i < niGeomData->GetUVSetCount(); ++i) {
 			uv_set = niGeomData->GetUVSet(i);
 
-			//cout << "uv_set_list.size():  " << uv_set_list.size() << endl;
-			//cout << "i:  " << i << endl;
+			//out << "uv_set_list.size():  " << uv_set_list.size() << endl;
+			//out << "i:  " << i << endl;
 
 
 			for (int j = 0; j < NumVertices; ++j) {
@@ -811,22 +810,22 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 			//Assign the UVs to the object
 			MString uv_set_name("map1");
 			if ( i < int(uv_set_list.size()) ) {
-				//cout << "Entered if statement." << endl;
+				//out << "Entered if statement." << endl;
 				uv_set_name = uv_set_list[i];
 			}
 
 			
 
-			//cout << "Create Maya UV Set " << endl; // << uv_set_name.asChar() << ".." << endl;
+			//out << "Create Maya UV Set " << endl; // << uv_set_name.asChar() << ".." << endl;
 
 			if ( uv_set_name != MString("map1") ) {
 				meshFn.createUVSet( uv_set_name );
-				//cout << "Creating UV Set:  " << uv_set_name.asChar() << endl;
+				//out << "Creating UV Set:  " << uv_set_name.asChar() << endl;
 			}
 	
-			//cout << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << endl;
+			//out << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << endl;
 			meshFn.setUVs( u_arr, v_arr, &uv_set_name );
-			//cout << "Assign UVs..." << endl;
+			//out << "Assign UVs..." << endl;
 			meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_name );
 
 			////Delete default "map1" UV set
@@ -847,11 +846,11 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	//meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
 
-	//cout << "Deleting poly_counts..." << endl;
+	//out << "Deleting poly_counts..." << endl;
 	//Delete everything that was used to load verticies
 	delete [] poly_counts;
 
-	//cout << "ImportMesh() end" << endl;
+	//out << "ImportMesh() end" << endl;
 	return meshPath;
 }
 
@@ -897,7 +896,6 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 			ExportMesh( *mesh );
 		}
 
-		
 		//--Write finished NIF file--//
 
 		out << "Writing Finished NIF file..." << endl;
@@ -1124,10 +1122,19 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		nif_vts[i].position.z = float(vts[i].z);
 	}
 
-	//TODO:  Get Skin weights too
-
 	//Set vertex info later since it includes skin weights
 	//cs.SetVertices( nif_vts );
+
+	out << "Use the function set to get the colors" << endl;
+	MColorArray myColors;
+	meshFn.getColors( myColors );
+
+	out << "Prepare NIF color vector" << endl;
+	vector<Color4> niColors( myColors.length() );
+	for( unsigned int i = 0; i < myColors.length(); ++i ) {
+		niColors[i] = Color4( myColors[i].r, myColors[i].g, myColors[i].b, myColors[i].a );
+	}
+	cs.SetColors( niColors );
 
 	// this will hold the returned vertex positions
 	MFloatVectorArray nmls;
@@ -1164,7 +1171,6 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Record assotiation between name and uv set index for later
 	map<string,int> uvSetNums;
 
-	//TODO:  Support multiple UV sets.  For now just get the first one with any data
 	for ( unsigned int i = 0; i < uvSetNames.length(); ++i ) {
 		if ( meshFn.numUVs( uvSetNames[i] ) > 0 ) {
 			TexType tt;
@@ -1284,7 +1290,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	// Create a list of faces with vertex IDs, and duplicate normals so they have the same ID
 	for ( ; !itPoly.isDone() ; itPoly.next() ) {
 
-		//cout << "Face " << face << ":" << endl;
+		//out << "Face " << face << ":" << endl;
 		//++face;
 
 		int poly_vert_count = itPoly.polygonVertexCount(&stat);
@@ -1308,7 +1314,9 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 			cp.vertexIndex = itPoly.vertexIndex(i);
 			cp.normalIndex = itPoly.normalIndex(i);
-			//TODO:  Get colors
+			int color_index;
+			itPoly.getColorIndex(i, color_index );
+			cp.colorIndex = color_index;
 
 			for ( unsigned int j = 0; j < uvSetNames.length(); ++j ) {
 				ComplexShape::TexCoordIndex tci;
@@ -1458,7 +1466,7 @@ void NifTranslator::ExportDAGNodes() {
 	MItDag it(MItDag::kDepthFirst);
 
 	out << "Looping through all DAG nodes..." << endl;
-	while(!it.isDone()) {
+	for( ; !it.isDone(); it.next() ) {
 		out << "Attaching function set for DAG node to the object." << endl;
 
 		// attach a function set for a dag node to the
@@ -1467,6 +1475,19 @@ void NifTranslator::ExportDAGNodes() {
 		MFnDagNode nodeFn(it.item());
 
 		out << "Object name is:  " << nodeFn.name().asChar() << endl;
+
+		//Skip over Maya's default objects by name
+		if ( 
+			nodeFn.name().substring(0, 13) == "UniversalManip" ||
+			nodeFn.name() == "groundPlane_transform" ||
+			nodeFn.name() == "ViewCompass" ||
+			nodeFn.name() == "persp" ||
+			nodeFn.name() == "top" ||
+			nodeFn.name() == "front" ||
+			nodeFn.name() == "side"
+		) {
+			continue;
+		}
 
 		// only want non-history items
 		if( !nodeFn.isIntermediateObject() ) {
@@ -1528,10 +1549,6 @@ void NifTranslator::ExportDAGNodes() {
 				}
 			}
 		}
-
-		out << "Moving to next DAG node." << endl;
-		// move to next node
-		it.next();
 	}
 	out << "Loop complete" << endl;
 
@@ -1546,10 +1563,10 @@ void NifTranslator::ExportDAGNodes() {
 		//MString name = meshFn.name();
 
 		//// write the node type found
-		//cout << "node: " << name.asChar() << endl;
+		//out << "node: " << name.asChar() << endl;
 
 		//// write the info about the children
-		//cout <<"num_kids " << meshFn.childCount() << endl;
+		//out <<"num_kids " << meshFn.childCount() << endl;
 
 		//for(int i=0;i<meshFn.childCount();++i) {
 //			// get the MObject for the i'th child
@@ -1559,8 +1576,8 @@ void NifTranslator::ExportDAGNodes() {
 		//MFnDagNode fnChild(child);
 
 		//// write the child name
-		//cout << "\t" << fnChild.name().asChar();
-		//cout << endl;
+		//out << "\t" << fnChild.name().asChar();
+		//out << endl;
 
 
 	out << "}" << endl;
@@ -1816,13 +1833,12 @@ void NifTranslator::ExportShaders() {
 					if ( niSpecProp == NULL ) {
 						niSpecProp = new NiSpecularProperty;
 						niSpecProp->SetFlags(1);
-						
 					}
 				}
 
 			} else {
 				niMatProp->SetSpecularColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				MGlobal::displayWarning("Specular textures are not supported by the NIF format.  Ignored.");
+				MGlobal::displayWarning("Gloss textures are not supported yet.  Ignored.");
 			}
 
 			//Handle cosine power/glossiness
@@ -1874,7 +1890,7 @@ void NifTranslator::ExportShaders() {
 
 		
 
-		//TODO:  Figure out if glossiness is specular rolloff, ecentricity, reflectivity, or what.
+		//TODO:  Figure out how to guestimate glossiness from Blin shaders.
 
 
 		out << "Putting created properties into a vector" << endl;
@@ -1927,9 +1943,21 @@ void NifTranslator::ExportFileTextures() {
 		//Create the NiSourceTexture block
 		NiSourceTextureRef ni_tex = new NiSourceTexture;
 
+		//Get Node Name
+		ni_tex->SetName( fn.name().asChar() );
+
 		MString fname;
 		ftn.getValue(fname);
 		string fileName = fname.asChar();
+
+		//Figure fixed file name
+		unsigned int len = unsigned int( texture_path.size() );
+
+		out << "Full Texture Path:  " << fname.asChar() << endl;
+		if ( fname.length() > len && fname.substring( 0, len - 1 ) == texture_path.c_str() ) {
+			fileName = fname.substring( len, fname.length() - 1 ).asChar();
+			out << "File Name:  " << fileName << endl;
+		}
 
 		ni_tex->SetExternalTexture( fileName, NULL );
 
@@ -1948,17 +1976,20 @@ void NifTranslator::ExportFileTextures() {
 void NifTranslator::ParseOptionString( const MString & optionsString ) {
 		//Parse Options String
 		MStringArray options;
-		cout << "optionsString:  " << optionsString.asChar() << endl;
+		out << "optionsString:  " << optionsString.asChar() << endl;
 		optionsString.split( ';', options );
 		for (unsigned int i = 0; i < options.length(); ++i) {
 			MStringArray tokens;
 			options[i].split( '=', tokens );
-			cout << "tokens[0]:  " << tokens[0].asChar() << endl;
-			cout << "tokens[1]:  " << tokens[1].asChar() << endl;
+			out << "tokens[0]:  " << tokens[0].asChar() << endl;
+			out << "tokens[1]:  " << tokens[1].asChar() << endl;
 			if ( tokens[0] == "texturePath" ) {
 				texture_path = tokens[1].asChar();
-				cout << "Texture Path:  " << texture_path << endl;
-				texture_path.append("/");
+				if ( texture_path[ texture_path.size() - 1 ] != '/' ) {
+					texture_path.append("/");
+				}
+				out << "Texture Path:  " << texture_path << endl;
+				
 			}
 			if ( tokens[0] == "exportVersion" ) {
 				MStringArray versionParts;
@@ -1974,8 +2005,7 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 					}
 					export_version = *((unsigned int *)verBits);
 				}
-				cout << "Export Version:  0x" << hex << export_version << endl;
-				texture_path.append("/");
+				out << "Export Version:  0x" << hex << export_version << endl;
 			}
 		}
 }
