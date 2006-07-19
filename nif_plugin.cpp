@@ -142,17 +142,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 					MGlobal::displayError( "Failed to cast to NiTriBasedGeom." );
 					return MStatus::kFailure;
 				}
-				
-				
-				////If this is a skinned shape, turn off inherit transform
-				////Some NIF files have the shapes parented to the skeleton which
-				////messes up the deformation
-				//TODO: Support skinning in Niflib
-				//blk_ref skin_inst = geom["Skin Instance"];
-				//if ( skin_inst.is_null() == false ) {
-				//	MFnDagNode nodeFn( it->second.node() );
-				//	nodeFn.findPlug("inheritsTransform").setValue(false);
-				//}
 
 				//out << "Importing mesh..." << endl;
 				//Import Mesh
@@ -519,17 +508,6 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	//--Set the Transform Matrix--//
 	Matrix44 transform;
 
-	//TODO:  Re-implement skinning support in Niflib.  This may not be necessary anyway.
-	////If this is a skinned shape, turn off inherit transform and use the World Transform
-	////Some NIF files have the shapes parented to the skeleton which
-	////messes up the deformation
-	//if ( (block->GetBlockType() == "NiTriShape") && (block["Skin Instance"]->asLink().is_null() == false) ) {
-	//	transFn.findPlug("inheritsTransform").setValue(false);
-	//	transform = node->GetWorldBindPos();
-	//}
-	//else {
-	//	transform = node->GetLocalBindPos();
-	//}
 	transform = niAVObj->GetLocalTransform();
 
 	//put matrix into a float array
@@ -871,8 +849,6 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		sceneRoot->SetName( "Scene Root" );
 		out << sceneRoot << endl;
 
-	
-
 		out << "Exporting file textures..." << endl;
 		textures.clear();
 		//Export file textures and get back a map of DAG path to Nif block
@@ -890,6 +866,10 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		meshes.clear();
 		//Export nodes
 		ExportDAGNodes();
+
+		out << "Enumerating skin clusters..." << endl;
+		meshClusters.clear();
+		EnumerateSkinClusters();
 
 		out << "Exporting meshes..." << endl;
 		for ( list<MObject>::iterator mesh = meshes.begin(); mesh != meshes.end(); ++mesh ) {
@@ -960,152 +940,70 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	// this will hold the returned vertex positions
 	MPointArray vts;
 
-	out << "Getting inMesh Plug" << endl;
-
-	MPlug inMeshPlug = visibleMeshFn.findPlug("inMesh", &stat);
-
-	if ( stat != MS::kSuccess ) {
-		out << stat.errorString().asChar() << endl;
-		throw runtime_error("Unable to find inMesh plug");
+	//Look up any skin clusters
+	if ( meshClusters.find( visibleMeshFn.fullPathName().asChar() ) != meshClusters.end() ) {
+		//Skin cluster found
+		clusterObj = meshClusters[ visibleMeshFn.fullPathName().asChar() ];
+		clusterFn.setObject(clusterObj);
 	}
 
-	bool use_visible_mesh = true;
-	out << "Checking inMesh Plug Connection" << endl;
-	if ( inMeshPlug.isConnected( &stat ) )
-	{
-		if ( stat != MS::kSuccess ) {
-			out << stat.errorString().asChar() << endl;
-			throw runtime_error("failed to check whether inMeshPlug is connected.");
-		}
+	//For now always use the visible mesh
+	meshFn.setObject(mesh);
 
-		out << "inMesh Plug is connected, search for skin cluster" << endl;
-		inMeshPlug.connectedTo(inMeshPlugArray,true,false,&stat);
-		if ( stat != MS::kSuccess ) {
-			out << stat.errorString().asChar() << endl;
-			throw runtime_error("failed to get inMeshPlug connection array.");
-		}
 
-		if (inMeshPlugArray.length() > 1) {
-			MGlobal::displayWarning("Multiple input meshes for geometry.");
-		}
 
-		if ( inMeshPlugArray[0].node().apiType() == MFn::kSkinClusterFilter ) {
-			// Skin controller output directly connected to input mesh.
-			clusterObj = inMeshPlugArray[0].node( &stat );
-			if ( stat != MS::kSuccess ) {
-				out << stat.errorString().asChar() << endl;
-				throw runtime_error("Failed to get clusterObj.");
-			}
-		} else {
-			// Do a more thorough search for skin cluster.
-			//if (FindSkinCluster(rkMesh,kClusterObj)) {
-				// At this point, indirectly attached skin clusters are not
-				// completely supported.  Connections, such as through a
-				// polyTriangulate node, will be ignored and the skin cluster
-				// and output geometry will be treated as if they were
-				// directly connected.
-					MGlobal::displayWarning("Intermediate nodes between cluster "\
-						"and output mesh will not be converted.");
-			//}
-		}
-	}
-		
-		//// walk the tree of stuff upstream from this plug
-		//MItDependencyGraph dgIt(inMeshPlug,
-		//						MFn::kInvalid,
-		//						MItDependencyGraph::kUpstream,
-		//						MItDependencyGraph::kDepthFirst,
-		//						MItDependencyGraph::kPlugLevel,
-		//						&stat);
+	//			// get the mesh coming into the clusterFn.  This
+	//			// is the mesh before being deformed but after
+	//			// being edited/tweaked/etc.
 
-		//if ( stat != MS::kSuccess ) {
-		//	throw runtime_error("Unable to create MItDependencyGraph");
-		//}
-		//
-		//out << "Disable pruning on filter" << endl;
-		//dgIt.disablePruningOnFilter();
-		//int count = 0;
+	//			out << "Get input plug" << endl;
+	//			inputPlug = clusterFn.findPlug("input", &stat);
+	//			if ( stat != MS::kSuccess ) {
+	//				out << stat.errorString().asChar() << endl;
+	//				throw runtime_error("Unable to find input plug");
+	//			}
 
-		//out << "Loop through Dependency Graph" << endl;
-		//for ( ; ! dgIt.isDone(); dgIt.next() )
-		//{
-		//	MObject thisNode = dgIt.thisNode();
+	//			unsigned int meshIndex = clusterFn.indexForOutputShape( visibleMeshFn.object(),&stat );
+	//			if ( stat != MS::kSuccess ) {
+	//				out << stat.errorString().asChar() << endl;
+	//				throw runtime_error("Failed to get index for output shape");
+	//			}
 
-		//	// go until we find a clusterFn
+	//			childPlug = inputPlug.elementByLogicalIndex( meshIndex, &stat ); 
+	//			if ( stat != MS::kSuccess ) {
+	//				out << stat.errorString().asChar() << endl;
+	//				throw runtime_error("Failed to get element by logical index");
+	//			}
+	//			geomPlug = childPlug.child(0,&stat); 
+	//			if ( stat != MS::kSuccess ) {
+	//				out << stat.errorString().asChar() << endl;
+	//				throw runtime_error("failed to get geomPlug");
+	//			}
 
-		//	if (thisNode.apiType() == MFn::kSkinClusterFilter)
-		//	{
+	//			stat = geomPlug.getValue(dataObj);
+	//			if ( stat != MS::kSuccess ) {
+	//				out << stat.errorString().asChar() << endl;
+	//				throw runtime_error("Failed to get value from geomPlug.");
+	//			}
 
-	if ( clusterObj.isNull() == false ) {
-				out << "Skin Cluster Found:  ";
-				stat = clusterFn.setObject( clusterObj );
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("could not set MFnSkinCluster.");
-				}
-
-				out << clusterFn.name().asChar() << endl;
-
-				// get the mesh coming into the clusterFn.  This
-				// is the mesh before being deformed but after
-				// being edited/tweaked/etc.
-
-				out << "Get input plug" << endl;
-				inputPlug = clusterFn.findPlug("input", &stat);
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("Unable to find input plug");
-				}
-
-				unsigned int meshIndex = clusterFn.indexForOutputShape( visibleMeshFn.object(),&stat );
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("Failed to get index for output shape");
-				}
-
-				childPlug = inputPlug.elementByLogicalIndex( meshIndex, &stat ); 
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("Failed to get element by logical index");
-				}
-				geomPlug = childPlug.child(0,&stat); 
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("failed to get geomPlug");
-				}
-
-				stat = geomPlug.getValue(dataObj);
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("Failed to get value from geomPlug.");
-				}
-
-				out << "Use input mesh instead of the visible one." << endl;
-				// let use this mesh instead of the visible one
-				if ( dataObj.hasFn( MFn::kMesh ) == true ) {
-					out << "Data has MeshFN function set." << endl;
-					//stat = meshFn.setObject(dataObj);
-					if ( stat != MS::kSuccess ) {
-						out << stat.errorString().asChar() << endl;
-						throw runtime_error("Failed to set new object");
-					}
-					
-					//use_visible_mesh = false;
-				} else {
-					out << "Data does not have meshFn function set" << endl;
-				}
-			}
-		//}
-		//out << "Loop Complete" << endl;
-	//}
-
-	if ( use_visible_mesh == true ) {
-		stat = meshFn.setObject( visibleMeshFn.object() );
-		if ( stat != MS::kSuccess ) {
-			out << stat.errorString().asChar() << endl;
-			throw runtime_error("failed to set meshFn to visibleMeshFn.");
-		}
-	}
+	//			out << "Use input mesh instead of the visible one." << endl;
+	//			// let use this mesh instead of the visible one
+	//			if ( dataObj.hasFn( MFn::kMesh ) == true ) {
+	//				out << "Data has MeshFN function set." << endl;
+	//				//stat = meshFn.setObject(dataObj);
+	//				if ( stat != MS::kSuccess ) {
+	//					out << stat.errorString().asChar() << endl;
+	//					throw runtime_error("Failed to set new object");
+	//				}
+	//				
+	//				//use_visible_mesh = false;
+	//			} else {
+	//				out << "Data does not have meshFn function set" << endl;
+	//			}
+	//		}
+	//	//}
+	//	//out << "Loop Complete" << endl;
+	////}
 
 	out << "Use the function set to get the points" << endl;
 	// use the function set to get the points
@@ -2034,4 +1932,29 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 				out << "Export Version:  0x" << hex << export_version << endl;
 			}
 		}
+}
+
+void NifTranslator::EnumerateSkinClusters() {
+
+	//Iterate through all skin clusters in the scene
+	MItDependencyNodes clusterIt( MFn::kSkinClusterFilter );
+	for ( ; !clusterIt.isDone(); clusterIt.next() ) {
+		MObject clusterObj = clusterIt.item();
+
+		//Attach function set
+		MFnSkinCluster clusterFn(clusterObj);
+
+		//Add an assotiation for each mesh that this skin cluster is
+		//connected to
+		MObjectArray shapes;
+		clusterFn.getOutputGeometry( shapes );
+
+		for ( unsigned int i = 0; i < shapes.length(); i++ ) {
+			if ( shapes[i].hasFn( MFn::kMesh ) ) {
+				MFnMesh meshFn( shapes[i] );
+
+				meshClusters[ meshFn.fullPathName().asChar() ] = clusterObj;
+			}
+		}
+	} 
 }
