@@ -41,25 +41,46 @@ global proc int nifTranslatorOpts ( string $parent,
 	
 	if ($action == "post") {
 		setParent $parent;
-		rowLayout -numberOfColumns 1;
-			text -label "Texture Source Directory:";
+		frameLayout -label "Common" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
+			columnLayout commonColumnLayout;
+				rowLayout -numberOfColumns 1;
+					text -label "Texture Source Directory:";
+				setParent commonColumnLayout;
+				rowLayout -numberOfColumns 2
+						  -columnWidth2 300 50
+						  -columnAttach2 "both" "left";
+					  textField -editable true 
+								-text $defaultPath
+								nifTxPath;
+					button -label "Browse"
+						   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
+				setParent $parent;
+		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
+			columnLayout;
+				checkBox -label "Attempt to Find Original Bind Pose" 
+					      -value 1
+						  impBindPoseCk;
+				checkBox -label "Try to Use Original Normals" 
+					      -value 0
+						  impNormalsCk;
+				checkBox -label "Ignore Ambient Color" 
+					      -value 0
+						  impNoAmbientCk;
 		setParent $parent;
-		rowLayout -numberOfColumns 2
-				  -columnWidth2 400 50
-				  -columnAttach2 "both" "left";
-			  textField -editable true 
-						-text $defaultPath
-						nifTxPath;
-			button -label "Browse"
-				   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
+		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
+			columnLayout exportColumnLayout;
+			rowLayout -numberOfColumns 2
+					  -columnWidth2 100 70
+					  -columnAttach2 "both" "both";
+					  text -label "NIF Version:";
+					  textField -editable true
+								-text $defaultVersion
+								nifVersion;
+			setParent exportColumnLayout;
+			checkBox -label "Export White Ambient if Texture is Present" 
+					      -value 1
+						  expWhiteAmbientCk;
 		setParent $parent;
-		rowLayout -numberOfColumns 2
-				  -columnWidth2 100 70
-				  -columnAttach2 "both" "both";
-				  text -label "Export NIF Version:";
-				  textField -editable true
-				  		    -text $defaultVersion
-							nifVersion;
 							
 		// Now set to current settings.
 		$currentOptions = $initialSettings;
@@ -73,6 +94,34 @@ global proc int nifTranslatorOpts ( string $parent,
 				if ($optionBreakDown[0] == "exportVersion") {
 					textField -edit -text $optionBreakDown[1] nifVersion;
 				}
+				if ($optionBreakDown[0] == "importBindPose") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true impBindPoseCk;
+					} else {
+						checkBox -edit -value false impBindPoseCk;
+					}
+				}
+				if ($optionBreakDown[0] == "importNormals") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true impNormalsCk;
+					} else {
+						checkBox -edit -value false impNormalsCk;
+					}
+				}
+				if ($optionBreakDown[0] == "importNoAmbient") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true impNoAmbientCk;
+					} else {
+						checkBox -edit -value false impNoAmbientCk;
+					}
+				}
+				if ($optionBreakDown[0] == "exportWhiteAmbient") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true expWhiteAmbientCk;
+					} else {
+						checkBox -edit -value false expWhiteAmbientCk;
+					}
+				}
 			}
 		}
 		$bResult = 1;
@@ -82,17 +131,26 @@ global proc int nifTranslatorOpts ( string $parent,
 		string $texturePath = `textField -query -text nifTxPath`;
 		if ($texturePath != "") {
 			$currentOptions = $currentOptions + "texturePath=" + $texturePath + ";";
+		} else {
+			//Use Default path
+			$currentOptions = $currentOptions + "texturePath=" + $defaultPath + ";";
 		}
 		string $version = `textField -query -text nifVersion`;
 		if ($version != "") {
 			$currentOptions = $currentOptions + "exportVersion=" + $version + ";";
-		}
-		else {
-			//Use Default path
-			$currentOptions = $currentOptions + "texturePath=" + $defaultPath + ";";
+		} else {
 			//Use Default version
 			$currentOptions = $currentOptions + "exportVersion=" + $defaultVersion + ";";
 		}
+		int $ckVal;
+		$ckVal = `checkBox -query -value impBindPoseCk`;
+		$currentOptions = $currentOptions + "importBindPose=" + $ckVal + ";";
+		$ckVal = `checkBox -query -value impNormalsCk`;
+		$currentOptions = $currentOptions + "importNormals=" + $ckVal + ";";
+		$ckVal = `checkBox -query -value impNoAmbientCk`;
+		$currentOptions = $currentOptions + "importNoAmbient=" + $ckVal + ";";
+		$ckVal = `checkBox -query -value expWhiteAmbientCk`;
+		$currentOptions = $currentOptions + "exportWhiteAmbient=" + $ckVal + ";";
 		eval($resultCallback+" \""+$currentOptions+"\"");
 		$bResult = 1;
 	} else {

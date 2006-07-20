@@ -6,6 +6,11 @@ const char TRANSLATOR_NAME [] = "NetImmerse Format";
 //--Globals--//
 string texture_path; // Path to textures gotten from option string
 unsigned int export_version = VER_4_0_0_2; //Version of NIF file to export
+bool import_bind_pose = false; //Determines whether or not the bind pose should be searched for
+
+bool import_normals= false; //Determines whether normals are imported
+bool import_no_ambient = false; //Determines whether ambient color is imported
+bool export_white_ambient = false; //Determines whether ambient color is automatically set to white if a texture is present
 
 //--Function Definitions--//
 
@@ -93,13 +98,20 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		//Read NIF file
 		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
 
+
+
 		out << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
 		map< NiAVObjectRef, MDagPath > objs;
-
 		NiNodeRef root_node = DynamicCast<NiNode>(root);
 		if ( root_node != NULL ) {
 			//Root is a NiNode and may have children
+
+			//Check if the user wants us to try to find the bind pose
+			if ( import_bind_pose ) {
+				SendNifTreeToBindPos( root_node );
+			}
+
 			vector<NiAVObjectRef> root_children = root_node->GetChildren();
 			
 			for ( unsigned int i = 0; i < root_children.size(); ++i ) {
@@ -594,10 +606,13 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecul
 	//Create the material but don't connect it to parent yet
 	MFnPhongShader phongFn;
 	MObject obj = phongFn.create();
+	Color3 color;
 
-	//TODO: Make this optional?
-	Color3 color = niMatProp->GetAmbientColor();
-	phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
+	//See if the user wants the ambient color imported
+	if ( !import_no_ambient ) {
+		color = niMatProp->GetAmbientColor();
+		phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
+	}
 
 	color = niMatProp->GetDiffuseColor();
 	phongFn.setColor( MColor(color.r, color.g, color.b) );
@@ -824,19 +839,33 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 			//meshFn.deleteUVSet( MString("map1") );
 		}
 	}
-	// Don't load the normals now because they glitch up the skinning (sigh)
-	//// Load Normals
-	//vector<Vector3> nif_normals(NumVertices);
-	//nif_normals = data->GetNormals();
 
-	//MVectorArray maya_normals(NumVertices);
-	//MIntArray vert_list(NumVertices);
-	//for (int i = 0; i < NumVertices; ++i) {
-	//	maya_normals[i] = MVector(nif_normals[i].x, nif_normals[i].y, nif_normals[i].z );
-	//	vert_list[i] = i;
-	//}
+	//See if the user wants us to import the normals
+	if ( import_normals ) {
+		out << "Getting Normals..." << endl;
+		// Load Normals
+		vector<Vector3> nif_normals = niGeomData->GetNormals();
+		if ( nif_normals.size() != 0 ) {
+			if ( nif_normals.size() != NumVertices ) {
+				throw runtime_error ("Normal size does not equal Num Vertices");
+			}
 
-	//meshFn.setVertexNormals( maya_normals, vert_list, MSpace::kObject );
+			MVectorArray maya_normals(NumVertices);
+			MIntArray vert_list(NumVertices);
+			for (int norm = 0; norm < NumVertices; ++norm) {
+				maya_normals[norm] = MVector(nif_normals[norm].x, nif_normals[norm].y, nif_normals[norm].z );
+				vert_list[norm] = norm;
+			}
+
+			MStatus stat = meshFn.setVertexNormals( maya_normals, vert_list );
+			if ( stat != MS::kSuccess ) {
+				out << stat.errorString().asChar() << endl;
+				throw runtime_error("Failed to assign UVs.");
+			}
+		}
+	}
+
+
 
 	out << "Deleting poly_counts..." << endl;
 	//Delete everything that was used to load verticies
@@ -1661,7 +1690,11 @@ void NifTranslator::ExportShaders() {
 				niMatProp->SetDiffuseColor( Color3( color.r, color.g, color.b ) );
 			} else {
 				niMatProp->SetDiffuseColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				
+				//See if the user wants us to export white ambient if there is a texture
+				if ( export_white_ambient ) {
+					niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+				}
+
 				out << "Base texture is used.  Create NiTexturingProperty." << endl;
 				//Base texture is used.  Create NiTexturingProperty.
 				if ( niTexProp == NULL ) {
@@ -1692,15 +1725,18 @@ void NifTranslator::ExportShaders() {
 				}
 			}
 
-			out << "Getting ambient color" << endl;
-			GetColor( lambertFn,"ambientColor", color, texture );
-			//Textures are not supported
-			if ( texture.isNull() == true ) {
-				//No texture
-				niMatProp->SetAmbientColor( Color3( color.r, color.g, color.b ) );
-			} else {
-				niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				MGlobal::displayWarning("Ambient textures are not supported by the NIF format.  Ignored.");
+			//Make sure white ambient wasn't already exported
+			if ( !(texture.isNull() == false && export_white_ambient) ) {
+				out << "Getting ambient color" << endl;
+				GetColor( lambertFn,"ambientColor", color, texture );
+				//Textures are not supported
+				if ( texture.isNull() == true ) {
+					//No texture
+					niMatProp->SetAmbientColor( Color3( color.r, color.g, color.b ) );
+				} else {
+					niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+					MGlobal::displayWarning("Ambient textures are not supported by the NIF format.  Ignored.");
+				}
 			}
 
 			out << "Getting incandescence color" << endl;
@@ -1918,40 +1954,72 @@ void NifTranslator::ExportFileTextures() {
 }
 
 void NifTranslator::ParseOptionString( const MString & optionsString ) {
-		//Parse Options String
-		MStringArray options;
-		out << "optionsString:  " << optionsString.asChar() << endl;
-		optionsString.split( ';', options );
-		for (unsigned int i = 0; i < options.length(); ++i) {
-			MStringArray tokens;
-			options[i].split( '=', tokens );
-			out << "tokens[0]:  " << tokens[0].asChar() << endl;
-			out << "tokens[1]:  " << tokens[1].asChar() << endl;
-			if ( tokens[0] == "texturePath" ) {
-				texture_path = tokens[1].asChar();
-				if ( texture_path[ texture_path.size() - 1 ] != '/' ) {
-					texture_path.append("/");
-				}
-				out << "Texture Path:  " << texture_path << endl;
-				
+	//Parse Options String
+	MStringArray options;
+	out << "optionsString:  " << optionsString.asChar() << endl;
+	optionsString.split( ';', options );
+	for (unsigned int i = 0; i < options.length(); ++i) {
+		MStringArray tokens;
+		options[i].split( '=', tokens );
+		out << "tokens[0]:  " << tokens[0].asChar() << endl;
+		out << "tokens[1]:  " << tokens[1].asChar() << endl;
+		if ( tokens[0] == "texturePath" ) {
+			texture_path = tokens[1].asChar();
+			if ( texture_path[ texture_path.size() - 1 ] != '/' ) {
+				texture_path.append("/");
 			}
-			if ( tokens[0] == "exportVersion" ) {
-				MStringArray versionParts;
-				tokens[1].split( '.', versionParts );
-
-				if ( versionParts.length() != 4 ) {
-					MGlobal::displayWarning( "Invalid export version specified.  Using default of 4.0.0.2." );
-					export_version = VER_4_0_0_2;
-				} else {
-					unsigned char verBits[4];
-					for ( int i = 0; i < 4; ++i ) {
-						verBits[3-i] = unsigned char( atoi( versionParts[i].asChar() ) );
-					}
-					export_version = *((unsigned int *)verBits);
-				}
-				out << "Export Version:  0x" << hex << export_version << dec << endl;
-			}
+			out << "Texture Path:  " << texture_path << endl;
+			
 		}
+		if ( tokens[0] == "exportVersion" ) {
+			MStringArray versionParts;
+			tokens[1].split( '.', versionParts );
+
+			if ( versionParts.length() != 4 ) {
+				MGlobal::displayWarning( "Invalid export version specified.  Using default of 4.0.0.2." );
+				export_version = VER_4_0_0_2;
+			} else {
+				unsigned char verBits[4];
+				for ( int i = 0; i < 4; ++i ) {
+					verBits[3-i] = unsigned char( atoi( versionParts[i].asChar() ) );
+				}
+				export_version = *((unsigned int *)verBits);
+			}
+			out << "Export Version:  0x" << hex << export_version << dec << endl;
+		}
+		if ( tokens[0] == "importBindPose" ) {
+			if ( tokens[1] == "1" ) {
+				import_bind_pose = true;
+			} else {
+				import_bind_pose = false;
+			}
+			out << "Import Bind Pose:  " << import_bind_pose << endl;
+		}
+		if ( tokens[0] == "importNormals" ) {
+			if ( tokens[1] == "1" ) {
+				import_normals = true;
+			} else {
+				import_normals = false;
+			}
+			out << "Import Bind Pose:  " << import_bind_pose << endl;
+		}
+		if ( tokens[0] == "importNoAmbient" ) {
+			if ( tokens[1] == "1" ) {
+				import_no_ambient = true;
+			} else {
+				import_no_ambient = false;
+			}
+			out << "Import Bind Pose:  " << import_bind_pose << endl;
+		}
+		if ( tokens[0] == "exportWhiteAmbient" ) {
+			if ( tokens[1] == "1" ) {
+				export_white_ambient = true;
+			} else {
+				export_white_ambient = false;
+			}
+			out << "Import Bind Pose:  " << import_bind_pose << endl;
+		}
+	}
 }
 
 void NifTranslator::EnumerateSkinClusters() {
