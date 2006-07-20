@@ -225,7 +225,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 							if ( niTexProp->HasTexture( i ) ) {
 								tx = niTexProp->GetTexture( i );
 								niSrcTex = tx.source;
-								uv_set++;
 
 								switch(i) {
 									case DARK_MAP:
@@ -332,22 +331,23 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 
 									//Create uvChooser if necessary
 									if ( uv_set > 0 ) {
-										MFnDependencyNode uvcFn;
-										uvcFn.create( "uvChooser", "uvChooser" );
+										MFnDependencyNode chooserFn;
+										chooserFn.create( "uvChooser", "uvChooser" );
 
 										//Connection between the mesh and the uvChooser
 										MFnMesh meshFn;
 										meshFn.setObject(meshPath);
-										dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), uvcFn.findPlug("uvSets").elementByLogicalIndex(0) );
+										dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
 
 										//Connections between the uvChooser and the place2dTexture
-										dgModifier.connect( uvcFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
-										dgModifier.connect( uvcFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
-										dgModifier.connect( uvcFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
-										dgModifier.connect( uvcFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
-										dgModifier.connect( uvcFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
+										dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
+										dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
+										dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
+										dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
+										dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
 									}
 								}
+								uv_set++;
 							}
 						}
 					}
