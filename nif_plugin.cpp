@@ -1,7 +1,14 @@
 #include "nif_plugin.h"
 
+//#define DEBUG
+#ifdef DEBUG
+ofstream out( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary );
+#else
+stringstream out;
+#endif
+
 const char PLUGIN_VERSION [] = "0.5";	
-const char TRANSLATOR_NAME [] = "NetImmerse/Gamebryo Format";
+const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
 string texture_path; // Path to textures gotten from option string
