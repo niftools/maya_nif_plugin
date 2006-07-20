@@ -1064,6 +1064,8 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Set vertex info later since it includes skin weights
 	//cs.SetVertices( nif_vts );
 
+	//TODO:  Make color support work in version 6.5
+#if MAYA_API_VERSION > 700
 	out << "Use the function set to get the colors" << endl;
 	MColorArray myColors;
 	meshFn.getColors( myColors );
@@ -1074,6 +1076,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		niColors[i] = Color4( myColors[i].r, myColors[i].g, myColors[i].b, myColors[i].a );
 	}
 	cs.SetColors( niColors );
+#endif
 
 	// this will hold the returned vertex positions
 	MFloatVectorArray nmls;
@@ -1253,9 +1256,11 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 			cp.vertexIndex = itPoly.vertexIndex(i);
 			cp.normalIndex = itPoly.normalIndex(i);
+#if MAYA_API_VERSION > 700
 			int color_index;
 			itPoly.getColorIndex(i, color_index );
 			cp.colorIndex = color_index;
+#endif
 
 			for ( unsigned int j = 0; j < uvSetNames.length(); ++j ) {
 				ComplexShape::TexCoordIndex tci;

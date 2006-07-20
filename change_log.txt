@@ -28,7 +28,9 @@
 * Added experimental export support.
 
 =Version 0.5=
-  
+
+* Realized that one of the functions I called is not supported by Maya 6.5.
+  Removed vertex color export from that version for now.
 * Organized options into Common, Import, and Export groups.
 * Added new options:  Attempt to Find Original Bind Pose, Try to Use Original
   Normals, Ignore Ambient Color, and Export White Ambient if Texture is
