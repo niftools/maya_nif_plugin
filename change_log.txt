@@ -26,4 +26,52 @@
 =Version 0.4=
 
 * Added experimental export support.
+
+=Version 0.5=
   
+* Organized options into Common, Import, and Export groups.
+* Added new options:  Attempt to Find Original Bind Pose, Try to Use Original
+  Normals, Ignore Ambient Color, and Export White Ambient if Texture is
+  Present.
+* Fixed problem with import of glow textures.  Texture index was off by one
+  due to being incremented at the wrong time.
+* Skin clusters should now always be properly detected no matter how distantly
+  they're connected to the mesh they deform.
+* A NiAlphaProperty is now created on export if the base texture has any
+  transparency specified in its alpha channel.
+* Glow textures are now supported for export.
+* Removed warning for transparency texture.  This was caused by the alpha
+  channel of the base map being connected to transparency as it should be.
+* Changed all cout statements to use the out file stream so they would not
+  write to the Maya Output window.
+* Only NiNodes that are skin influences are now imported as IKJoints.
+  Previously nodes with the word "Bip" in the name were also made into joints
+  but this was incorrect.
+* Now import ambient as well.  It looks bad e renders, but not importing it
+  results in exports that do not match the original file.
+* Vertex colors are now exported.
+* Maya's default objects (such as the top, front, side, and persp camera) are
+  no longer exported.
+* Exported the name of the FileTexture node in the resulting NiSourceTexture
+  object.
+* Paths of textures are now fixed by removing any part of the beginning that
+  matches the texture path specified in the options.
+* Texture path can now optionally end with an extra \ character after the last
+  directory name.
+* Fixed a bug where two \ characters were always added to whatever texture
+  path the user specified.
+* Added skin export support. For now, just exports the mesh in its present
+  position.  Disabled old behavior of searching for the bind position of the
+  mesh.
+* Fixed detection of history items to be more accurate.
+* Names of split meshes now set properly.
+* Moved all vertex cloning/triangulation code into Niflib and can now support
+  multiple materials and UV sets per mesh.
+* Properly handle glossiness/cosine power for Phong shaders.  Blinn now
+  defaults to a glossiness of 20.
+* Moved export parent query to its own function.
+* Deferred export mesh creation until after all nodes are imported to prepare
+  to implement support for skinning.
+* Simplified export parent connection.  Two loops are no longer required.
+
+

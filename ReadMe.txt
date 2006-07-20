@@ -8,9 +8,10 @@ This importer is very incomplete, and will not import all data in the NIF file. 
 
 KNOWN ISSUES:
 
-* When meshes have multiple UV sets, the textures are not always attached to the correct UV set.
-* Export resutls can be unpredictable if UVs go outside the 0.0-1.0 range.  Suggest staying within the picture in the UV editor.
+* Export results can be unpredictable if UVs go outside the 0.0-1.0 range.  Suggest staying within the picture in the UV editor.
 * Niflib has endian issues that are not taken care of, so a PowerPC compile will be impossible.
+* Importing Normals does not work on skinned meshes
+* Meshes affected by multiple skin clusters cannot be exported yet.  Suggest deleting history and re-binding to the skeleton.
 
 INSTALLATION:
 
@@ -44,13 +45,57 @@ This code SHOULD be compatible with multiple versions of Maya.  If you successfu
 
 If you can program in C++, have Maya, and want to help make this plugin better, come join our project at http://niftools.sourceforge.net!
 
+OPTIONS:
+
+You can access the options by choosing the option box (square) next to either
+"File->Open Scene" or "File->Export All" rather than clicking the words.  Then choose
+"NetImmerse Format" from the File Type drop down box.  The options should
+appear.
+
+Texture Source Directory:
+This is the directory that the plug-in will look for textures in.  It will
+prepend this to any texture path read from the NIF file when creating the
+FileTexture node.  This also has the effet of stripping this added information
+back out of the NIF file if the begining of the path matches the text entered
+here.
+
+Attempt to Find Original Bind Pose:
+NIF files do not store their original bind pose, but sometimes a reasonable
+substitute can be calculated by trying to line up the bones with the pre-
+deformed skins.  Checking this activates this option.  Clearing it will
+cause the NIF file to import in whatever position it is actually in.
+
+Try to Use Original Normals
+Usually Maya will automatically calculate the normals of a polygon, but it
+optionally supports the setting of "user normals."  This type of fixed normal
+does not seem to work well with skins, but may allow you to retain the
+original normal information from the NIF file exactly if successful.
+
+Ignore Ambient Color
+Most NIF files with textures have their ambient color set to white.  This
+causes there to be no shading on the model when rendered with Maya.  Enable
+this if you plan to render a NIF with textures.  NIF files without textures,
+however, may lose important lighting information if this is enabled.
+
+NIF Version
+This determines what version of NIF files is created by the export process.
+If an invalid version string is specified, the default of 4.0.0.2 is used; the
+lowest NIF version that Niflib supports.
+
+Export White Ambient if Texture is Pressent
+Every NIF file from a game I've seen has a white ambient component if there is
+a texture present, but Maya's default is black.  You can get some
+interesting effects by setting the ambient color to something other than
+white, but they will look very different from all the other objects in the
+game.
+
 IMPORT:
 
 The following are imported:
  * NiNodes are imported as either transforms or ikJoints.
  * NiTriShapes and NiTriStrips are imported as polygon meshes.
  * NiAlphaProperty and NiSpecularProperty are honored.
- * NiMaterialProperties and NiTexturingProperties are imported as shaders.
+ * NiMaterialProperties and NiTexturingProperties are imported as Phong shaders.
  * Meshes with a NiSkinInstance are bound to the skeleton.
  
 The following are NOT imported:
@@ -65,20 +110,25 @@ The following are NOT imported:
 EXPORT
 
 The following are exported:
- * Polygon meshes (triangulation is not necessary).  Vertex positions,
-   normals, and one set of UV coordinates are exported.
+ * Polygon meshes (triangulation is not necessary).  Components exported are
+   vertex positions, normals, vertex colors and UV coordinates for supported
+   texture types.
  * DAG nodes other than meshes are exported as NiNodes and include
-   transform information.  This includes things you will want to remove
-   with NifSkope like default cameras.
- * One shader per mesh.  Multiple shaders on a single mesh will cause the
-   export to fail.  Attributes exported are color, transparency (averaged), 
-   ambient color, incandecence, and specular color.  Color can be a texture,
-   but no other textures are exported.  Paths are absolute and will need to
-   be fixed in NifSkope.
+   transform information.  Maya's default DAG nodes like the default
+   cameras are ignored.  Visibility is exported by flagging the NiNode as
+   hidden.  History items are not exported.
+ * Any shaders connected to a mesh.   Meshes are automatically split into
+   multiple NiTriShapes by material.  Attributes exported are color,
+   transparency (averaged), ambient color, incandecence, and specular color.
+   Color and incandesence can be textures.
+ * Any textures connected to a mesh through a material's color or
+   incandesense attributes.  Paths are fixed to remove anything in the
+   texture folder option.
+ * Skin bindings are exported so long as only one skin cluster affects
+   a mesh.
    
 The following are NOT exported:
  * Animation of any kind
- * Skin bindings
  * Oblivion Havok data or any other collision information.
  * Cameras
  * Lights
