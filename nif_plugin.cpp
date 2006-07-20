@@ -1,7 +1,7 @@
 #include "nif_plugin.h"
 
-const char PLUGIN_VERSION [] = "0.3.1";	
-const char TRANSLATOR_NAME [] = "NetImmerse Format";
+const char PLUGIN_VERSION [] = "0.5";	
+const char TRANSLATOR_NAME [] = "NetImmerse/Gamebryo Format";
 
 //--Globals--//
 string texture_path; // Path to textures gotten from option string

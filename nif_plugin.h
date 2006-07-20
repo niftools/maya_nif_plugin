@@ -114,7 +114,7 @@ using namespace Niflib;
 class NifTranslator : public MPxFileTranslator {
 public:
 	//Constructor
-	NifTranslator () : out( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary ) {};
+	NifTranslator () {} //: out( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary ) {};
 
 	//Destructor
 	virtual ~NifTranslator () {};
@@ -159,7 +159,7 @@ public:
 	MFileKind identifyFile (const MFileObject& fileName, const char* buffer, short size) const;
 
 private:
-	ofstream out;
+	stringstream out; //ofstream out;
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
