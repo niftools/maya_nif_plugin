@@ -38,6 +38,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	
 	string $defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
 	string $defaultVersion = "4.0.0.2";
+	string $defaultJointMatch = "Bip";
 	
 	if ($action == "post") {
 		setParent $parent;
@@ -54,9 +55,13 @@ global proc int nifTranslatorOpts ( string $parent,
 								nifTxPath;
 					button -label "Browse"
 						   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
+				setParent commonColumnLayout;
+					checkBox -label "Use Name Mangling to Preserve Original Names" 
+							  -value 1
+							  useNameManglingCk;
 				setParent $parent;
 		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
-			columnLayout;
+			columnLayout importColumnLayout;
 				checkBox -label "Attempt to Find Original Bind Pose" 
 					      -value 1
 						  impBindPoseCk;
@@ -66,6 +71,13 @@ global proc int nifTranslatorOpts ( string $parent,
 				checkBox -label "Ignore Ambient Color" 
 					      -value 0
 						  impNoAmbientCk;
+				checkBox -label "Combine New Skins with Existing Skeleton" 
+					      -value 1
+						  impSkelCombCk;
+				text -label "Import nodes with the following in their name as joints:";
+				textField -editable true
+						  -text $defaultJointMatch
+						  impJointMatchTx;
 		setParent $parent;
 		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout exportColumnLayout;
@@ -122,6 +134,23 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false expWhiteAmbientCk;
 					}
 				}
+				if ($optionBreakDown[0] == "importSkelComb") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true impSkelCombCk;
+					} else {
+						checkBox -edit -value false impSkelCombCk;
+					}
+				}
+				if ($optionBreakDown[0] == "importJointMatch") {
+					textField -edit -text $optionBreakDown[1] impJointMatchTx;
+				}
+				if ($optionBreakDown[0] == "useNameMangling") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true useNameManglingCk;
+					} else {
+						checkBox -edit -value false useNameManglingCk;
+					}
+				}
 			}
 		}
 		$bResult = 1;
@@ -135,6 +164,7 @@ global proc int nifTranslatorOpts ( string $parent,
 			//Use Default path
 			$currentOptions = $currentOptions + "texturePath=" + $defaultPath + ";";
 		}
+		
 		string $version = `textField -query -text nifVersion`;
 		if ($version != "") {
 			$currentOptions = $currentOptions + "exportVersion=" + $version + ";";
@@ -143,14 +173,28 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "exportVersion=" + $defaultVersion + ";";
 		}
 		int $ckVal;
+		
 		$ckVal = `checkBox -query -value impBindPoseCk`;
 		$currentOptions = $currentOptions + "importBindPose=" + $ckVal + ";";
+		
 		$ckVal = `checkBox -query -value impNormalsCk`;
 		$currentOptions = $currentOptions + "importNormals=" + $ckVal + ";";
+		
 		$ckVal = `checkBox -query -value impNoAmbientCk`;
 		$currentOptions = $currentOptions + "importNoAmbient=" + $ckVal + ";";
+		
 		$ckVal = `checkBox -query -value expWhiteAmbientCk`;
 		$currentOptions = $currentOptions + "exportWhiteAmbient=" + $ckVal + ";";
+		
+		$ckVal = `checkBox -query -value impSkelCombCk`;
+		$currentOptions = $currentOptions + "importSkelComb=" + $ckVal + ";";
+		
+		string $jointMatch = `textField -query -text impJointMatchTx`;
+		$currentOptions = $currentOptions + "importJointMatch=" + $jointMatch + ";";
+		
+		$ckVal = `checkBox -query -value useNameManglingCk`;
+		$currentOptions = $currentOptions + "useNameMangling=" + $ckVal + ";";
+		
 		eval($resultCallback+" \""+$currentOptions+"\"");
 		$bResult = 1;
 	} else {

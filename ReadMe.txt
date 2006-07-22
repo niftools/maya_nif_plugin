@@ -1,6 +1,6 @@
 Maya 6.5 NIF File Translator
 
-Currently supports importing static (non-animated) NIF files.  Export is *not* supported.  Pre-compiled versions are availiable for Maya 6.5 and 7.0 for Windows.  To use on other versions of Maya or other operating systems, you will need to compile from source.
+Currently supports importing static (non-animated) NIF files.  Export is *not* supported.  Pre-compiled versions are available for Maya 6.5 and 7.0 for Windows.  To use on other versions of Maya or other operating systems, you will need to compile from source.
 
 WARNING:  
 
@@ -27,7 +27,7 @@ From within Maya:
 
 From the menu, choose:  Window -> Settings/Preferences -> Plug-in Manager...
 
-Look for nifTranslator.mll in the list of available plugins and check the two boxes next to it "load" and "auto load"
+Look for nifTranslator.mll in the list of available plug-ins and check the two boxes next to it "load" and "auto load"
 
 Now choose File->Open Scene, and click the Options... button.
 
@@ -39,11 +39,11 @@ You should now be able to open and import NIF files like any other scene file th
 
 COMPILING FROM SOURCE:
 
-This release uses Niflib 0.5.4, availiable separately.  You can compile both Niflib and the Maya plug-in together or separately by first compiling Niflib in static library form and then linking it with the Maya plug-in.
+This release uses Niflib 0.5.6, available separately.  You can compile both Niflib and the Maya plug-in together or separately by first compiling Niflib in static library form and then linking it with the Maya plug-in.
 
 This code SHOULD be compatible with multiple versions of Maya.  If you successfully compile this code for a version of Maya other than 6.5 or 7.0, please send it to me so others can use it! =)
 
-If you can program in C++, have Maya, and want to help make this plugin better, come join our project at http://niftools.sourceforge.net!
+If you can program in C++, have Maya, and want to help make this plug-in better, come join our project at http://niftools.sourceforge.net!
 
 OPTIONS:
 
@@ -55,9 +55,15 @@ appear.
 Texture Source Directory:
 This is the directory that the plug-in will look for textures in.  It will
 prepend this to any texture path read from the NIF file when creating the
-FileTexture node.  This also has the effet of stripping this added information
-back out of the NIF file if the begining of the path matches the text entered
+FileTexture node.  This also has the effect of stripping this added information
+back out of the NIF file if the beginning of the path matches the text entered
 here.
+
+Use Name Mangling to Preserve Original Names
+This will cause characters which are invalid for Maya names to be replaced
+with hex equivalents on import, and translated back to the original character
+on export.  Disabling it will cause all invalid characters to be changed to
+underscores on import and names will be exported with no changes.
 
 Attempt to Find Original Bind Pose:
 NIF files do not store their original bind pose, but sometimes a reasonable
@@ -77,12 +83,25 @@ causes there to be no shading on the model when rendered with Maya.  Enable
 this if you plan to render a NIF with textures.  NIF files without textures,
 however, may lose important lighting information if this is enabled.
 
+Combine New Skins with Existing Skeleton
+This is useful when using the Import, rather than Open command.  If you have
+already opened or created an IK joint hierarchy, this option will cause the
+import command to search for names in the NIF file which match the names in
+the joint hierarchy, and use the existing joints instead of the ones in the
+original file.  This will only work if the existing joints are in exactly
+the same position that those in the file are in.
+
+Import nodes with the following in their name as joints
+Usually only NiNodes flagged as skin influences will be imported as IK joints,
+but this will cause any with the given sub string somewhere in their name to
+be imported as IK joints as well.
+
 NIF Version
 This determines what version of NIF files is created by the export process.
 If an invalid version string is specified, the default of 4.0.0.2 is used; the
 lowest NIF version that Niflib supports.
 
-Export White Ambient if Texture is Pressent
+Export White Ambient if Texture is Present
 Every NIF file from a game I've seen has a white ambient component if there is
 a texture present, but Maya's default is black.  You can get some
 interesting effects by setting the ambient color to something other than
@@ -104,7 +123,7 @@ The following are NOT imported:
  * Special nodes like Billboards lose their special properties.
  * Cameras
  * Lights
- * Evironment Maps
+ * Environment Maps
  * Anything else not listed
 
 EXPORT
@@ -119,10 +138,10 @@ The following are exported:
    hidden.  History items are not exported.
  * Any shaders connected to a mesh.   Meshes are automatically split into
    multiple NiTriShapes by material.  Attributes exported are color,
-   transparency (averaged), ambient color, incandecence, and specular color.
-   Color and incandesence can be textures.
+   transparency (averaged), ambient color, incandescence, and specular color.
+   Color and incandescence can be textures.
  * Any textures connected to a mesh through a material's color or
-   incandesense attributes.  Paths are fixed to remove anything in the
+   incandescence attributes.  Paths are fixed to remove anything in the
    texture folder option.
  * Skin bindings are exported so long as only one skin cluster affects
    a mesh.
@@ -132,6 +151,5 @@ The following are NOT exported:
  * Oblivion Havok data or any other collision information.
  * Cameras
  * Lights
- * Evironment Maps
+ * Environment Maps
  * Anything else not listed
- 

@@ -49,7 +49,7 @@
 * Only NiNodes that are skin influences are now imported as IKJoints.
   Previously nodes with the word "Bip" in the name were also made into joints
   but this was incorrect.
-* Now import ambient as well.  It looks bad e renders, but not importing it
+* Now import ambient as well.  It looks bad in renders, but not importing it
   results in exports that do not match the original file.
 * Vertex colors are now exported.
 * Maya's default objects (such as the top, front, side, and persp camera) are
@@ -77,3 +77,16 @@
 * Simplified export parent connection.  Two loops are no longer required.
 
 
+=Version 0.5.3=
+* Added name mangling option to preserve original names
+* Added ability to import nodes with a user-selected sub-string in their names
+  as joints.
+* Added option to merge newly imported skins with existing skeletons
+* Changed vertex color export code so that Maya 6.5 and Maya 7.0 are both
+  supported.
+* Niflib change fixes the problem with Oblivion skins not having the skin flag
+  set properly, making the import of the skin weights fail.
+* Added warnings if the user tries to export something with scale not 1.0 or
+  with separate values for scale x, y, and z.
+* Now import root nodes with non-identity transforms instead of treating them
+  as the scene root and ignoring them.  Fixes some Morrowind skins.

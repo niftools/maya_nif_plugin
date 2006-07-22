@@ -18,6 +18,9 @@ bool import_bind_pose = false; //Determines whether or not the bind pose should 
 bool import_normals= false; //Determines whether normals are imported
 bool import_no_ambient = false; //Determines whether ambient color is imported
 bool export_white_ambient = false; //Determines whether ambient color is automatically set to white if a texture is present
+bool import_comb_skel = false; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
+string joint_match = ""; //String to match in the name of nodes as another way to cause themm to import as IK joints
+bool use_name_mangling = false;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
 
 //--Function Definitions--//
 
@@ -105,8 +108,20 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		//Read NIF file
 		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
 
+		//Check if the user wants us to try to combine new skins with
+		//an existing skeleton
+		if ( import_comb_skel ) {
+			//Enumerate existing nodes by name
+			existingNodes.clear();
+			MItDag dagIt( MItDag::kDepthFirst);
 
-
+			for ( ; !dagIt.isDone(); dagIt.next() ) {
+				MFnTransform transFn( dagIt.item() );
+				out << "Adding " << transFn.name().asChar() << " to list of existing nodes" << endl;
+				existingNodes[ transFn.name().asChar() ] = dagIt.item();
+			}
+		}
+		
 		out << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
 		map< NiAVObjectRef, MDagPath > objs;
@@ -119,10 +134,17 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				SendNifTreeToBindPos( root_node );
 			}
 
-			vector<NiAVObjectRef> root_children = root_node->GetChildren();
-			
-			for ( unsigned int i = 0; i < root_children.size(); ++i ) {
-				ImportNodes( root_children[i], objs );
+			//Check if the root node has a non-identity transform
+			if ( root_node->GetLocalTransform() == Matrix44::IDENTITY ) {
+				//Root has no transform, so treat it as the scene root
+				vector<NiAVObjectRef> root_children = root_node->GetChildren();
+				
+				for ( unsigned int i = 0; i < root_children.size(); ++i ) {
+					ImportNodes( root_children[i], objs );
+				}
+			} else {
+				//Root has a transform, so it's probably part of the scene
+				ImportNodes( StaticCast<NiAVObject>(root_node), objs );
 			}
 		} else {
 			NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
@@ -508,38 +530,67 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 
 	//This must be a node, so process its basic attributes	
 	MFnTransform transFn;
-	string name = niAVObj->GetName();
+	MString name = MakeMayaName( niAVObj->GetName() );
+	string strName = name.asChar();
+
 	int flags = niAVObj->GetFlags();
+
+
 	NiNodeRef niNode = DynamicCast<NiNode>(niAVObj);
-	if ( niNode != NULL && niNode->IsSkinInfluence() == true ) {
-		// This is a bone, create an IK joint parented to the given parent
-		MFnIkJoint IKjointFn;
-		obj = IKjointFn.create( parent );
 
-		//Set Transform Fn to work on the new IK joint
+	//Determine whether this node is an IK joint
+	bool is_joint = false;
+	if ( niNode != NULL) {
+		if ( joint_match != "" && strName.find(joint_match) != string::npos ) {
+			is_joint = true;
+		} else if ( niNode->IsSkinInfluence() == true ) {
+			is_joint = true;
+		}
+	}
+
+	//Check if the user wants us to try to combine new skins with an
+	//existing skeleton
+	if ( import_comb_skel ) {
+		//Check if joint already exits in scene.  If so, use it.
+		if ( is_joint ) {
+			obj = GetExistingJoint( name.asChar() );
+		}
+	}
+
+	if ( obj.isNull() == false ) {
+		//A matching object was found
 		transFn.setObject( obj );
+	} else {
+		if ( is_joint ) {
+			// This is a bone, create an IK joint parented to the given parent
+			MFnIkJoint IKjointFn;
+			obj = IKjointFn.create( parent );
+
+			//Set Transform Fn to work on the new IK joint
+			transFn.setObject( obj );
+		}
+		else {
+			//Not a bone, create a transform node parented to the given parent
+			obj = transFn.create( parent );
+		}
+
+		//--Set the Transform Matrix--//
+		Matrix44 transform;
+
+		transform = niAVObj->GetLocalTransform();
+
+		//put matrix into a float array
+		float trans_arr[4][4];
+		transform.AsFloatArr( trans_arr );
+
+		transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
+		transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
+
+		//Set name
+		MFnDependencyNode dnFn;
+		dnFn.setObject(obj);
+		dnFn.setName( name );	
 	}
-	else {
-		//Not a bone, create a transform node parented to the given parent
-		obj = transFn.create( parent );
-	}
-
-	//--Set the Transform Matrix--//
-	Matrix44 transform;
-
-	transform = niAVObj->GetLocalTransform();
-
-	//put matrix into a float array
-	float trans_arr[4][4];
-	transform.AsFloatArr( trans_arr );
-
-	transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
-	transFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
-
-	//Set name
-	MFnDependencyNode dnFn;
-	dnFn.setObject(obj);
-	dnFn.setName(MString(name.c_str()));	
 
 	//Add the newly created object to the objects list
 	MDagPath path;
@@ -649,8 +700,8 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecul
 	alpha = 1.0f - alpha;
 	phongFn.setTransparency( MColor( alpha, alpha, alpha, alpha) );
 
-	string name = niMatProp->GetName();
-	phongFn.setName( MString(name.c_str()) );
+	MString name = MakeMayaName( niMatProp->GetName() );
+	phongFn.setName( name );
 
 	return obj;
 }
@@ -956,7 +1007,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Find Mesh child of given transform objet
 	MFnDagNode nodeFn(dagNode);
 
-	cs.SetName( nodeFn.name().asChar() );
+	cs.SetName( MakeNifName(nodeFn.name()) );
 
 	for( int i = 0; i != nodeFn.childCount(); ++i ) {
 		// get a handle to the child
@@ -1064,11 +1115,9 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Set vertex info later since it includes skin weights
 	//cs.SetVertices( nif_vts );
 
-	//TODO:  Make color support work in version 6.5
-#if MAYA_API_VERSION > 700
 	out << "Use the function set to get the colors" << endl;
 	MColorArray myColors;
-	meshFn.getColors( myColors );
+	meshFn.getFaceVertexColors( myColors );
 
 	out << "Prepare NIF color vector" << endl;
 	vector<Color4> niColors( myColors.length() );
@@ -1076,7 +1125,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		niColors[i] = Color4( myColors[i].r, myColors[i].g, myColors[i].b, myColors[i].a );
 	}
 	cs.SetColors( niColors );
-#endif
+
 
 	// this will hold the returned vertex positions
 	MFloatVectorArray nmls;
@@ -1227,14 +1276,8 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		throw runtime_error("Failed to create polygon iterator.");
 	}
 
-	//int face = 0;
-
 	// Create a list of faces with vertex IDs, and duplicate normals so they have the same ID
 	for ( ; !itPoly.isDone() ; itPoly.next() ) {
-
-		//out << "Face " << face << ":" << endl;
-		//++face;
-
 		int poly_vert_count = itPoly.polygonVertexCount(&stat);
 
 		if ( stat != MS::kSuccess ) {
@@ -1256,11 +1299,21 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 			cp.vertexIndex = itPoly.vertexIndex(i);
 			cp.normalIndex = itPoly.normalIndex(i);
-#if MAYA_API_VERSION > 700
-			int color_index;
-			itPoly.getColorIndex(i, color_index );
-			cp.colorIndex = color_index;
-#endif
+			if ( niColors.size() > 0 ) {
+				int color_index;
+				stat = meshFn.getFaceVertexColorIndex( itPoly.index(), i, color_index );
+				if ( stat != MS::kSuccess ) {
+					out << stat.errorString().asChar() << endl;
+					throw runtime_error("Failed to get vertex color.");
+				}
+				cp.colorIndex = color_index;
+			}
+
+//#if MAYA_API_VERSION > 700
+//			int color_index;
+//			itPoly.getColorIndex(i, color_index );
+//			
+//#endif
 
 			for ( unsigned int j = 0; j < uvSetNames.length(); ++j ) {
 				ComplexShape::TexCoordIndex tci;
@@ -1549,12 +1602,22 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 	out << "Fixing name from " << nodeFn.name().asChar() << " to ";
 
 	//Fix name
-	string name = string( nodeFn.name().asChar() );
-	replace(name.begin(), name.end(), '_', ' ');
+	string name = MakeNifName( nodeFn.name() );
 	avObj->SetName( name );
 	out << name << endl;
 
-	MMatrix my_trans= nodeFn.transformationMatrix();
+	MMatrix my_trans = nodeFn.transformationMatrix();
+	MTransformationMatrix myTrans(my_trans);
+
+	//Warn user about any scaling problems
+	double myScale[3];
+	myTrans.getScale( myScale, MSpace::kPreTransform );
+	if ( abs(myScale[0] - 1.0) > 0.0001 || abs(myScale[1] - 1.0) > 0.0001 || abs(myScale[2] - 1.0) > 0.0001 ) {
+		MGlobal::displayWarning("Some games such as the Elder Scrolls do not react well when scale is not 1.0.  Consider freezing scale transforms on all nodes before export.");
+	}
+	if ( abs(myScale[0] - myScale[1]) > 0.0001 || abs(myScale[0] - myScale[2]) > 0.001 || abs(myScale[1] - myScale[2]) > 0.001 ) {
+		MGlobal::displayWarning("The NIF format does not support separate scales for X, Y, and Z.  An average will be used.  Consider freezing scale transforms on all nodes before export.");
+	}
 
 	//Set visibility
 	MPlug vis = nodeFn.findPlug( MString("visibility") );
@@ -1564,6 +1627,7 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 	if ( value == false ) {
 		avObj->SetVisibility(false);
 	}
+
 
 	out << "Copying Maya matrix to Niflib matrix" << endl;
 	//Copy Maya matrix to Niflib matrix
@@ -1690,7 +1754,7 @@ void NifTranslator::ExportShaders() {
 			MFnLambertShader lambertFn( itDep.item() );
 
 			//Set Name
-			niMatProp->SetName( lambertFn.name().asChar() );
+			niMatProp->SetName( MakeNifName( lambertFn.name() ) );
 
 			//--Get info from Color slots--//
 			out << "Getting base color" << endl;
@@ -1936,7 +2000,7 @@ void NifTranslator::ExportFileTextures() {
 		NiSourceTextureRef ni_tex = new NiSourceTexture;
 
 		//Get Node Name
-		ni_tex->SetName( fn.name().asChar() );
+		ni_tex->SetName( MakeNifName( fn.name() ) );
 
 		MString fname;
 		ftn.getValue(fname);
@@ -2013,7 +2077,7 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			} else {
 				import_normals = false;
 			}
-			out << "Import Bind Pose:  " << import_bind_pose << endl;
+			out << "Import Normals:  " << import_normals << endl;
 		}
 		if ( tokens[0] == "importNoAmbient" ) {
 			if ( tokens[1] == "1" ) {
@@ -2021,7 +2085,7 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			} else {
 				import_no_ambient = false;
 			}
-			out << "Import Bind Pose:  " << import_bind_pose << endl;
+			out << "Import No Ambient:  " << import_no_ambient << endl;
 		}
 		if ( tokens[0] == "exportWhiteAmbient" ) {
 			if ( tokens[1] == "1" ) {
@@ -2029,7 +2093,27 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			} else {
 				export_white_ambient = false;
 			}
-			out << "Import Bind Pose:  " << import_bind_pose << endl;
+			out << "Export White Ambient:  " << export_white_ambient << endl;
+		}
+		if ( tokens[0] == "importSkelComb" ) {
+			if ( tokens[1] == "1" ) {
+				import_comb_skel = true;
+			} else {
+				import_comb_skel = false;
+			}
+			out << "Combine with Existing Skeleton:  " << import_comb_skel << endl;
+		}
+		if ( tokens[0] == "importJointMatch" ) {
+			joint_match = tokens[1].asChar();
+			out << "Import Joint Match:  " << joint_match << endl;
+		}
+		if ( tokens[0] == "useNameMangling" ) {
+			if ( tokens[1] == "1" ) {
+				use_name_mangling = true;
+			} else {
+				use_name_mangling = false;
+			}
+			out << "Use Name Mangling:  " << use_name_mangling << endl;
 		}
 	}
 }
@@ -2059,4 +2143,194 @@ void NifTranslator::EnumerateSkinClusters() {
 			}
 		}
 	} 
+}
+
+MObject NifTranslator::GetExistingJoint( const string & name ) {
+	//If it's not in the list, return a null object
+	map<string,MObject>::iterator it = existingNodes.find( name );
+	if ( it == existingNodes.end() ) {
+		out << "A joint named " << name << " did not exist in list." << endl;
+		return MObject::kNullObj;
+	}
+
+	//It's in the list
+	MObject jointObj = it->second;
+
+	//Check if it is an Ik joint
+	if ( jointObj.hasFn( MFn::kJoint ) ) {
+		out << "Matching joint is already an IK joint." << endl;
+		//It's a joint already, return it
+		return jointObj;
+	} else {
+		return MObject::kNullObj;
+	}
+}
+
+MObject NifTranslator::MakeJoint( MObject & jointObj ) {
+
+	MStatus stat;
+
+	//Check if this is an Ik joint
+	if ( jointObj.hasFn( MFn::kJoint ) ) {
+		out << "Matching joint is already an IK joint." << endl;
+		//It's a joint already, return it
+		return jointObj;
+	}
+
+	out << "Matching joint object must be changed to an IK joint." << endl;
+	//The object is not a joint, so make it into one.
+	MFnTransform transFn(jointObj);
+	
+	//Temporary data
+	MTransformationMatrix transMat;
+	MObjectArray children;
+	MObjectArray parents;
+
+	//Copy name
+	MString name = transFn.name();
+
+	//Copy transform
+	transMat = transFn.transformation();
+
+	//Copy children
+	for ( unsigned int i = 0; i < transFn.childCount(); ++i ) {
+		children.append( transFn.child(i) );
+	}
+
+	//Copy additional parents
+	for ( unsigned int i = 0; i < transFn.parentCount(); ++i ) {
+		parents.append( transFn.parent(i) );
+
+	}
+
+
+
+	//Create new object
+	MFnIkJoint jointFn;
+	jointFn.create( MObject::kNullObj, &stat );
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to create joint.");
+	}
+
+
+
+	//Set transform
+	stat = jointFn.set( transMat );
+	if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("Failed to set transform.");
+		}
+
+	//Set children
+	for ( unsigned int i = 0; i < children.length(); ++i ) {
+		MFnDagNode nodeFn( children[i] );
+		out << "Attaching " << nodeFn.name().asChar() << " as child of " << name.asChar() << endl;
+		stat = jointFn.addChild( children[i], MFnDagNode::kNextPos, true );
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("Failed to attach child.");
+		}
+	}
+
+	//Set additional parents
+	for ( unsigned int i = 0; i < parents.length(); ++i ) {
+		if ( parents[i].hasFn( MFn::kDagNode ) ) {
+			MFnDagNode nodeFn( parents[i] );
+			out << "Attaching " << name.asChar() << " to " << nodeFn.name().asChar() << endl;
+			stat = nodeFn.addChild( jointFn.object() );
+			if ( stat != MS::kSuccess ) {
+				out << stat.errorString().asChar() << endl;
+				throw runtime_error("Failed to attach to parent.");
+			}
+		}
+	}
+
+			//Destroy original object
+	MString command = "delete " + transFn.fullPathName();
+	MGlobal::executeCommand( command );
+
+	//Set the name of the new object
+	jointFn.setName( name, &stat );
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to set name.");
+	}
+
+	//Return new joint
+	return jointFn.object();
+}
+
+MString NifTranslator::MakeMayaName( const string & nifName ) {
+	stringstream newName;
+	newName.fill('0');
+
+	for ( unsigned int i = 0; i < nifName.size(); ++i ) {
+		if ( use_name_mangling ) {
+			if ( nifName[i] == ' ' ) {
+				newName << "_";
+			} else if ( 
+				(nifName[i] >= '0' && nifName[i] <= '9') ||
+				(nifName[i] >= 'A' && nifName[i] <= 'Z') ||
+				(nifName[i] >= 'a' && nifName[i] <= 'z')
+			) {
+				newName << nifName[i];
+			} else {
+				newName << "_0x" << setw(2) << hex << int(nifName[i]);
+			}
+		} else {
+			if ( 
+				(nifName[i] >= '0' && nifName[i] <= '9') ||
+				(nifName[i] >= 'A' && nifName[i] <= 'Z') ||
+				(nifName[i] >= 'a' && nifName[i] <= 'z')
+			) {
+				newName << nifName[i];
+			} else {
+				newName << "_";
+			}
+		}
+	}
+	out << "New Maya name:  " << newName.str() << endl;
+	return MString( newName.str().c_str() );
+}
+
+string NifTranslator::MakeNifName( const MString & mayaName ) {
+	stringstream newName;
+	stringstream temp;
+	temp.setf ( ios_base::hex, ios_base::basefield );  // set hex as the basefield
+
+	string str = mayaName.asChar();
+
+	if ( use_name_mangling ) {
+		for ( unsigned int i = 0; i < str.size(); ++i ) {
+			if ( i + 5 < str.size() ) {
+				string sub = str.substr( i, 3);
+				out << "Sub string:  " << sub << endl;
+				if ( sub == "_0x" ) {
+					sub = str.substr( i+3, 2);
+					out << "Sub sub string:  " << sub << endl;
+					temp.clear();
+					temp << sub; // should be the char number
+					int ch_num;
+					temp >> ch_num;
+					out << "The int returned from the string stream extraction is:  " << ch_num << endl;
+					if ( temp.fail() == false ) {
+						newName << char(ch_num);
+						i += 4;
+					}
+					continue;
+				}
+			}
+		
+			if ( str[i] == '_' ) {
+				newName << " ";
+			} else {
+				newName << str[i];
+			}
+		}
+
+		return newName.str();
+	} else {
+		return str;
+	}
 }
