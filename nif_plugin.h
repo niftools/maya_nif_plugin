@@ -162,12 +162,19 @@ private:
 	//Map to hold existing nodes that were found for connecting skins to
 	//skeletons on import
 	map<string, MObject> existingNodes;
+	//maps to hold information about what has already been imported
+	map< NiAVObjectRef, MDagPath > importedNodes;
+	map< pair<NiMaterialPropertyRef, NiTexturingPropertyRef>, MObject > importedMaterials;
+	map< NiSourceTextureRef, MObject > importedTextures;
+	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
+
+	void ImportMaterialAndTexture( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list );
 	MObject GetExistingJoint( const string & name );
 	MObject MakeJoint( MObject & jointObj );
 	MString MakeMayaName( const string & nifName );
 	string MakeNifName( const MString & mayaName );
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
-	MDagPath ImportMesh( NiTriBasedGeomRef niGeom, MObject parent = MObject::kNullObj );
+	MDagPath ImportMesh( NiAVObjectRef root, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
 	MObject ImportTexture( NiSourceTextureRef niSrcTex );
 	void ExportDAGNodes();

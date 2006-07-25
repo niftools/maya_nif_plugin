@@ -104,6 +104,12 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		//Get user preferences
 		ParseOptionString( optionsString );
 
+		//Clear arrays
+		importedNodes.clear();
+		importedTextures.clear();
+		importedMaterials.clear();
+		importedMeshes.clear();
+
 		out << "Reading NIF File..." << endl;
 		//Read NIF file
 		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
@@ -124,7 +130,6 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		
 		out << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
-		map< NiAVObjectRef, MDagPath > objs;
 		NiNodeRef root_node = DynamicCast<NiNode>(root);
 		if ( root_node != NULL ) {
 			//Root is a NiNode and may have children
@@ -140,17 +145,17 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				vector<NiAVObjectRef> root_children = root_node->GetChildren();
 				
 				for ( unsigned int i = 0; i < root_children.size(); ++i ) {
-					ImportNodes( root_children[i], objs );
+					ImportNodes( root_children[i], importedNodes );
 				}
 			} else {
 				//Root has a transform, so it's probably part of the scene
-				ImportNodes( StaticCast<NiAVObject>(root_node), objs );
+				ImportNodes( StaticCast<NiAVObject>(root_node), importedNodes );
 			}
 		} else {
 			NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
 			if ( rootAVObj != NULL ) {
 				//Root is importable, but has no children
-				ImportNodes( rootAVObj, objs );
+				ImportNodes( rootAVObj, importedNodes );
 			} else {
 				//Root cannot be imported
 				MGlobal::displayError( "The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported." );
@@ -159,346 +164,21 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		}
 		
 
-		//Report total number of blocks in memory
-		out << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
+		//Report total number of NIF Objects in memory
+		out << "Objects in memory:  " << NiObject::NumObjectsInMemory() << endl;
 		
-		//--Import Data--//
-		out << "Importing Data..." << endl;
-		//maps to hold information about what has already been imported
-		map< pair<NiMaterialPropertyRef, NiTexturingPropertyRef>, MObject > materials;
-		map< NiSourceTextureRef, MObject > textures;
+		//--Import Meshes-//
+		out << "Importing Meshes..." << endl;
 
-		out << "Itterating through all nodes that were imported" << endl;
-		//Iterate through all nodes that were imported
-		map< NiAVObjectRef, MDagPath >::iterator it;
-		for ( it = objs.begin(); it != objs.end(); ++it ) {
-			//Import the data based on the type of node - NiTriShape only so far
-			if ( it->first->IsDerivedType(NiTriBasedGeom::TypeConst()) ) {
-				out << "Found NiTriBasedGeom:  " << it->first << endl;
-
-				//Cast to NiTriBasedGeom
-				NiTriBasedGeomRef geom = DynamicCast<NiTriBasedGeom>(it->first);
-
-				if ( geom == NULL ) {
-					MGlobal::displayError( "Failed to cast to NiTriBasedGeom." );
-					return MStatus::kFailure;
-				}
-
-				out << "Importing mesh..." << endl;
-				//Import Mesh
-				MDagPath meshPath = ImportMesh( geom, it->second.node() );
-
-				//--Look for Materials--//
-				MObject grpOb;
-				MObject matOb;
-				MObject txOb;
-
-
-				out << "Looking for material and texturing properties" << endl;
-				//Get Material and Texturing properties, if any
-				NiMaterialPropertyRef niMatProp = NULL;
-				NiTexturingPropertyRef niTexProp = NULL;
-				NiSpecularPropertyRef niSpecProp = NULL;
-				NiPropertyRef niProp = geom->GetPropertyByType( NiMaterialProperty::TypeConst() );
-				if ( niProp != NULL ) {
-					niMatProp = DynamicCast<NiMaterialProperty>( niProp );
-				}
-				niProp = geom->GetPropertyByType( NiTexturingProperty::TypeConst());
-				if ( niProp != NULL ) {
-					niTexProp = DynamicCast<NiTexturingProperty>( niProp );
-				}
-				niProp = geom->GetPropertyByType( NiSpecularProperty::TypeConst() );
-				if ( niProp != NULL ) {
-					niSpecProp = DynamicCast<NiSpecularProperty>( niProp );
-				}
-							
-				out << "Processing material property..." << endl;
-				//Process Material Property
-				if ( niMatProp != NULL ) {
-					//Check to see if material has already been found
-					if ( materials.find( pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp) ) == materials.end() ) {
-						//New material/texture combo  - import and add to the list
-						matOb = ImportMaterial( niMatProp, niSpecProp );
-						materials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ] = matOb;
-					} else {
-						// Use the existing material
-						matOb = materials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ];
-					}
-
-					//--Create a Shading Group--//
-
-					//Make a selection list and add the mesh to it
-					MSelectionList sel_list;
-					sel_list.add( meshPath );
-
-					//Create the shading group from the list
-					MFnSet setFn;
-					setFn.create( sel_list, MFnSet::kRenderableOnly, false );
-					setFn.setName("shadingGroup");
-					
-					//--Connect the mesh to the shading group--//
-
-					//Set material to a phong function set
-					MFnPhongShader phongFn;
-					phongFn.setObject( matOb );
-					
-					//Break the default connection that is created
-					MPlugArray arr;
-					MPlug surfaceShader = setFn.findPlug("surfaceShader");
-					surfaceShader.connectedTo( arr, true, true );
-					MDGModifier dgModifier;
-					dgModifier.disconnect( arr[0], surfaceShader );
-					
-					//Connect outColor to surfaceShader
-					dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
-					
-					out << "Looking for textures..." << endl;
-					//--Look for textures--//
-					if ( niTexProp != NULL ) {
-						MFnDependencyNode nodeFn;
-						NiSourceTextureRef niSrcTex;
-						TexDesc tx;
-
-						//Get TexturingProperty Interface						
-						//Cycle through for each type of texture
-						int uv_set = 0;
-						for (int i = 0; i < 8; ++i) {
-							if ( niTexProp->HasTexture( i ) ) {
-								tx = niTexProp->GetTexture( i );
-								niSrcTex = tx.source;
-
-								switch(i) {
-									case DARK_MAP:
-										//Temporary until/if Dark Textures are supported
-										MGlobal::displayWarning( "Dark Textures are not yet supported." );
-										continue;
-									case DETAIL_MAP:
-										//Temporary until/if Detail Textures are supported
-										MGlobal::displayWarning( "Detail Textures are not yet supported." );
-										continue;
-									case GLOSS_MAP:
-										//Temporary until/if Detail Textures are supported
-										MGlobal::displayWarning( "Gloss Textures are not yet supported." );
-										continue;
-									case BUMP_MAP:
-										//Temporary until/if Bump Map Textures are supported
-										MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
-										continue;
-									case DECAL_0_MAP:
-									case DECAL_1_MAP:
-										//Temporary until/if Decal Textures are supported
-										MGlobal::displayWarning( "Decal Textures are not yet supported." );
-										continue;
-								};
-
-								if ( niSrcTex != NULL ) {
-									//Check if texture has already been used
-									if ( textures.find( niSrcTex ) == textures.end() ) {
-										//New texture - import it and add it to the list
-										txOb = ImportTexture( niSrcTex );
-										textures[niSrcTex] = txOb;
-									} else {
-										//Already found, use existing one
-										txOb = textures[niSrcTex];
-									}
-								
-									nodeFn.setObject(txOb);
-									MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
-									switch(i) {
-										case BASE_MAP:
-											//Base Texture
-											dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
-											//Check if Alpha needs to be used
-											{
-												NiAlphaPropertyRef niAlphaProp;
-												niProp = geom->GetPropertyByType(NiAlphaProperty::TypeConst() );
-												if ( niProp != NULL ) {
-													niAlphaProp = DynamicCast<NiAlphaProperty>(niProp);
-												}
-												if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
-													//Alpha is used, connect it
-													dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
-												}
-											}
-											break;
-										case GLOW_MAP:
-											//Glow Texture
-											dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
-											nodeFn.findPlug("alphaGain").setValue(0.25);
-											nodeFn.findPlug("defaultColorR").setValue( 0.0 );
-											nodeFn.findPlug("defaultColorG").setValue( 0.0 );
-											nodeFn.findPlug("defaultColorB").setValue( 0.0 );
-											dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
-											break;
-									}
-
-									//Check for clamp mode
-									bool wrap_u = true, wrap_v = true;
-									if ( tx.clampMode == CLAMP_S_CLAMP_T ) {
-										wrap_u = false;
-										wrap_v = false;
-									} else if ( tx.clampMode == CLAMP_S_WRAP_T ) {
-										wrap_u = false;
-									} else if ( tx.clampMode == WRAP_S_CLAMP_T ) {
-										wrap_v = false;
-									}
-
-									//Create 2D Texture Placement
-									MFnDependencyNode tp2dFn;
-									tp2dFn.create( "place2dTexture", "place2dTexture" );
-									tp2dFn.findPlug("wrapU").setValue(wrap_u);
-									tp2dFn.findPlug("wrapV").setValue(wrap_v);
-
-									//Connect all the 18 things
-									dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
-									dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
-									dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
-									dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
-									dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
-									dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
-									dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
-									dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
-									dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
-									dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
-									dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
-									dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
-									dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
-									dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
-									dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
-									dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
-									dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
-									dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
-									//(Whew!)
-
-									//Create uvChooser if necessary
-									if ( uv_set > 0 ) {
-										MFnDependencyNode chooserFn;
-										chooserFn.create( "uvChooser", "uvChooser" );
-
-										//Connection between the mesh and the uvChooser
-										MFnMesh meshFn;
-										meshFn.setObject(meshPath);
-										dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
-
-										//Connections between the uvChooser and the place2dTexture
-										dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
-										dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
-										dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
-										dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
-										dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
-									}
-								}
-								uv_set++;
-							}
-						}
-					}
-					
-					out << "Invoking dgModifier..." << endl;
-					dgModifier.doIt();
-
-					//--Bind Skin if any--//
-					NiSkinInstanceRef niSkinInst = geom->GetSkinInstance();
-					NiSkinDataRef niSkinData;
-					if ( niSkinInst != NULL ) {
-						//Get the NIF skin data interface
-						niSkinData = niSkinInst->GetSkinData();
-					}
-
-					if ( niSkinData != NULL ) {
-						//Build up the MEL command string
-						string cmd = "skinCluster -tsb ";
-						
-						//Add list of bones to the command
-						vector<NiNodeRef> bone_nodes = niSkinInst->GetBones();
-
-						for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
-							cmd.append( objs[ StaticCast<NiAVObject>(bone_nodes[i]) ].partialPathName().asChar() );
-							cmd.append( " " );
-						}
-
-						//Add mesh path to the command
-						cmd.append( meshPath.partialPathName().asChar() );
-
-						//Execute command to create skin cluster bound to specific bones
-						MStringArray result;
-						MGlobal::executeCommand( cmd.c_str(), result );
-						MFnSkinCluster clusterFn;
-
-						MSelectionList selList;
-						selList.add(result[0]);
-						MObject skinOb;
-						selList.getDependNode( 0, skinOb );
-						clusterFn.setObject(skinOb);
-
-						//Get a list of all verticies in this mesh
-						MFnSingleIndexedComponent compFn;
-						MObject vertices = compFn.create( MFn::kMeshVertComponent );
-						MItGeometry gIt(meshPath);
-						MIntArray vertex_indices( gIt.count() );
-						for ( int j = 0; j < gIt.count(); ++j ) {
-							vertex_indices[j] = j;
-						}
-						compFn.addElements(vertex_indices);
-
-						//Get weight data from NIF
-						vector< vector<float> > nif_weights( bone_nodes.size() );
-
-						//Set skin weights & bind pose for each bone
-						for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
-							nif_weights[i].resize( gIt.count() );
-							//Init all values to zero
-							for ( int j = 0; j < gIt.count(); ++j ) {
-								nif_weights[i][j] = 0.0f;
-							}
-
-							//Get weight data
-							vector<SkinWeight> weights = niSkinData->GetBoneWeights(i);
-							
-							//Put data in proper slots in the 2D array
-							for (unsigned int j = 0; j < weights.size(); ++j ) {
-								nif_weights[i][weights[j].index] = weights[j].weight;
-							}
-						}
-
-						//Build Maya influence list
-						MIntArray influence_list( bone_nodes.size() );
-						for ( unsigned int i = 0; i < bone_nodes.size(); ++i ) {
-							influence_list[i] = i;
-						}
-
-						//Build Maya weight list
-						MFloatArray weight_list(  gIt.count() * int(bone_nodes.size()) );
-						int k = 0;
-						for ( int i = 0; i < gIt.count(); ++i ) {
-							for ( int j = 0; j < int(bone_nodes.size()); ++j ) {
-								weight_list[k] = nif_weights[j][i];
-								++k;
-							}
-						}
-
-						//Send the weights to Maya
-						clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
-					}			
-				}
-			}
+		//Iterate through all meshes that were imported.
+		//This had to be deffered because all bones must exist
+		//when attaching skin
+		for ( unsigned i = 0; i < importedMeshes.size(); ++i ) {
+			out << "Importing mesh..." << endl;
+			//Import Mesh
+			MDagPath meshPath = ImportMesh( importedMeshes[i].first, importedMeshes[i].second);
 		}
-		out << "Done searching imported scene graph." << endl;
-
-
-
-		//TODO: Restore skinning support in Niflib.  This may not be necessary anyway.
-		//--Reposition Nodes--//
-		//for ( it = objs.begin(); it != objs.end(); ++it ) {
-		//	MFnTransform transFn( it->second );
-		//	Matrix44 transform;
-		//	INode * node = (INode*)it->first->QueryInterface(ID_NODE);
-		//	transform = node->GetLocalTransform();
-		//	float trans_arr[4][4];
-		//	transform.AsFloatArr( trans_arr );
-
-		//	transFn.set( MTransformationMatrix(MMatrix(trans_arr)) );
-		//}
-
+		out << "Done importing meshes." << endl;
 	}
 	catch( exception & e ) {
 		MGlobal::displayError( e.what() );
@@ -508,11 +188,16 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		MGlobal::displayError( "Error:  Unknown Exception." );
 		return MStatus::kFailure;
 	}
+
+	out << "Deselecting anything that was selected by MEL commands" << endl;
+	MGlobal::clearSelectionList();
 	
 	out << "Finished Read" << endl;
 
-	//Report total number of blocks in memory (hopfully zero)
-	out << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
+#ifndef DEBUG
+	//Clear the stringstream so it doesn't waste a bunch of RAM
+	out.clear();
+#endif
 
 	return MStatus::kSuccess;
 }
@@ -522,7 +207,6 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	MObject obj;
 
 	out << "Importing " << niAVObj << endl;
-	out << "Blocks in memory:  " << NiObject::NumObjectsInMemory() << endl;
 
 	////Stop at a non-node
 	//if ( node == NULL )
@@ -597,11 +281,26 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	transFn.getPath( path );
 	objs[niAVObj] = path;
 
-	//Call this function for any children
+	//Check to see if this is a mesh
+	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TypeConst() ) ) {
+		//This is a mesh, so add it to the mesh list
+		importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
+	}
+
 	if ( niNode != NULL ) {
-		vector<NiAVObjectRef> children = niNode->GetChildren();
-		for ( unsigned int i = 0; i < children.size(); ++i ) {
-			ImportNodes( children[i], objs, obj );
+
+		//Check to see fi this is a mesh proxy
+		if ( niNode->IsSplitMeshProxy() ) {
+			out << niNode << " is a split mesh proxy." << endl;
+			//Since this is a mesh proxy, treat it like a mesh and do not
+			//call this function on any children
+			importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
+		} else {
+			//Call this function for any children
+			vector<NiAVObjectRef> children = niNode->GetChildren();
+			for ( unsigned int i = 0; i < children.size(); ++i ) {
+				ImportNodes( children[i], objs, obj );
+			}
 		}
 	}
 }
@@ -706,39 +405,56 @@ MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecul
 	return obj;
 }
 
-MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
+MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	out << "ImportMesh() begin" << endl;
-	//Get NiTriBAsedGeomData
-	NiTriBasedGeomDataRef niGeomData = niGeom->GetData();
 
-	if ( niGeomData == NULL ) {
-		MGlobal::displayError( "This mesh has no polygon data." );
-		return MDagPath();
-	}
-
-	int NumVertices = niGeomData->GetVertexCount();
-
-	vector<Vector3> nif_verts;
-	
-	//If this is a skin influenced mesh, get vertices from niGeom
-	if ( niGeom->GetSkinInstance() != NULL ) {
-		nif_verts = niGeom->GetSkinInfluencedVertices();
+	//Make invisible if this or any children are invisible
+	bool visible = true;
+	if ( root->GetVisibility() == false ) {
+		visible = false;
 	} else {
-		nif_verts = niGeomData->GetVertices();
+		NiNodeRef rootNode = DynamicCast<NiNode>(root);
+		if ( rootNode != NULL ) {
+			vector<NiAVObjectRef> children = rootNode->GetChildren();
+			for ( unsigned i = 0; i < children.size(); ++i ) {
+				if ( children[i]->GetVisibility() == false ) {
+					visible = false;
+					break;
+				}
+			}
+		}
+		
 	}
+
+	if ( visible == false ) {
+		MFnDagNode parFn(parent);
+		MPlug vis = parFn.findPlug( MString("visibility") );
+		vis.setValue(false);
+	}
+
+	out << "Try out ComplexShape::Merge" << endl;
+	ComplexShape cs;
+
+	cs.Merge( root );
+
+	vector<ComplexShape::WeightedVertex> nif_verts = cs.GetVertices();
+	unsigned NumVertices = unsigned(nif_verts.size());
+	out << "Num Vertices:  " << NumVertices << endl;
+	
 	MPointArray maya_verts(NumVertices);
 
-	for (int i = 0; i < NumVertices; ++i) {
-		maya_verts[i] = MPoint(nif_verts[i].x, nif_verts[i].y, nif_verts[i].z, 0.0f);
+	for (unsigned i = 0; i < NumVertices; ++i) {
+		maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
 	}
 
 	out << "Getting polygons..." << endl;
 	//Get Polygons
 	int NumPolygons = 0;
-	vector<Triangle> triangles;
-	triangles = niGeomData->GetTriangles();
+	vector<ComplexShape::ComplexFace> niFaces = cs.GetFaces();
 
-	NumPolygons = triangles.size();
+	//NumPolygons = triangles.size();
+	NumPolygons = niFaces.size();
+	out << "Num Polygons:  " << NumPolygons << endl;
 
 	//Nifs only have triangles, so all polys have 3 verticies
 	//Create an array to tell Maya this
@@ -753,9 +469,10 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	MIntArray maya_connects;
 	for (int i = 0; i < NumPolygons; ++i) {
-		maya_connects.append(triangles[i].v1);
-		maya_connects.append(triangles[i].v2);
-		maya_connects.append(triangles[i].v3);
+		//out << "Polygon " << i << " has " << niFaces[i].points.size() << " points" << endl;
+		maya_connects.append( niFaces[i].points[0].vertexIndex );
+		maya_connects.append( niFaces[i].points[1].vertexIndex );
+		maya_connects.append( niFaces[i].points[2].vertexIndex );
 	}
 
 	//MIntArray maya_connects( connects, NumPolygons * 3 );
@@ -769,66 +486,79 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	out << "Importing vertex colors..." << endl;
 	//Import Vertex Colors
-	vector<Color4> nif_colors = niGeomData->GetColors();
+	vector<Color4> nif_colors = cs.GetColors();
 	if ( nif_colors.size() > 0 ) {
 		//Create vertex list
-		MIntArray vert_list(NumVertices);
-		MColorArray maya_colors((unsigned int)nif_colors.size(), MColor(0.5f, 0.5f, 0.5f, 1.0f) );
-		for (unsigned int i = 0; i < nif_colors.size(); ++i ) {
-			maya_colors[i] = MColor( nif_colors[i].r, nif_colors[i].g, nif_colors[i].b, nif_colors[i].a );
-			vert_list[i] = i;
+		MIntArray face_list;
+		MIntArray vert_list;
+		MColorArray maya_colors;
+		
+		for ( unsigned f = 0; f < niFaces.size(); ++f ) {
+			//Make sure all of the points in this face have color
+			if (
+				niFaces[f].points[0].colorIndex == CS_NO_INDEX ||
+				niFaces[f].points[1].colorIndex == CS_NO_INDEX ||
+				niFaces[f].points[2].colorIndex == CS_NO_INDEX
+			) { 
+				continue; 
+			}
+
+			face_list.append(f);
+			face_list.append(f);
+			face_list.append(f);
+
+			vert_list.append( niFaces[f].points[0].vertexIndex );
+			vert_list.append( niFaces[f].points[1].vertexIndex );
+			vert_list.append( niFaces[f].points[2].vertexIndex );
+
+			Color4 color1 = nif_colors[ niFaces[f].points[0].colorIndex ];
+			Color4 color2 = nif_colors[ niFaces[f].points[1].colorIndex ];
+			Color4 color3 = nif_colors[ niFaces[f].points[2].colorIndex ];
+
+			maya_colors.append( MColor( color1.r, color1.g, color1.b, color1.a ) );
+			maya_colors.append( MColor( color2.r, color2.g, color2.b, color2.a ) );
+			maya_colors.append( MColor( color3.r, color3.g, color3.b, color3.a ) );
 		}
-		meshFn.setVertexColors( maya_colors, vert_list );
-	}
 
-	out << "Examining properties..." << endl;
-	//--Examine properties--//
-	vector<MString> uv_set_list;
-
-	//Make invisible if bit flag 1 is set
-	if ( niGeom->GetVisibility() == false ) {
-		MPlug vis = meshFn.findPlug( MString("visibility") );
-		vis.setValue(false);
+		MStatus stat = meshFn.setFaceVertexColors( maya_colors, face_list, vert_list );
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("Failed to set UVs.");
+		}
 	}
 
 	out << "Creating a list of the UV sets..." << endl;
-	//Create a list of the UV sets used by the texturing property if there is one
-	NiPropertyRef niProp = niGeom->GetPropertyByType( NiTexturingProperty::TypeConst() );
-	NiTexturingPropertyRef niTexProp;
-	if ( niProp != NULL ) {
-		niTexProp = DynamicCast<NiTexturingProperty>(niProp);
-	}
-	if ( niTexProp != NULL ) {
+	//Create a list of the UV sets used by the complex shape if any
 
-		for ( int i = 0; i < 8; ++i ) {
-			if ( niTexProp->HasTexture(i) == true ) {
-				switch(i) {
-					case BASE_MAP:
-						uv_set_list.push_back( MString("map1") );
-						break;
-					case DARK_MAP:
-						uv_set_list.push_back( MString("dark") );
-						break;
-					case DETAIL_MAP:
-						uv_set_list.push_back( MString("detail") );
-						break;
-					case GLOSS_MAP:
-						uv_set_list.push_back( MString("gloss") );
-						break;
-					case GLOW_MAP:
-						uv_set_list.push_back( MString("glow") );
-						break;
-					case BUMP_MAP:
-						uv_set_list.push_back( MString("bump") );
-						break;
-					case DECAL_0_MAP:
-						uv_set_list.push_back( MString("decal0") );
-						break;
-					case DECAL_1_MAP:
-						uv_set_list.push_back( MString("decal1") );
-						break;
-				}
-			}
+	vector<ComplexShape::TexCoordSet> niUVSets = cs.GetTexCoordSets();
+	vector<MString> uv_set_list( niUVSets.size() );
+
+	for ( unsigned i = 0; i < niUVSets.size(); ++i ) {
+		switch( niUVSets[i].texType ) {
+			case BASE_MAP:
+				uv_set_list[i] = MString("map1");
+				break;
+			case DARK_MAP:
+				uv_set_list[i] = MString("dark");
+				break;
+			case DETAIL_MAP:
+				uv_set_list[i] = MString("detail");
+				break;
+			case GLOSS_MAP:
+				uv_set_list[i] = MString("gloss");
+				break;
+			case GLOW_MAP:
+				uv_set_list[i] = MString("glow");
+				break;
+			case BUMP_MAP:
+				uv_set_list[i] = MString("bump");
+				break;
+			case DECAL_0_MAP:
+				uv_set_list[i] = MString("decal0");
+				break;
+			case DECAL_1_MAP:
+				uv_set_list[i] = MString("decal1");
+				break;
 		}
 	}
 
@@ -839,38 +569,39 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 
 	out << "Getting default UV set..." << endl;
 	// Get default (first) UV Set if there is one		
-	if ( niGeomData->GetUVSetCount() > 0 ) {
+	if ( niUVSets.size() > 0 ) {
 		meshFn.clearUVs();
 		vector<TexCoord> uv_set;
-		//Arrays for maya
-		MFloatArray u_arr(NumVertices), v_arr(NumVertices);
 
-		out << "Loop through " << niGeomData->GetUVSetCount() << " UV sets..." << endl;
-		for (int i = 0; i < niGeomData->GetUVSetCount(); ++i) {
-			uv_set = niGeomData->GetUVSet(i);
+		out << "Loop through " << niUVSets.size() << " UV sets..." << endl;
+		for ( unsigned i = 0; i < niUVSets.size(); ++i ) {
+			uv_set = niUVSets[i].texCoords;
 
-			out << "uv_set_list.size():  " << uv_set_list.size() << endl;
-			out << "i:  " << i << endl;
+			//Arrays for maya
+			MFloatArray u_arr(uv_set.size()), v_arr(uv_set.size());
+
+			//out << "uv_set_list.size():  " << uv_set_list.size() << endl;
+			//out << "i:  " << i << endl;
 
 
-			for (int j = 0; j < NumVertices; ++j) {
+			for ( unsigned j = 0; j < uv_set.size(); ++j) {
 				u_arr[j] = uv_set[j].u;
 				v_arr[j] = 1.0f - uv_set[j].v;
 			}
 
 			//out << "Original UV Array:" << endl;
-			//for ( int j = 0; j < NumVertices; ++j ) {
+			//for ( unsigned j = 0; j < uv_set.size(); ++j ) {
 			//	out << "U:  " << uv_set[j].u << "  V:  " << uv_set[j].v << endl;
 			//}
 			//out << "Maya UV Array:" << endl;
-			//for ( int j = 0; j < NumVertices; ++j ) {
+			//for ( unsigned j = 0; j < uv_set.size(); ++j ) {
 			//	out << "U:  " << u_arr[j] << "  V:  " << v_arr[j]<< endl;
 			//}
 			
 			//Assign the UVs to the object
 			MString uv_set_name("map1");
 			if ( i < int(uv_set_list.size()) ) {
-				out << "Entered if statement." << endl;
+				//out << "Entered if statement." << endl;
 				uv_set_name = uv_set_list[i];
 			}
 
@@ -880,11 +611,58 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 				out << "Creating UV Set:  " << uv_set_name.asChar() << endl;
 			}
 	
-			out << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << endl;
+			out << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << " uv_set_name " << uv_set_name.asChar() << endl;
 			MStatus stat = meshFn.setUVs( u_arr, v_arr, &uv_set_name );
 			if ( stat != MS::kSuccess ) {
 				out << stat.errorString().asChar() << endl;
 				throw runtime_error("Failed to set UVs.");
+			}
+
+			out << "Create list of which UV to assign to each polygon vertex";
+			maya_poly_counts.clear();
+			maya_connects.clear();
+			//Create list of which UV to assign to each polygon vertex
+			for ( unsigned f = 0; f < niFaces.size(); ++f ) {
+				//Make sure all of the points in this face have color
+				unsigned match[3];
+				int matches_found = 0;
+				for ( unsigned p = 0; p < 3; ++p ) {
+					//Figure out which index we're using, if any
+					for ( unsigned t = 0; t < niFaces[f].points[p].texCoordIndices.size(); ++t ) {
+						//out << "niFaces[" << f << "].points[" << p << "].texCoordIndices[" << t << "].texCoordSetIndex:  " << niFaces[f].points[p].texCoordIndices[t].texCoordSetIndex << endl;
+						if ( niFaces[f].points[p].texCoordIndices[t].texCoordSetIndex == i ) {
+							//out << "Match found at " << t << endl;
+							++matches_found;
+							match[p] = t;
+							break;
+						}
+					}
+				}
+
+				//out << " Matches found:  " << matches_found << endl;
+				if ( matches_found != 3 ) {
+					continue;
+				}
+
+				unsigned tcIndices[3] = {
+					niFaces[f].points[0].texCoordIndices[ match[0] ].texCoordIndex,
+					niFaces[f].points[1].texCoordIndices[ match[1] ].texCoordIndex,
+					niFaces[f].points[2].texCoordIndices[ match[2] ].texCoordIndex
+				};
+
+
+				if ( tcIndices[0] == CS_NO_INDEX || tcIndices[0] == CS_NO_INDEX || tcIndices[0] == CS_NO_INDEX ) { 
+					continue; 
+				}
+
+				maya_poly_counts.append(3); //3 points in this face
+
+				//out << "Texture Coord indices for set " << i << " face " << f << endl;
+
+				maya_connects.append(tcIndices[0]);
+				maya_connects.append(tcIndices[1]);
+				maya_connects.append(tcIndices[2]);
+				
 			}
 
 			out << "Assign UVs..." << endl;
@@ -893,8 +671,6 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 				out << stat.errorString().asChar() << endl;
 				throw runtime_error("Failed to assign UVs.");
 			}
-			////Delete default "map1" UV set
-			//meshFn.deleteUVSet( MString("map1") );
 		}
 	}
 
@@ -902,30 +678,169 @@ MDagPath NifTranslator::ImportMesh( NiTriBasedGeomRef niGeom, MObject parent ) {
 	if ( import_normals ) {
 		out << "Getting Normals..." << endl;
 		// Load Normals
-		vector<Vector3> nif_normals = niGeomData->GetNormals();
+		vector<Vector3> nif_normals = cs.GetNormals();
+		//Create vertex list
+		MIntArray face_list;
+		MIntArray vert_list;
+		MVectorArray maya_normals;
 		if ( nif_normals.size() != 0 ) {
-			if ( nif_normals.size() != NumVertices ) {
-				throw runtime_error ("Normal size does not equal Num Vertices");
+			for ( unsigned f = 0; f < niFaces.size(); ++f ) {
+				//Make sure all of the points in this face have a normal
+				if (
+					niFaces[f].points[0].normalIndex == CS_NO_INDEX ||
+					niFaces[f].points[1].normalIndex == CS_NO_INDEX ||
+					niFaces[f].points[2].normalIndex == CS_NO_INDEX
+				) { 
+					continue; 
+				}
+
+				face_list.append(f);
+				face_list.append(f);
+				face_list.append(f);
+
+				vert_list.append( niFaces[f].points[0].vertexIndex );
+				vert_list.append( niFaces[f].points[1].vertexIndex );
+				vert_list.append( niFaces[f].points[2].vertexIndex );
+
+				Vector3 norm1 = nif_normals[ niFaces[f].points[0].normalIndex ];
+				Vector3 norm2 = nif_normals[ niFaces[f].points[1].normalIndex ];
+				Vector3 norm3 = nif_normals[ niFaces[f].points[2].normalIndex ];
+
+				maya_normals.append( MVector( norm1.x, norm1.y, norm1.z ) );
+				maya_normals.append( MVector( norm2.x, norm2.y, norm2.z ) );
+				maya_normals.append( MVector( norm3.x, norm3.y, norm3.z ) );
 			}
 
-			MVectorArray maya_normals(NumVertices);
-			MIntArray vert_list(NumVertices);
-			for (int norm = 0; norm < NumVertices; ++norm) {
-				maya_normals[norm] = MVector(nif_normals[norm].x, nif_normals[norm].y, nif_normals[norm].z );
-				vert_list[norm] = norm;
-			}
+			MStatus stat = meshFn.setFaceVertexNormals( maya_normals, face_list, vert_list );
 
-			MStatus stat = meshFn.setVertexNormals( maya_normals, vert_list );
+			//MStatus stat = meshFn.setVertexNormals( maya_normals, vert_list );
 			if ( stat != MS::kSuccess ) {
 				out << stat.errorString().asChar() << endl;
-				throw runtime_error("Failed to assign UVs.");
+				throw runtime_error("Failed to set Normals.");
 			}
 		}
 	}
 
+	out << "Importing Materials and textures" << endl;
+	vector< vector<NiPropertyRef> > propGroups = cs.GetPropGroups();
 
+	//Create a selection list for each prop group
+	vector<MSelectionList> sel_lists(propGroups.size());
+	//sel_list.add( meshPath );
 
-	out << "Deleting poly_counts..." << endl;
+	//If there is only one property group, use it on the whole mesh
+	if ( propGroups.size() == 1 ) {
+		sel_lists[0].add( meshPath );
+	} else {
+		//Add the faces affected by each property group to the corresponding
+		//selection list
+		MItMeshPolygon gIt(meshPath);
+		for ( ; !gIt.isDone(); gIt.next() ) {
+			//out << "gIt.index():  " << gIt.index() << endl;
+			unsigned prop_index = niFaces[ gIt.index() ].propGroupIndex;
+			if ( prop_index != CS_NO_INDEX ) {
+				//out << "Appending face " << gIt.index() << " to selection list " << prop_index << endl;
+				sel_lists[prop_index].add( meshPath, gIt.polygon() );
+			}
+		}
+	}
+
+	for ( unsigned i = 0; i < propGroups.size(); ++i ) {
+		ImportMaterialAndTexture( propGroups[i], meshPath, sel_lists[i] );
+	}
+
+	out << "Bind skin if any" << endl;
+	//--Bind Skin if any--//
+
+	vector<NiNodeRef> bone_nodes = cs.GetSkinInfluences();
+	if ( bone_nodes.size() != 0 ) {
+		//Build up the MEL command string
+		string cmd = "skinCluster -tsb ";
+		
+		//out << "Add list of bones to the command" << endl;
+		//Add list of bones to the command
+		for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
+			cmd.append( importedNodes[ StaticCast<NiAVObject>(bone_nodes[i]) ].partialPathName().asChar() );
+			cmd.append( " " );
+		}
+
+		//out << "Add mesh path to the command" << endl;
+		//Add mesh path to the command
+		cmd.append( meshPath.partialPathName().asChar() );
+
+		//out << "Execute command" << endl;
+		//Execute command to create skin cluster bound to specific bones
+		MStringArray result;
+		MGlobal::executeCommand( cmd.c_str(), result );
+		MFnSkinCluster clusterFn;
+
+		MSelectionList selList;
+		selList.add(result[0]);
+		MObject skinOb;
+		selList.getDependNode( 0, skinOb );
+		clusterFn.setObject(skinOb);
+
+		//out << "Get a list of all vertices in this mesh" << endl;
+		//Get a list of all verticies in this mesh
+		MFnSingleIndexedComponent compFn;
+		MObject vertices = compFn.create( MFn::kMeshVertComponent );
+		MItGeometry gIt(meshPath);
+		MIntArray vertex_indices( gIt.count() );
+		for ( int j = 0; j < gIt.count(); ++j ) {
+			vertex_indices[j] = j;
+		}
+		compFn.addElements(vertex_indices);
+
+		//out << "Get weight data from NIF" << endl;
+		//Get weight data from NIF
+		vector< vector<float> > nif_weights( bone_nodes.size() );
+
+		//out << "Set skin weights & bind pose for each bone" << endl;
+		//Set skin weights & bind pose for each bone
+		for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
+			nif_weights[i].resize( gIt.count() );
+			
+			//out << "Put data in proper slots int he 2D array" << endl;
+			//Put data in proper slots in the 2D array
+			for (unsigned int j = 0; j < nif_verts.size(); ++j ) {
+				//out << "Find a match for this skin influence" << endl;
+				//Find a match for this skin influence
+				float wght = 0.0f;
+				for ( unsigned k = 0; k < nif_verts[j].weights.size(); ++k ) {
+					if ( nif_verts[j].weights[k].influenceIndex == i ) {
+						wght = nif_verts[j].weights[k].weight;
+						break;
+					}
+				}
+				nif_weights[i][j] = wght;
+			}
+		}
+
+		//out << "Build Maya influence list" << endl;
+		//Build Maya influence list
+		MIntArray influence_list( bone_nodes.size() );
+		for ( unsigned int i = 0; i < bone_nodes.size(); ++i ) {
+			influence_list[i] = i;
+		}
+
+		//out << "Build Maya weight list" << endl;
+		//Build Maya weight list
+		MFloatArray weight_list(  gIt.count() * int(bone_nodes.size()) );
+		int k = 0;
+		for ( int i = 0; i < gIt.count(); ++i ) {
+			for ( int j = 0; j < int(bone_nodes.size()); ++j ) {
+				//out << "Bone:  " << bone_nodes[j] << "\tWeight:  " << nif_weights[j][i] << endl;
+				weight_list[k] = nif_weights[j][i];
+				++k;
+			}
+		}
+
+		//out << "Send the weights to Maya" << endl;
+		//Send the weights to Maya
+		clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
+	}			
+	
+	//out << "Deleting poly_counts..." << endl;
 	//Delete everything that was used to load verticies
 	delete [] poly_counts;
 
@@ -994,6 +909,11 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		MGlobal::displayError( "Error:  Unknown Exception." );
 		return MStatus::kFailure;
 	}
+
+#ifndef DEBUG
+	//Clear the stringstream so it doesn't waste a bunch of RAM
+	out.clear();
+#endif
 	
 	return MS::kSuccess;
 }
@@ -2032,13 +1952,14 @@ void NifTranslator::ExportFileTextures() {
 void NifTranslator::ParseOptionString( const MString & optionsString ) {
 	//Parse Options String
 	MStringArray options;
-	out << "optionsString:  " << optionsString.asChar() << endl;
+	//out << "optionsString:" << endl;
+	//out << optionsString.asChar() << endl;
 	optionsString.split( ';', options );
 	for (unsigned int i = 0; i < options.length(); ++i) {
 		MStringArray tokens;
 		options[i].split( '=', tokens );
-		out << "tokens[0]:  " << tokens[0].asChar() << endl;
-		out << "tokens[1]:  " << tokens[1].asChar() << endl;
+		//out << "tokens[0]:  " << tokens[0].asChar() << endl;
+		//out << "tokens[1]:  " << tokens[1].asChar() << endl;
 		if ( tokens[0] == "texturePath" ) {
 			texture_path = tokens[1].asChar();
 			if ( texture_path[ texture_path.size() - 1 ] != '/' ) {
@@ -2149,7 +2070,7 @@ MObject NifTranslator::GetExistingJoint( const string & name ) {
 	//If it's not in the list, return a null object
 	map<string,MObject>::iterator it = existingNodes.find( name );
 	if ( it == existingNodes.end() ) {
-		out << "A joint named " << name << " did not exist in list." << endl;
+		//out << "A joint named " << name << " did not exist in list." << endl;
 		return MObject::kNullObj;
 	}
 
@@ -2158,7 +2079,7 @@ MObject NifTranslator::GetExistingJoint( const string & name ) {
 
 	//Check if it is an Ik joint
 	if ( jointObj.hasFn( MFn::kJoint ) ) {
-		out << "Matching joint is already an IK joint." << endl;
+		//out << "Matching joint is already an IK joint." << endl;
 		//It's a joint already, return it
 		return jointObj;
 	} else {
@@ -2290,7 +2211,7 @@ MString NifTranslator::MakeMayaName( const string & nifName ) {
 			}
 		}
 	}
-	out << "New Maya name:  " << newName.str() << endl;
+	//out << "New Maya name:  " << newName.str() << endl;
 	return MString( newName.str().c_str() );
 }
 
@@ -2305,15 +2226,15 @@ string NifTranslator::MakeNifName( const MString & mayaName ) {
 		for ( unsigned int i = 0; i < str.size(); ++i ) {
 			if ( i + 5 < str.size() ) {
 				string sub = str.substr( i, 3);
-				out << "Sub string:  " << sub << endl;
+				//out << "Sub string:  " << sub << endl;
 				if ( sub == "_0x" ) {
 					sub = str.substr( i+3, 2);
-					out << "Sub sub string:  " << sub << endl;
+					//out << "Sub sub string:  " << sub << endl;
 					temp.clear();
 					temp << sub; // should be the char number
 					int ch_num;
 					temp >> ch_num;
-					out << "The int returned from the string stream extraction is:  " << ch_num << endl;
+					//out << "The int returned from the string stream extraction is:  " << ch_num << endl;
 					if ( temp.fail() == false ) {
 						newName << char(ch_num);
 						i += 4;
@@ -2332,5 +2253,206 @@ string NifTranslator::MakeNifName( const MString & mayaName ) {
 		return newName.str();
 	} else {
 		return str;
+	}
+}
+
+void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list ) {
+	//--Look for Materials--//
+	MObject grpOb;
+	MObject matOb;
+	MObject txOb;
+
+
+	out << "Looking for material and texturing properties" << endl;
+	//Get Material and Texturing properties, if any
+	NiMaterialPropertyRef niMatProp = NULL;
+	NiTexturingPropertyRef niTexProp = NULL;
+	NiSpecularPropertyRef niSpecProp = NULL;
+	NiAlphaPropertyRef niAlphaProp = NULL;
+
+	for ( unsigned i = 0; i < properties.size(); ++i ) {
+		if ( properties[i]->IsDerivedType( NiMaterialProperty::TypeConst() ) ) {
+			niMatProp = DynamicCast<NiMaterialProperty>( properties[i] );
+		} else if ( properties[i]->IsDerivedType( NiTexturingProperty::TypeConst() ) ) {
+			niTexProp = DynamicCast<NiTexturingProperty>( properties[i] );
+		} else if ( properties[i]->IsDerivedType( NiSpecularProperty::TypeConst() ) ) {
+			niSpecProp = DynamicCast<NiSpecularProperty>( properties[i] );
+		} else if ( properties[i]->IsDerivedType( NiAlphaProperty::TypeConst() ) ) {
+			niAlphaProp = DynamicCast<NiAlphaProperty>( properties[i] );
+		}
+	}
+				
+	out << "Processing material property..." << endl;
+	//Process Material Property
+	if ( niMatProp != NULL ) {
+		//Check to see if material has already been found
+		if ( importedMaterials.find( pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp) ) == importedMaterials.end() ) {
+			//New material/texture combo  - import and add to the list
+			matOb = ImportMaterial( niMatProp, niSpecProp );
+			importedMaterials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ] = matOb;
+		} else {
+			// Use the existing material
+			matOb = importedMaterials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ];
+		}
+
+		//--Create a Shading Group--//
+
+		//Create the shading group from the list
+		MFnSet setFn;
+		setFn.create( sel_list, MFnSet::kRenderableOnly, false );
+		setFn.setName("shadingGroup");
+		
+		//--Connect the mesh to the shading group--//
+
+		//Set material to a phong function set
+		MFnPhongShader phongFn;
+		phongFn.setObject( matOb );
+		
+		//Break the default connection that is created
+		MPlugArray arr;
+		MPlug surfaceShader = setFn.findPlug("surfaceShader");
+		surfaceShader.connectedTo( arr, true, true );
+		MDGModifier dgModifier;
+		dgModifier.disconnect( arr[0], surfaceShader );
+		
+		//Connect outColor to surfaceShader
+		dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
+		
+		out << "Looking for textures..." << endl;
+		//--Look for textures--//
+		if ( niTexProp != NULL ) {
+			MFnDependencyNode nodeFn;
+			NiSourceTextureRef niSrcTex;
+			TexDesc tx;
+
+			//Get TexturingProperty Interface						
+			//Cycle through for each type of texture
+			int uv_set = 0;
+			for (int i = 0; i < 8; ++i) {
+				if ( niTexProp->HasTexture( i ) ) {
+					tx = niTexProp->GetTexture( i );
+					niSrcTex = tx.source;
+
+					switch(i) {
+						case DARK_MAP:
+							//Temporary until/if Dark Textures are supported
+							MGlobal::displayWarning( "Dark Textures are not yet supported." );
+							continue;
+						case DETAIL_MAP:
+							//Temporary until/if Detail Textures are supported
+							MGlobal::displayWarning( "Detail Textures are not yet supported." );
+							continue;
+						case GLOSS_MAP:
+							//Temporary until/if Detail Textures are supported
+							MGlobal::displayWarning( "Gloss Textures are not yet supported." );
+							continue;
+						case BUMP_MAP:
+							//Temporary until/if Bump Map Textures are supported
+							MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
+							continue;
+						case DECAL_0_MAP:
+						case DECAL_1_MAP:
+							//Temporary until/if Decal Textures are supported
+							MGlobal::displayWarning( "Decal Textures are not yet supported." );
+							continue;
+					};
+
+					if ( niSrcTex != NULL ) {
+						//Check if texture has already been used
+						if ( importedTextures.find( niSrcTex ) == importedTextures.end() ) {
+							//New texture - import it and add it to the list
+							txOb = ImportTexture( niSrcTex );
+							importedTextures[niSrcTex] = txOb;
+						} else {
+							//Already found, use existing one
+							txOb = importedTextures[niSrcTex];
+						}
+					
+						nodeFn.setObject(txOb);
+						MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
+						switch(i) {
+							case BASE_MAP:
+								//Base Texture
+								dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
+								//Check if Alpha needs to be used
+								if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
+									//Alpha is used, connect it
+									dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
+								}
+								break;
+							case GLOW_MAP:
+								//Glow Texture
+								dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
+								nodeFn.findPlug("alphaGain").setValue(0.25);
+								nodeFn.findPlug("defaultColorR").setValue( 0.0 );
+								nodeFn.findPlug("defaultColorG").setValue( 0.0 );
+								nodeFn.findPlug("defaultColorB").setValue( 0.0 );
+								dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
+								break;
+						}
+
+						//Check for clamp mode
+						bool wrap_u = true, wrap_v = true;
+						if ( tx.clampMode == CLAMP_S_CLAMP_T ) {
+							wrap_u = false;
+							wrap_v = false;
+						} else if ( tx.clampMode == CLAMP_S_WRAP_T ) {
+							wrap_u = false;
+						} else if ( tx.clampMode == WRAP_S_CLAMP_T ) {
+							wrap_v = false;
+						}
+
+						//Create 2D Texture Placement
+						MFnDependencyNode tp2dFn;
+						tp2dFn.create( "place2dTexture", "place2dTexture" );
+						tp2dFn.findPlug("wrapU").setValue(wrap_u);
+						tp2dFn.findPlug("wrapV").setValue(wrap_v);
+
+						//Connect all the 18 things
+						dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
+						dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
+						dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
+						dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
+						dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
+						dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
+						dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
+						dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
+						dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
+						dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
+						dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
+						dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
+						dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
+						dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
+						dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
+						dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
+						dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
+						dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
+						//(Whew!)
+
+						//Create uvChooser if necessary
+						if ( uv_set > 0 ) {
+							MFnDependencyNode chooserFn;
+							chooserFn.create( "uvChooser", "uvChooser" );
+
+							//Connection between the mesh and the uvChooser
+							MFnMesh meshFn;
+							meshFn.setObject(meshPath);
+							dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
+
+							//Connections between the uvChooser and the place2dTexture
+							dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
+							dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
+							dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
+							dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
+							dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
+						}
+					}
+					uv_set++;
+				}
+			}
+		}
+		
+		out << "Invoking dgModifier..." << endl;
+		dgModifier.doIt();
 	}
 }
