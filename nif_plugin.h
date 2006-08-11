@@ -199,4 +199,7 @@ private:
 	void ParseOptionString( const MString & optionString );
 };
 
+MMatrix MatrixN2M( const Matrix44 & n );
+Matrix44 MatrixM2N( const MMatrix & n );
+
 #endif

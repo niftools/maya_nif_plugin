@@ -281,6 +281,39 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	transFn.getPath( path );
 	objs[niAVObj] = path;
 
+	//Check if this object has a bounding box
+	if ( niAVObj->HasBoundingBox() ) {
+		//Get bounding box info
+		BoundingBox bb = niAVObj->GetBoundingBox();		
+		
+		//Create a transform node to move the bounding box around
+		MFnTransform tranFn;
+		tranFn.create( obj );
+		tranFn.setName("BoundingBox");
+		Matrix44 bbTrans( bb.translation, bb.rotation, 1.0f);
+		out << "bbTrans:" << endl << bbTrans << endl;
+		out << "Translation:  " << bb.translation << endl;
+		out << "Rotation:  " << bb.rotation << endl;
+
+		//put matrix into a float array
+		float bb_arr[4][4];
+		bbTrans.AsFloatArr( bb_arr );
+		MStatus stat = tranFn.set( MTransformationMatrix(MMatrix(bb_arr)) );
+		if ( stat != MS::kSuccess ) {
+			out << stat.errorString().asChar() << endl;
+			throw runtime_error("Failed to set bounding box transforms.");
+		}
+		tranFn.setRotationOrder( MTransformationMatrix::kXYZ, false );
+
+		//Create an implicit box parented to the node we just created
+		MFnDagNode dagFn;
+		dagFn.create( "implicitBox", tranFn.object() );
+		dagFn.findPlug("sizeX").setValue( bb.radius.x );
+		dagFn.findPlug("sizeY").setValue( bb.radius.y );
+		dagFn.findPlug("sizeZ").setValue( bb.radius.z );
+		
+	}
+
 	//Check to see if this is a mesh
 	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TypeConst() ) ) {
 		//This is a mesh, so add it to the mesh list
@@ -1258,7 +1291,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	cs.SetFaces( nif_faces );
 
-	out << "===Exported Face Data===" << endl;
+	//out << "===Exported Face Data===" << endl;
 	//for ( unsigned int i = 0; i < nif_faces.size(); ++i ) {
 	//	out << "Face " << i << endl
 	//		<< "   propGroupIndex:  " << nif_faces[i].propGroupIndex << endl
@@ -1338,17 +1371,17 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 				cs.SetSkinInfluences( niBones );
 				
 				out << "Adding weights to ComplexShape vertices" << endl;
-				out << "Number of weights:  " << myWeights.length() << endl;
-				out << "Number of bones:  " << myBones.length() << endl;
-				out << "Number of Maya vertices:  " << gIt.count() << endl;
-				out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
+				//out << "Number of weights:  " << myWeights.length() << endl;
+				//out << "Number of bones:  " << myBones.length() << endl;
+				//out << "Number of Maya vertices:  " << gIt.count() << endl;
+				//out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
 				unsigned int weight_index = 0;
 				ComplexShape::SkinInfluence sk;
 				for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
 					for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
-						out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
+						//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
 						// Only bother with weights that are significant
-						if ( myWeights[weight_index] > 0.0 ) {
+						if ( myWeights[weight_index] > 0.0f ) {
 							sk.influenceIndex = bone_index;
 							sk.weight = float(myWeights[weight_index]);
 							
@@ -1379,12 +1412,30 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	//If polygon mesh is hidden, hide tri_shape
 	MPlug vis = visibleMeshFn.findPlug( MString("visibility") );
-	bool value;
-	vis.getValue(value);
-	if ( value == false ) {
-		out << "Visibility of " << visibleMeshFn.name().asChar() << " is " << value << endl;
-		avObj->SetVisibility(false);
+	bool visibility;
+	vis.getValue(visibility);
+
+
+	NiNodeRef splitRoot = DynamicCast<NiNode>(avObj);
+	if ( splitRoot != NULL ) {
+		//Root is a NiNode with NiTriBasedGeom children.
+		vector<NiAVObjectRef> children = splitRoot->GetChildren();
+		for ( unsigned c = 0; c < children.size(); ++c ) {
+			//Set the default collision propogation flag to "use triangles"
+			children[c]->SetFlags(2);
+			// Make the mesh invisible if necessary
+			if ( visibility == false ) {
+				children[c]->SetVisibility(false);
+			}
+		}
+
+	} else {
+		//Root must be a NiTriBasedGeom.  Make it invisible if necessary
+		if ( visibility == false ) {
+			avObj->SetVisibility(false);
+		}
 	}
+
 
 	out << "}" << endl;
 }
@@ -1433,11 +1484,14 @@ void NifTranslator::ExportDAGNodes() {
 				NiAVObjectRef avObj;
 
 				bool tri_shape = false;
+				bool bounding_box = false;
 				bool intermediate = false;
 				MObject matching_child;
 
 				//Check to see what kind of node we should create
 				for( int i = 0; i != nodeFn.childCount(); ++i ) {
+
+					//out << "API Type:  " << nodeFn.child(i).apiTypeStr() << endl;
 					// get a handle to the child
 					if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
 						MFnMesh meshFn( nodeFn.child(i) );
@@ -1453,6 +1507,34 @@ void NifTranslator::ExportDAGNodes() {
 							break;
 						}
 
+					} else if ( nodeFn.child(i).hasFn( MFn::kBox ) ) {
+						out << "Found Bounding Box" << endl;
+
+						//Set bounding box info
+						BoundingBox bb;
+
+						Matrix44 niMat= MatrixM2N( nodeFn.transformationMatrix() );
+		
+						bb.translation = niMat.GetTranslation();
+						bb.rotation = niMat.GetRotation();
+						bb.unknownInt = 1;
+						
+						//Get size of box
+						MFnDagNode dagFn( nodeFn.child(i) );
+						dagFn.findPlug("sizeX").getValue( bb.radius.x );
+						dagFn.findPlug("sizeY").getValue( bb.radius.y );
+						dagFn.findPlug("sizeZ").getValue( bb.radius.z );
+
+						//Find the parent NiNode, if any
+						if ( nodeFn.parentCount() > 0 ) {
+							MFnDagNode parFn( nodeFn.parent(0) );
+							if ( nodes.find( parFn.fullPathName().asChar() ) != nodes.end() ) {
+								NiNodeRef parNode = nodes[parFn.fullPathName().asChar()];
+								parNode->SetBoundingBox(bb);
+							}
+						}
+
+						bounding_box = true;
 					}
 				}
 
@@ -1462,6 +1544,8 @@ void NifTranslator::ExportDAGNodes() {
 						out << "Adding Mesh to list to be exported later..." << endl;
 						meshes.push_back( it.item() );
 						//NiTriShape
+					} else if ( bounding_box == true ) {
+						//Do nothing
 					} else {
 						out << "Creating a NiNode..." << endl;
 						//NiNode
@@ -1538,6 +1622,9 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 	if ( abs(myScale[0] - myScale[1]) > 0.0001 || abs(myScale[0] - myScale[2]) > 0.001 || abs(myScale[1] - myScale[2]) > 0.001 ) {
 		MGlobal::displayWarning("The NIF format does not support separate scales for X, Y, and Z.  An average will be used.  Consider freezing scale transforms on all nodes before export.");
 	}
+
+	//Set default collision propogation type of "Use triangles"
+	avObj->SetFlags(2);
 
 	//Set visibility
 	MPlug vis = nodeFn.findPlug( MString("visibility") );
@@ -2455,4 +2542,27 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 		out << "Invoking dgModifier..." << endl;
 		dgModifier.doIt();
 	}
+}
+
+MMatrix MatrixN2M( const Matrix44 & n ) {
+	//Copy Niflib matrix to Maya matrix
+
+	float myMat[4][4] = { 
+		n[0][0], n[0][1], n[0][2], n[0][3],
+		n[1][0], n[1][1], n[1][2], n[1][3],
+		n[2][0], n[2][1], n[2][2], n[2][3],
+		n[3][0], n[3][1], n[3][2], n[3][3]
+	};
+
+	return MMatrix(myMat);
+}
+
+Matrix44 MatrixM2N( const MMatrix & n ) {
+	//Copy Maya matrix to Niflib matrix
+	return Matrix44( 
+		(float)n[0][0], (float)n[0][1], (float)n[0][2], (float)n[0][3],
+		(float)n[1][0], (float)n[1][1], (float)n[1][2], (float)n[1][3],
+		(float)n[2][0], (float)n[2][1], (float)n[2][2], (float)n[2][3],
+		(float)n[3][0], (float)n[3][1], (float)n[3][2], (float)n[3][3]
+	);
 }
