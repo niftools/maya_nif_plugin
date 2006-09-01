@@ -1404,7 +1404,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	NiNodeRef parNode = GetDAGParent( dagNode );
 
 	out << "Split ComplexShape" <<endl;
-	NiAVObjectRef avObj = cs.Split( parNode );
+	NiAVObjectRef avObj = cs.Split( parNode, true, true );
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
