@@ -38,6 +38,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	
 	string $defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
 	string $defaultVersion = "4.0.0.2";
+	string $defaultBonesPerPart = "4";
 	string $defaultJointMatch = "Bip";
 	
 	if ($action == "post") {
@@ -92,6 +93,13 @@ global proc int nifTranslatorOpts ( string $parent,
 			checkBox -label "Export White Ambient if Texture is Present" 
 					      -value 1
 						  expWhiteAmbientCk;
+			checkBox -label "Arrange Triangles in Strips" 
+					      -value 1
+						  expTriStripsCk;
+			text -label "Maximum Number of Bones per Skin Partition:";
+				textField -editable true
+						  -text $defaultBonesPerPart
+						  expPartBonesTx;
 		setParent $parent;
 							
 		// Now set to current settings.
@@ -134,12 +142,22 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false expWhiteAmbientCk;
 					}
 				}
+				if ($optionBreakDown[0] == "exportTriStrips") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true expTriStripsCk;
+					} else {
+						checkBox -edit -value false expTriStripsCk;
+					}
+				}
 				if ($optionBreakDown[0] == "importSkelComb") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true impSkelCombCk;
 					} else {
 						checkBox -edit -value false impSkelCombCk;
 					}
+				}
+				if ($optionBreakDown[0] == "exportPartBones") {
+					textField -edit -text $optionBreakDown[1] expPartBonesTx;
 				}
 				if ($optionBreakDown[0] == "importJointMatch") {
 					textField -edit -text $optionBreakDown[1] impJointMatchTx;
@@ -186,8 +204,14 @@ global proc int nifTranslatorOpts ( string $parent,
 		$ckVal = `checkBox -query -value expWhiteAmbientCk`;
 		$currentOptions = $currentOptions + "exportWhiteAmbient=" + $ckVal + ";";
 		
+		$ckVal = `checkBox -query -value expTriStripsCk`;
+		$currentOptions = $currentOptions + "exportTriStrips=" + $ckVal + ";";
+		
 		$ckVal = `checkBox -query -value impSkelCombCk`;
 		$currentOptions = $currentOptions + "importSkelComb=" + $ckVal + ";";
+		
+		string $partBones = `textField -query -text expPartBonesTx`;
+		$currentOptions = $currentOptions + "exportPartBones=" + $partBones + ";";
 		
 		string $jointMatch = `textField -query -text impJointMatchTx`;
 		$currentOptions = $currentOptions + "importJointMatch=" + $jointMatch + ";";

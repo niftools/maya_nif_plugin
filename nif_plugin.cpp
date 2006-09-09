@@ -21,6 +21,8 @@ bool export_white_ambient = false; //Determines whether ambient color is automat
 bool import_comb_skel = false; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
 string joint_match = ""; //String to match in the name of nodes as another way to cause themm to import as IK joints
 bool use_name_mangling = false;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
+bool export_tri_strips = false;  //Determiens whether to export NiTriShape objects or NiTriStrip objects
+int export_part_bones = 0; //Determines the maximum number of bones per skin partition.
 
 //--Function Definitions--//
 
@@ -1404,7 +1406,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	NiNodeRef parNode = GetDAGParent( dagNode );
 
 	out << "Split ComplexShape" <<endl;
-	NiAVObjectRef avObj = cs.Split( parNode, true, true );
+	NiAVObjectRef avObj = cs.Split( parNode, export_part_bones, export_tri_strips );
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
@@ -2103,6 +2105,14 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			}
 			out << "Export White Ambient:  " << export_white_ambient << endl;
 		}
+		if ( tokens[0] == "exportTriStrips" ) {
+			if ( tokens[1] == "1" ) {
+				export_tri_strips = true;
+			} else {
+				export_tri_strips = false;
+			}
+			out << "Export Triangle Strips:  " << export_tri_strips << endl;
+		}
 		if ( tokens[0] == "importSkelComb" ) {
 			if ( tokens[1] == "1" ) {
 				import_comb_skel = true;
@@ -2110,6 +2120,10 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 				import_comb_skel = false;
 			}
 			out << "Combine with Existing Skeleton:  " << import_comb_skel << endl;
+		}
+		if ( tokens[0] == "exportPartBones" ) {
+			export_part_bones = atoi( tokens[1].asChar() );
+			out << "Max Bones per Skin Partition:  " << export_part_bones << endl;
 		}
 		if ( tokens[0] == "importJointMatch" ) {
 			joint_match = tokens[1].asChar();
