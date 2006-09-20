@@ -931,7 +931,9 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		//--Write finished NIF file--//
 
 		out << "Writing Finished NIF file..." << endl;
-		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), export_version, export_user_version );
+		NifInfo nif_info(export_version, export_user_version);
+		nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
+		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
 
 		out << "Export Complete." << endl;
 	}
