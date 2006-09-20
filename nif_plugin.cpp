@@ -23,7 +23,7 @@ string joint_match = ""; //String to match in the name of nodes as another way t
 bool use_name_mangling = false;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
 bool export_tri_strips = false;  //Determiens whether to export NiTriShape objects or NiTriStrip objects
 int export_part_bones = 0; //Determines the maximum number of bones per skin partition.
-
+bool export_tan_space = false; //Determines whether Oblivion tangent space data is generated for meshes on export
 //--Function Definitions--//
 
 //--NifTranslator::identifyFile--//
@@ -1410,7 +1410,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	ExportAV(tempAV, dagNode );
 
 	out << "Split ComplexShape" <<endl;
-	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform(), export_part_bones, export_tri_strips );
+	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform(), export_part_bones, export_tri_strips, export_tan_space );
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
@@ -2116,6 +2116,14 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 				export_tri_strips = false;
 			}
 			out << "Export Triangle Strips:  " << export_tri_strips << endl;
+		}
+		if ( tokens[0] == "exportTanSpace" ) {
+			if ( tokens[1] == "1" ) {
+				export_tan_space = true;
+			} else {
+				export_tan_space = false;
+			}
+			out << "Export Tangent Space:  " << export_tan_space << endl;
 		}
 		if ( tokens[0] == "importSkelComb" ) {
 			if ( tokens[1] == "1" ) {

@@ -96,6 +96,9 @@ global proc int nifTranslatorOpts ( string $parent,
 			checkBox -label "Arrange Triangles in Strips" 
 					      -value 1
 						  expTriStripsCk;
+			checkBox -label "Generate Oblivion Tangent Space Data" 
+					      -value 0
+						  expTanSpaceCk;
 			text -label "Maximum Number of Bones per Skin Partition:";
 				textField -editable true
 						  -text $defaultBonesPerPart
@@ -147,6 +150,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value true expTriStripsCk;
 					} else {
 						checkBox -edit -value false expTriStripsCk;
+					}
+				}
+				if ($optionBreakDown[0] == "exportTanSpace") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true expTanSpaceCk;
+					} else {
+						checkBox -edit -value false expTanSpaceCk;
 					}
 				}
 				if ($optionBreakDown[0] == "importSkelComb") {
@@ -206,6 +216,9 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value expTriStripsCk`;
 		$currentOptions = $currentOptions + "exportTriStrips=" + $ckVal + ";";
+		
+		$ckVal = `checkBox -query -value expTanSpaceCk`;
+		$currentOptions = $currentOptions + "exportTanSpace=" + $ckVal + ";";
 		
 		$ckVal = `checkBox -query -value impSkelCombCk`;
 		$currentOptions = $currentOptions + "importSkelComb=" + $ckVal + ";";
