@@ -38,6 +38,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	
 	string $defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
 	string $defaultVersion = "4.0.0.2";
+	string $defaultUserVersion = "0";
 	string $defaultBonesPerPart = "4";
 	string $defaultJointMatch = "Bip";
 	
@@ -53,56 +54,90 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -columnAttach2 "both" "left";
 					  textField -editable true 
 								-text $defaultPath
+								-annotation "This is the directory that the plug-in will look for textures in."
 								nifTxPath;
 					button -label "Browse"
 						   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
 				setParent commonColumnLayout;
 					checkBox -label "Use Name Mangling to Preserve Original Names" 
 							  -value 1
+							  -annotation "Preserves names which are invalid in Maya names using character code numbers for re-export."
 							  useNameManglingCk;
 				setParent $parent;
 		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout importColumnLayout;
 				checkBox -label "Attempt to Find Original Bind Pose" 
 					      -value 1
+						  -annotation "Attempts to extract the original position the NIF file was bound in rather than its current position."
 						  impBindPoseCk;
 				checkBox -label "Try to Use Original Normals" 
 					      -value 0
+						  -annotation "Attepts to import the normals from the NIF file as user normals."
 						  impNormalsCk;
 				checkBox -label "Ignore Ambient Color" 
 					      -value 0
+						  -annotation "Uses the default ambient color instead of what is in the NIF file; usually white."
 						  impNoAmbientCk;
 				checkBox -label "Combine New Skins with Existing Skeleton" 
 					      -value 1
+						  -annotation "Tries to bind newly imported skin files to an already imported skeleton.  Only works for identical skeletons."
 						  impSkelCombCk;
-				text -label "Import nodes with the following in their name as joints:";
-				textField -editable true
-						  -text $defaultJointMatch
-						  impJointMatchTx;
+				rowLayout -numberOfColumns 3
+					  -columnWidth3 90 50 120
+					  -columnAttach3 "both" "both" "both";
+					  text -label "Import nodes with";
+					  textField -editable true
+					  			-text $defaultJointMatch
+								-annotation "NIF files do not mark their joints, so this provides a method to force known bones to import."
+								impJointMatchTx;
+					  text -label "  in their name as joints.";
+				setParent importColumnLayout;
+				
 		setParent $parent;
 		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout exportColumnLayout;
 			rowLayout -numberOfColumns 2
-					  -columnWidth2 100 70
+					  -columnWidth2 120 70
 					  -columnAttach2 "both" "both";
 					  text -label "NIF Version:";
 					  textField -editable true
 								-text $defaultVersion
+								-annotation "The NIF file version to export.  Examples - Morrowind: 4.0.0.2  CivIV: 20.0.0.4  Oblivion: 20.0.0.5"
 								nifVersion;
 			setParent exportColumnLayout;
+			rowLayout -numberOfColumns 2
+					  -columnWidth2 120 70
+					  -columnAttach2 "both" "both";
+					  text -label "Game Specific Version:";
+					  textField -editable true
+								-text $defaultUserVersion
+								-annotation "Optional game-specific version number extention.  Oblivion: 11 or 12  All Others: 0"
+								expUserVersionTx;
+			setParent exportColumnLayout;
+			
 			checkBox -label "Export White Ambient if Texture is Present" 
 					      -value 1
+						  -annotation "Allows you to keep your ambient colors looking nice in Maya and convert them to white on export."
 						  expWhiteAmbientCk;
 			checkBox -label "Arrange Triangles in Strips" 
 					      -value 1
+						  -annotation "Exports NiTriStrips instead of NiTriShapes.  May cause problems in Morrowind CS."
 						  expTriStripsCk;
 			checkBox -label "Generate Oblivion Tangent Space Data" 
 					      -value 0
+						  -annotation "Check this option if you are exporting for Oblivion.  Otherwise it will just inflate your NIF file."
 						  expTanSpaceCk;
-			text -label "Maximum Number of Bones per Skin Partition:";
-				textField -editable true
+			setParent exportColumnLayout;
+			rowLayout -numberOfColumns 2
+					  -columnWidth2 220 50
+					  -columnAttach2 "both" "both";
+					  text -label "Maximum Number of Bones per Skin Partition:";
+					  textField -editable true
 						  -text $defaultBonesPerPart
+						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Others:  4 is safe.  0 to disable."
 						  expPartBonesTx;
+			setParent exportColumnLayout;
+			
 		setParent $parent;
 							
 		// Now set to current settings.
@@ -116,6 +151,9 @@ global proc int nifTranslatorOpts ( string $parent,
 				}
 				if ($optionBreakDown[0] == "exportVersion") {
 					textField -edit -text $optionBreakDown[1] nifVersion;
+				}
+				if ($optionBreakDown[0] == "exportUserVersion") {
+					textField -edit -text $optionBreakDown[1] expUserVersionTx;
 				}
 				if ($optionBreakDown[0] == "importBindPose") {
 					if ($optionBreakDown[1] == "1" ) {
@@ -200,6 +238,15 @@ global proc int nifTranslatorOpts ( string $parent,
 			//Use Default version
 			$currentOptions = $currentOptions + "exportVersion=" + $defaultVersion + ";";
 		}
+		
+		string $userVersion = `textField -query -text expUserVersionTx`;
+		if ($version != "") {
+			$currentOptions = $currentOptions + "exportUserVersion=" + $userVersion + ";";
+		} else {
+			//Use Default user version
+			$currentOptions = $currentOptions + "exportUserVersion=" + $defaultUserVersion + ";";
+		}
+		
 		int $ckVal;
 		
 		$ckVal = `checkBox -query -value impBindPoseCk`;

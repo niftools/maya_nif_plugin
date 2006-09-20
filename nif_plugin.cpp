@@ -13,6 +13,7 @@ const char TRANSLATOR_NAME [] = "NetImmerse Format";
 //--Globals--//
 string texture_path; // Path to textures gotten from option string
 unsigned int export_version = VER_4_0_0_2; //Version of NIF file to export
+unsigned int export_user_version = 0; //Game-specific user version of NIF file to export
 bool import_bind_pose = false; //Determines whether or not the bind pose should be searched for
 
 bool import_normals= false; //Determines whether normals are imported
@@ -930,7 +931,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		//--Write finished NIF file--//
 
 		out << "Writing Finished NIF file..." << endl;
-		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), export_version );
+		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), export_version, export_user_version );
 
 		out << "Export Complete." << endl;
 	}
@@ -2136,6 +2137,10 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 		if ( tokens[0] == "exportPartBones" ) {
 			export_part_bones = atoi( tokens[1].asChar() );
 			out << "Max Bones per Skin Partition:  " << export_part_bones << endl;
+		}
+		if ( tokens[0] == "exportUserVersion" ) {
+			export_user_version = atoi( tokens[1].asChar() );
+			out << "User Version:  " << export_user_version << endl;
 		}
 		if ( tokens[0] == "importJointMatch" ) {
 			joint_match = tokens[1].asChar();

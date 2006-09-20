@@ -52,10 +52,10 @@ You can access the options by choosing the option box (square) next to either
 appear.
 
 =Texture Source Directory=
-This is the directory that the plug-in will look for textures in.  It will
-prepend this to any texture path read from the NIF file when creating the
-FileTexture node.  This also has the effect of stripping this added information
-back out of the NIF file if the beginning of the path matches the text entered
+This is the directory that the plug-in will look for textures in.  It will\n
+prepend this to any texture path read from the NIF file when creating the\n
+FileTexture node.  This also has the effect of stripping this added information\n
+back out of the NIF file if the beginning of the path matches the text entered\n
 here.
 
 =Use Name Mangling to Preserve Original Names=
@@ -99,6 +99,10 @@ be imported as IK joints as well.
 This determines what version of NIF files is created by the export process.
 If an invalid version string is specified, the default of 4.0.0.2 is used; the
 lowest NIF version that Niflib supports.
+
+=Game Specific Version=
+This is used only in Oblivion so far.  Set to 11 or 12 for this game.  For all
+other games set to zero.  May be useful in the future for other games.
 
 =Export White Ambient if Texture is Present=
 Every NIF file from a game I've seen has a white ambient component if there is
