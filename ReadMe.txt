@@ -101,7 +101,7 @@ If an invalid version string is specified, the default of 4.0.0.2 is used; the
 lowest NIF version that Niflib supports.
 
 =Game Specific Version=
-This is used only in Oblivion so far.  Set to 11 or 12 for this game.  For all
+This is used only in Oblivion so far.  Set to 10 or 11 for this game.  For all
 other games set to zero.  May be useful in the future for other games.
 
 =Export White Ambient if Texture is Present=

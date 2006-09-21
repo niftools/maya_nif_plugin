@@ -90,3 +90,21 @@
   with separate values for scale x, y, and z.
 * Now import root nodes with non-identity transforms instead of treating them
   as the scene root and ignoring them.  Fixes some Morrowind skins.
+  
+  =Version 0.5.5=
+* Added Config options to:
+  - Generate Oblivion tangent space.
+  - Export triangles in strips
+  - Set User Version
+  - Generate skin partitions of specified size
+* Config UI controls now have tool-tips.
+* Fixed bug in skinning where shapes were bound as if the they had identity
+  transforms, even if they didn't.
+* Added bounding box import/export support.  This is non-Oblivion Collision.
+* Changed default flags that are exported to be more standard.
+* Invisibility is now correctly marked on imported transform node instead of the
+  geometry node.
+* Niflib improvements
+  - Additional skinning bug fix - The better bodies meshes can now be imported and
+    re-exported without problems.
+  - Support for most files from the Freedom Force games

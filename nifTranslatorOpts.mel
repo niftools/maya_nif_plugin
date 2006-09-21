@@ -111,7 +111,7 @@ global proc int nifTranslatorOpts ( string $parent,
 					  text -label "Game Specific Version:";
 					  textField -editable true
 								-text $defaultUserVersion
-								-annotation "Optional game-specific version number extention.  Oblivion: 11 or 12  All Others: 0"
+								-annotation "Optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
 								expUserVersionTx;
 			setParent exportColumnLayout;
 			
