@@ -2065,18 +2065,11 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			
 		}
 		if ( tokens[0] == "exportVersion" ) {
-			MStringArray versionParts;
-			tokens[1].split( '.', versionParts );
+			export_version = ParseVersionString( tokens[1].asChar() );
 
-			if ( versionParts.length() != 4 ) {
+			if ( export_version == VER_INVALID ) {
 				MGlobal::displayWarning( "Invalid export version specified.  Using default of 4.0.0.2." );
 				export_version = VER_4_0_0_2;
-			} else {
-				unsigned char verBits[4];
-				for ( int i = 0; i < 4; ++i ) {
-					verBits[3-i] = unsigned char( atoi( versionParts[i].asChar() ) );
-				}
-				export_version = *((unsigned int *)verBits);
 			}
 			out << "Export Version:  0x" << hex << export_version << dec << endl;
 		}

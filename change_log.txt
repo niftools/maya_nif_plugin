@@ -104,6 +104,8 @@
 * Changed default flags that are exported to be more standard.
 * Invisibility is now correctly marked on imported transform node instead of the
   geometry node.
+* You can now leave parts of the version number at the end.  So 4 is equivalent to
+  4.0.0.0 and 10.2 is equivalent to 10.2.0.0, etc.
 * Niflib improvements
   - Additional skinning bug fix - The better bodies meshes can now be imported and
     re-exported without problems.
