@@ -38,7 +38,7 @@ You should now be able to open and import NIF files like any other scene file th
 
 COMPILING FROM SOURCE:
 
-This release uses Niflib 0.5.6, available separately.  You can compile both Niflib and the Maya plug-in together or separately by first compiling Niflib in static library form and then linking it with the Maya plug-in.
+This release uses Niflib 0.5.8, available separately.  You can compile both Niflib and the Maya plug-in together or separately by first compiling Niflib in static library form and then linking it with the Maya plug-in.
 
 This code SHOULD be compatible with multiple versions of Maya.  If you successfully compile this code for a version of Maya other than 6.5 or 7.0, please send it to me so others can use it! =)
 
