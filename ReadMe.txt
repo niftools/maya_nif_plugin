@@ -1,16 +1,26 @@
 Maya 6.5 NIF File Translator
 
-Currently supports importing static (non-animated) NIF files.  Export is *not* supported.  Pre-compiled versions are available for Maya 6.5 and 7.0 for Windows.  To use on other versions of Maya or other operating systems, you will need to compile from source.
+Currently supports importing and exporting static (non-animated) NIF files.
+Pre-compiled versions are available for Maya 6.5 and 7.0 for Windows.  To use on
+other versions of Maya or other operating systems, you will need to compile from
+source.
 
 WARNING:  
 
-This importer is very incomplete, and will not import all data in the NIF file.  This includes animation, sound data, normals, particle systems, collision information, bounding boxes, and more!  It should be seen only as a fun thing to mess around with for now.  I can't promise that files you import today and save as mb files will be able to be re-exported flawlessly when I write the export functionality later.
+This importer is very incomplete, and will not import all data in the NIF file.
+This includes animation, sound data, normals, particle systems, collision
+information, bounding boxes, and more!  It should be seen only as a fun thing to
+mess around with for now.  I can't promise that files you import today and save as
+mb files will be able to be re-exported flawlessly when I write the export
+functionality later.
 
 KNOWN ISSUES:
 
-* Niflib has endian issues that are not taken care of, so a PowerPC compile will be impossible.
+* Niflib has endian issues that are not taken care of, so a PowerPC compile will
+  be impossible.
 * Importing Normals does not work on skinned meshes
-* Meshes affected by multiple skin clusters cannot be exported yet.  Suggest deleting history and re-binding to the skeleton.
+* Meshes affected by multiple skin clusters cannot be exported yet.  Suggest
+  deleting history and re-binding to the skeleton.
 
 INSTALLATION:
 
@@ -18,7 +28,8 @@ place nifTranslator.mll in your plug-in folder.  Probably something like:
 
 C:\Program Files\Alias\Maya6.5\bin\plug-ins
 
-Place the nifTranslatorOpts.mel file in your scripts folder. Probably something like:
+Place the nifTranslatorOpts.mel file in your scripts folder. Probably something
+like:
 
 C:\Documents and Settings\*YourUserName*\My Documents\Maya\scripts
 
@@ -26,29 +37,37 @@ From within Maya:
 
 From the menu, choose:  Window -> Settings/Preferences -> Plug-in Manager...
 
-Look for nifTranslator.mll in the list of available plug-ins and check the two boxes next to it "load" and "auto load"
+Look for nifTranslator.mll in the list of available plug-ins and check the two boxes
+next to it "load" and "auto load"
 
 Now choose File->Open Scene, and click the Options... button.
 
 In the File Type drop down box, select "NetImmerse Format"
 
-Now you should see Texture Source Directory under File Type Specific Options.  Press the button to browse for the location of your textures.
+Now you should see Texture Source Directory under File Type Specific Options.  Press
+the button to browse for the location of your textures.
 
-You should now be able to open and import NIF files like any other scene file that Maya understands.
+You should now be able to open and import NIF files like any other scene file that
+Maya understands.
 
 COMPILING FROM SOURCE:
 
-This release uses Niflib 0.5.8, available separately.  You can compile both Niflib and the Maya plug-in together or separately by first compiling Niflib in static library form and then linking it with the Maya plug-in.
+This release uses Niflib 0.6.0, available separately.  You can compile both Niflib
+and the Maya plug-in together or separately by first compiling Niflib in static
+library form and then linking it with the Maya plug-in.
 
-This code SHOULD be compatible with multiple versions of Maya.  If you successfully compile this code for a version of Maya other than 6.5 or 7.0, please send it to me so others can use it! =)
+This code SHOULD be compatible with multiple versions of Maya.  If you successfully
+compile this code for a version of Maya other than 6.5 or 7.0, please send it to me
+so others can use it! =)
 
-If you can program in C++, have Maya, and want to help make this plug-in better, come join our project at http://niftools.sourceforge.net!
+If you can program in C++, have Maya, and want to help make this plug-in better,
+come join our project at http://niftools.sourceforge.net!
 
 OPTIONS:
 
 You can access the options by choosing the option box (square) next to either
-"File->Open Scene" or "File->Export All" rather than clicking the words.  Then choose
-"NetImmerse Format" from the File Type drop down box.  The options should
+"File->Open Scene" or "File->Export All" rather than clicking the words.  Then
+choose "NetImmerse Format" from the File Type drop down box.  The options should
 appear.
 
 =Texture Source Directory=
