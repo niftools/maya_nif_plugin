@@ -293,7 +293,10 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "texturePath=";
 		}
 		for( $i = 0; $i < size($paths); $i++ ) {
-			$currentOptions = $currentOptions + $paths[$i] + "|";
+			$currentOptions = $currentOptions + $paths[$i];
+			if ( $i != size($paths) - 1 ) {
+				$currentOptions = $currentOptions + "|";
+			}
 		}
 		$curentOptions = $currentOptions + ";";
 		string $texturePath = `textField -query -text nifTxPath`;
