@@ -41,6 +41,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultUserVersion = "0";
 	string $defaultBonesPerPart = "0";
 	string $defaultJointMatch = "Bip";
+	string $defaultPathPrefix = "textures/";
 	string $defaultPaths[] = { 
 		"C:/Program Files/Bethesda Softworks/Morrowind/Data Files",
 		"C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures",
@@ -64,8 +65,10 @@ global proc int nifTranslatorOpts ( string $parent,
 								nifTxPath;
 					button -label "Browse"
 					       -annotation "Press this button to choose a folder from your drive, then make any edits in the text box to the left and press 'Add.'"
+						   -width 50
 						   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
 					button -label "Add"
+					       -width 50
 					       -command "AddPath()";
 				setParent commonColumnLayout;
 				textScrollList -width 400 
@@ -75,7 +78,7 @@ global proc int nifTranslatorOpts ( string $parent,
 							   -deleteKeyCommand "DeletePath()"
 							   nifPathList;
 				for ( $i = 0; $i < size($defaultPaths); $i++ ) {
-					textScrollList -edit -append $defaultPaths[$i] nifPathList;
+					textScrollList -edit -append $defaultPaths[$i] -width 400 nifPathList;
 				}
 				checkBox -label "Use Name Mangling to Preserve Original Names" 
 						  -value 1
@@ -110,7 +113,6 @@ global proc int nifTranslatorOpts ( string $parent,
 								impJointMatchTx;
 					  text -label "  in their name as joints.";
 				setParent importColumnLayout;
-				
 		setParent $parent;
 		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout exportColumnLayout;
@@ -138,7 +140,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -annotation "Allows you to keep your ambient colors looking nice in Maya and convert them to white on export."
 						  expWhiteAmbientCk;
 			checkBox -label "Arrange Triangles in Strips" 
-					      -value 1
+					      -value 0
 						  -annotation "Exports NiTriStrips instead of NiTriShapes.  May cause problems in Morrowind CS."
 						  expTriStripsCk;
 			checkBox -label "Generate Oblivion Tangent Space Data" 
@@ -155,7 +157,32 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Morrowind: 0"
 						  expPartBonesTx;
 			setParent exportColumnLayout;
-			
+			text -label "Texture Path Adjustment:"
+			     -width 200
+				 -annotation "Determines the way the texture file paths will be saved in the NIF file."
+				 -font boldLabelFont;
+			columnLayout pathLayout;
+				radioCollection;
+					radioButton -label "Automatic based on texture search path selections."
+								-annotation "If part of the path matches one of the texture search paths, a partial path will be exported.  Otherwise only the name will be exported."
+								-select
+								expPathAutoRd;
+					radioButton -label "Export file name only."
+								-annotation "Only the file name, no folders, will be exported."
+								expPathNameRd;
+					radioButton -label "Export full path."
+								-annotation "The full path, including the drive letter and all folders, will be exported."
+								expPathFullRd;
+					radioButton -label "Prefix file name with the following:"
+								-annotation "The following text will be added to the begining of all texture paths in the exported NIF file"
+								expPathPrefixRd;
+				setParent pathLayout;
+				textField -editable true
+					      -text $defaultPathPrefix
+						  -width 200
+						  -annotation "Text optionally added to the begining of all texture paths in the exported NIF file"
+				          expPathPrefixTx;
+			setParent exportColumnLayout;
 		setParent $parent;
 							
 		// Now set to current settings.
@@ -169,7 +196,7 @@ global proc int nifTranslatorOpts ( string $parent,
 					string $paths[];
 					tokenize($optionBreakDown[1], "|", $paths);
 					for ( $i = 0; $i < size($paths); $i++ ) {
-						textScrollList -edit -append $paths[$i] nifPathList;
+						textScrollList -edit -append $paths[$i] -width 400 nifPathList;
 					}
 				}
 				if ($optionBreakDown[0] == "exportVersion") {
@@ -226,6 +253,21 @@ global proc int nifTranslatorOpts ( string $parent,
 					} else {
 						checkBox -edit -value false impSkelCombCk;
 					}
+				}
+				if ($optionBreakDown[0] == "exportPathMode") {
+					if ( $optionBreakDown[1] == "Name" ) {
+						radioButton -edit -select expPathNameRd;
+					} else if ( $optionBreakDown[1] == "Full" ) {
+						radioButton -edit -select expPathFullRd;
+					} else if ( $optionBreakDown[1] == "Prefix" ) {
+						radioButton -edit -select expPathPrefixRd;
+					} else {
+						//Auto is default
+						radioButton -edit -select expPathAutoRd;
+					}
+				}				
+				if ($optionBreakDown[0] == "exportPathPrefix") {
+					textField -edit -text $optionBreakDown[1] expPathPrefixTx;
 				}
 				if ($optionBreakDown[0] == "exportPartBones") {
 					textField -edit -text $optionBreakDown[1] expPartBonesTx;
@@ -309,6 +351,21 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value useNameManglingCk`;
 		$currentOptions = $currentOptions + "useNameMangling=" + $ckVal + ";";
+
+		$currentOptions = $currentOptions + "exportPathMode=";
+		
+		if ( `radioButton -query -select expPathNameRd` == true ) {
+			$currentOptions = $currentOptions + "Name;";
+		} else if ( `radioButton -query -select expPathFullRd` == true ) {
+			$currentOptions = $currentOptions + "Full;";
+		} else if ( `radioButton -query -select expPathPrefixRd` == true ) {
+			$currentOptions = $currentOptions + "Prefix;";
+		} else {
+			$currentOptions = $currentOptions + "Auto;";
+		}
+		
+		string $prefix = `textField -query -text expPathPrefixTx`;
+		$currentOptions = $currentOptions + "exportPathPrefix=" + $prefix + ";";
 		
 		eval($resultCallback+" \""+$currentOptions+"\"");
 		$bResult = 1;
@@ -328,7 +385,7 @@ global proc AddPath() {
 				textScrollList -edit -removeItem  $texturePath nifPathList;
 			}
 		}
-		textScrollList -edit -appendPosition 1 $texturePath nifPathList;
+		textScrollList -edit -appendPosition 1 $texturePath -width 400 nifPathList;
 		textField -edit -text "" nifTxPath;
 	}
 }

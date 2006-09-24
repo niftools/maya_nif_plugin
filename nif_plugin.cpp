@@ -1,11 +1,7 @@
 #include "nif_plugin.h"
 
 //#define DEBUG
-#ifdef DEBUG
-ofstream out( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary );
-#else
-stringstream out;
-#endif
+ofstream out;
 
 const char PLUGIN_VERSION [] = "0.5.5";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
@@ -25,6 +21,14 @@ bool use_name_mangling = false;  //Determines whether to replace characters that
 bool export_tri_strips = false;  //Determiens whether to export NiTriShape objects or NiTriStrip objects
 int export_part_bones = 0; //Determines the maximum number of bones per skin partition.
 bool export_tan_space = false; //Determines whether Oblivion tangent space data is generated for meshes on export
+enum TexPathMode {
+	PATH_MODE_AUTO, //Uses search paths to strip intelligently
+	PATH_MODE_FULL, //Uses full path
+	PATH_MODE_NAME, //Uses only file name
+	PATH_MODE_PREFIX //Uses user-defined prefix
+};
+TexPathMode tex_path_mode = PATH_MODE_AUTO;  //Determines the way textures paths are exported
+string tex_path_prefix; //Optional prefix to add to texture paths.
 //--Function Definitions--//
 
 //--NifTranslator::identifyFile--//
@@ -60,6 +64,10 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 
 // Code adapted from lepTranslator example that comes with Maya 6.5
 MStatus initializePlugin( MObject obj ) {
+	#ifdef DEBUG
+	out.open( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary );
+	#endif
+
 	//out << "Initializing Plugin..." << endl;
 	MStatus   status;
 	MFnPlugin plugin( obj, "NifTools", PLUGIN_VERSION );
@@ -426,7 +434,7 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 
 		//--Search for the texture file--//
 		
-		//Replace \ with /
+		//Replace back slash with forward slash
 		unsigned last_slash = 0;
 		for ( unsigned i = 0; i < file_name.size(); ++i ) {
 			if ( file_name[i] == '\\' ) {
@@ -443,11 +451,11 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 
 		//Check if the file exists in the current working directory
 		mFile.setRawPath( importFile.rawPath() );
-		cout << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+		out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
 		if ( mFile.exists() ) {
 			found_file =  mFile.fullName();
 		} else {
-			cout << "File Not Found." << endl;
+			out << "File Not Found." << endl;
 		}
 
 		if ( found_file == "" ) {
@@ -465,24 +473,24 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 
 				}
 				
-				cout << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
 				if ( mFile.exists() ) {
 					//File exists at path entry i
 					found_file = mFile.fullName();
 					break;
 				} else {
-					cout << "File Not Found." << endl;
+					out << "File Not Found." << endl;
 				}
 
 				////Maybe it's a relative path
 				//mFile.setRawPath( importFile.rawPath() + paths[i] );
-				//				cout << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+				//				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
 				//if ( mFile.exists() ) {
 				//	//File exists at path entry i
 				//	found_file = mFile.fullName();
 				//	break;
 				//} else {
-				//	cout << "File Not Found." << endl;
+				//	out << "File Not Found." << endl;
 				//}
 			}
 		}
@@ -627,7 +635,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 	//NumPolygons = triangles.size();
 	NumPolygons = niFaces.size();
-	cout << "Num Polygons:  " << NumPolygons << endl;
+	out << "Num Polygons:  " << NumPolygons << endl;
 
 	MIntArray maya_poly_counts;
 	MIntArray maya_connects;
@@ -860,15 +868,14 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				
 			}
 
-			unsigned sum = 0;
-			for ( unsigned i = 0; i < maya_poly_counts.length(); ++i ) {
-				sum += maya_poly_counts[i];
-			}
+			//unsigned sum = 0;
+			//for ( unsigned i = 0; i < maya_poly_counts.length(); ++i ) {
+			//	sum += maya_poly_counts[i];
+			//}
 
-
-			cout << "Poly Count Length:  " << maya_poly_counts.length() << endl;
-			cout << "Poly Count Sum:  " << sum << endl;
-			cout << "Connects Length:  " << maya_connects.length() << endl;
+			//out << "Poly Count Length:  " << maya_poly_counts.length() << endl;
+			//out << "Poly Count Sum:  " << sum << endl;
+			//out << "Connects Length:  " << maya_connects.length() << endl;
 
 			stat = meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_name );
 			if ( stat != MS::kSuccess ) {
@@ -1096,6 +1103,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 
 		out << "Writing Finished NIF file..." << endl;
 		NifInfo nif_info(export_version, export_user_version);
+		nif_info.endian = NifInfo::INFO_LITTLE_ENDIAN; //Intel endian format
 		nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
 
@@ -2186,14 +2194,62 @@ void NifTranslator::ExportFileTextures() {
 		ftn.getValue(fname);
 		string fileName = fname.asChar();
 
-		//Figure fixed file name
-		unsigned int len = unsigned int( texture_path.size() );
+		//Replace back slash with forward slash to match with paths
+		for ( unsigned i = 0; i < fileName.size(); ++i ) {
+			if ( fileName[i] == '\\' ) {
+				fileName[i] = '/';
+			}
+		}
 
 		out << "Full Texture Path:  " << fname.asChar() << endl;
-		if ( fname.length() > len && fname.substring( 0, len - 1 ) == texture_path.c_str() ) {
-			fileName = fname.substring( len, fname.length() - 1 ).asChar();
-			out << "File Name:  " << fileName << endl;
+
+		//Figure fixed file name
+		string::size_type index;
+		MStringArray paths;
+		MString(texture_path.c_str()).split( '|', paths );
+		switch( tex_path_mode ) {
+			case PATH_MODE_AUTO:
+				for ( unsigned p = 0; p < paths.length(); ++p ) {
+					unsigned len = paths[p].length();
+					if ( len >= fileName.size() ) {
+						continue;
+					}
+					if ( fileName.substr( 0, len ) == paths[p].asChar() ) {
+						//Found a matching path, cut matching part out
+						fileName = fileName.substr( len + 1 );
+						break;
+					}
+				}
+				break;
+			case PATH_MODE_PREFIX:
+			case PATH_MODE_NAME:
+				index = fileName.rfind( "/" );
+				if ( index != string::npos ) { 
+					//We don't want the slash itself
+					if ( index + 1 < fileName.size() ) {
+						fileName = fileName.substr( index + 1 );
+					}
+				}
+				if ( tex_path_mode == PATH_MODE_NAME ) {
+					break;
+				}
+				//Now we're doing the prefix case
+				fileName = tex_path_prefix + fileName;
+				break;
+				
+			//Do nothing for full path since the full path is already
+			//set in file name
+			case PATH_MODE_FULL: break;
 		}
+
+		//Now make all slashes back slashes since some games require this
+		for ( unsigned i = 0; i < fileName.size(); ++i ) {
+			if ( fileName[i] == '/' ) {
+				fileName[i] = '\\';
+			}
+		}
+
+		out << "File Name:  " << fileName << endl;
 
 		ni_tex->SetExternalTexture( fileName, NULL );
 
@@ -2222,10 +2278,15 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 		//out << "tokens[1]:  " << tokens[1].asChar() << endl;
 		if ( tokens[0] == "texturePath" ) {
 			texture_path = tokens[1].asChar();
-			if ( texture_path[ texture_path.size() - 1 ] != '/' ) {
-				texture_path.append("/");
+
+			//Replace back slash with forward slash
+			for ( unsigned i = 0; i < texture_path.size(); ++i ) {
+				if ( texture_path[i] == '\\' ) {
+					texture_path[i] = '/';
+				}
 			}
-			cout << "Texture Path:  " << texture_path << endl;
+
+			out << "Texture Path:  " << texture_path << endl;
 			
 		}
 		if ( tokens[0] == "exportVersion" ) {
@@ -2312,6 +2373,28 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 				use_name_mangling = false;
 			}
 			out << "Use Name Mangling:  " << use_name_mangling << endl;
+		}
+		if ( tokens[0] == "exportPathMode" ) {
+			out << " Export Texture Path Mode:  ";
+			if ( tokens[1] == "Name" ) {
+				tex_path_mode = PATH_MODE_NAME;
+				out << "Name" << endl;
+			} else if ( tokens[1] == "Full" ) {
+				tex_path_mode = PATH_MODE_FULL;
+				out << "Full" << endl;
+			} else if ( tokens[1] == "Prefix" ) {
+				tex_path_mode = PATH_MODE_PREFIX;
+				out << "Prefix" << endl;
+			} else {
+				//Auto is default
+				tex_path_mode = PATH_MODE_AUTO;
+				out << "Auto" << endl;
+			}
+		}
+
+		if ( tokens[0] == "exportPathPrefix" ) {
+			tex_path_prefix = tokens[1].asChar();
+			out << "Export Texture Path Prefix:  " << tex_path_prefix << endl;
 		}
 	}
 }
