@@ -2225,7 +2225,7 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			if ( texture_path[ texture_path.size() - 1 ] != '/' ) {
 				texture_path.append("/");
 			}
-			out << "Texture Path:  " << texture_path << endl;
+			cout << "Texture Path:  " << texture_path << endl;
 			
 		}
 		if ( tokens[0] == "exportVersion" ) {

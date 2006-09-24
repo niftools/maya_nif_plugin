@@ -39,7 +39,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
 	string $defaultVersion = "4.0.0.2";
 	string $defaultUserVersion = "0";
-	string $defaultBonesPerPart = "4";
+	string $defaultBonesPerPart = "0";
 	string $defaultJointMatch = "Bip";
 	
 	if ($action == "post") {
@@ -59,10 +59,15 @@ global proc int nifTranslatorOpts ( string $parent,
 					button -label "Browse"
 						   -command "fileBrowser( \"onOk\", \"\", \"\", 4 )";
 				setParent commonColumnLayout;
-					checkBox -label "Use Name Mangling to Preserve Original Names" 
-							  -value 1
-							  -annotation "Preserves names which are invalid in Maya names using character code numbers for re-export."
-							  useNameManglingCk;
+				textScrollList -width 300 -height 300
+				               -allowMultiSelection  1
+							   -append "Test1"
+							   -append "Test2"
+							   nifDirList;
+				checkBox -label "Use Name Mangling to Preserve Original Names" 
+						  -value 1
+						  -annotation "Preserves names which are invalid in Maya names using character code numbers for re-export."
+						  useNameManglingCk;
 				setParent $parent;
 		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout importColumnLayout;
@@ -134,7 +139,7 @@ global proc int nifTranslatorOpts ( string $parent,
 					  text -label "Maximum Number of Bones per Skin Partition:";
 					  textField -editable true
 						  -text $defaultBonesPerPart
-						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Others:  4 is safe.  0 to disable."
+						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Morrowind: 0"
 						  expPartBonesTx;
 			setParent exportColumnLayout;
 			
