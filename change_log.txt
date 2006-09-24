@@ -91,7 +91,7 @@
 * Now import root nodes with non-identity transforms instead of treating them
   as the scene root and ignoring them.  Fixes some Morrowind skins.
   
-  =Version 0.5.5=
+=Version 0.5.5=
 * Added Config options to:
   - Generate Oblivion tangent space.
   - Export triangles in strips
@@ -111,3 +111,24 @@
     re-exported without problems.
   - Support for most files from the Freedom Force games
   - Corrected support for importing and exporting glow textures.
+  
+=Version 0.5.7=
+* Bug Fixes:
+  - The endian type was being set wrong, causing later version NIF files to be
+    invalid.
+  - Allowed files with invalid triangles to load.
+  - Fixed bug where objects without textures could cause a file to fail to load.
+* Combine With Existing Skeleton option now works even if the skeleton is in a
+  different pose than the skeleton in the file being imported.
+* New Texture Search Features
+  - Ability to specify multiple texture search paths with new UI
+  - Ability to use relative paths
+  - The location of the NIF file is now searched.
+  - Several games's default locations are now included in the default settings in
+    addition to Morrowind's.
+* Can now export texture paths:
+ - Automatically as before, but now stripping parts that match any of the search
+   paths in the list.
+ - With no path, only the file name.
+ - With the complete path.
+ - With a user-specified prefix.

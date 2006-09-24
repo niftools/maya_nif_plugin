@@ -3,7 +3,7 @@
 //#define DEBUG
 ofstream out;
 
-const char PLUGIN_VERSION [] = "0.5.5";	
+const char PLUGIN_VERSION [] = "0.5.7";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
