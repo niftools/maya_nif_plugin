@@ -7,7 +7,7 @@ ofstream out( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary );
 stringstream out;
 #endif
 
-const char PLUGIN_VERSION [] = "0.5";	
+const char PLUGIN_VERSION [] = "0.5.5";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
@@ -97,6 +97,63 @@ MStatus uninitializePlugin( MObject obj )
 	return status;
 }
 
+//Adjust NiNodes in the original file that match names
+//in the maya scene to have the same transforms before
+//importing the new mesh over the top of the old one
+void NifTranslator::AdjustSkeleton( NiAVObjectRef & root ) {
+	NiNodeRef niNode = DynamicCast<NiNode>(root);
+
+	if ( niNode != NULL ) {
+		string name = MakeMayaName( root->GetName() ).asChar();
+		if ( existingNodes.find( name ) != existingNodes.end() ) {
+			out << "Copying current scene transform of " << name << " over the top of " << root << endl;
+			//Found a match
+			MDagPath existing = existingNodes[name];
+
+			//Get World Matrix of Dag Path
+			MMatrix my_trans = existing.inclusiveMatrix();
+			MTransformationMatrix myTrans(my_trans);
+
+			//Warn user about any scaling problems
+			double myScale[3];
+			myTrans.getScale( myScale, MSpace::kPreTransform );
+			if ( abs(myScale[0] - 1.0) > 0.0001 || abs(myScale[1] - 1.0) > 0.0001 || abs(myScale[2] - 1.0) > 0.0001 ) {
+				MGlobal::displayWarning("Some games such as the Elder Scrolls do not react well when scale is not 1.0.  Consider freezing scale transforms on all nodes before export.");
+			}
+			if ( abs(myScale[0] - myScale[1]) > 0.0001 || abs(myScale[0] - myScale[2]) > 0.001 || abs(myScale[1] - myScale[2]) > 0.001 ) {
+				MGlobal::displayWarning("The NIF format does not support separate scales for X, Y, and Z.  An average will be used.  Consider freezing scale transforms on all nodes before export.");
+			}
+
+			//Copy Maya matrix to Niflib matrix
+			Matrix44 ni_trans( 
+				(float)my_trans[0][0], (float)my_trans[0][1], (float)my_trans[0][2], (float)my_trans[0][3],
+				(float)my_trans[1][0], (float)my_trans[1][1], (float)my_trans[1][2], (float)my_trans[1][3],
+				(float)my_trans[2][0], (float)my_trans[2][1], (float)my_trans[2][2], (float)my_trans[2][3],
+				(float)my_trans[3][0], (float)my_trans[3][1], (float)my_trans[3][2], (float)my_trans[3][3]
+			);
+
+			//Check if root has a parent
+			Matrix44 par_world;
+			NiNodeRef par = root->GetParent();
+			if ( par != NULL ) {
+				par_world = par->GetWorldTransform();
+			}
+
+			//Move bone to world position of maya transform * inverse of current
+			//parent world transform
+			root->SetLocalTransform( ni_trans * par_world.Inverse() );
+
+			//ExportAV( root, existingNodes[name] );
+		}
+
+		//Call this function on all children of this node
+		vector<NiAVObjectRef> children = niNode->GetChildren();
+		for ( unsigned i = 0; i < children.size(); ++i ) {
+			AdjustSkeleton( children[i] );
+		}
+	}
+}
+
 //--NifTranslator::reader--//
 
 //This routine is called by Maya when it is necessary to load a file of a type supported by this translator.
@@ -113,23 +170,12 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		importedMaterials.clear();
 		importedMeshes.clear();
 
+		//Save file
+		importFile = file;
+
 		out << "Reading NIF File..." << endl;
 		//Read NIF file
 		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
-
-		//Check if the user wants us to try to combine new skins with
-		//an existing skeleton
-		if ( import_comb_skel ) {
-			//Enumerate existing nodes by name
-			existingNodes.clear();
-			MItDag dagIt( MItDag::kDepthFirst);
-
-			for ( ; !dagIt.isDone(); dagIt.next() ) {
-				MFnTransform transFn( dagIt.item() );
-				out << "Adding " << transFn.name().asChar() << " to list of existing nodes" << endl;
-				existingNodes[ transFn.name().asChar() ] = dagIt.item();
-			}
-		}
 		
 		out << "Importing Nodes..." << endl;
 		//Import Nodes, starting at each child of the root
@@ -138,8 +184,32 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			//Root is a NiNode and may have children
 
 			//Check if the user wants us to try to find the bind pose
-			if ( import_bind_pose ) {
+			if ( import_bind_pose && !import_comb_skel ) {
 				SendNifTreeToBindPos( root_node );
+			}
+
+			//Check if the user wants us to try to combine new skins with
+			//an existing skeleton
+			if ( import_comb_skel ) {
+				//Enumerate existing nodes by name
+				existingNodes.clear();
+				MItDag dagIt( MItDag::kDepthFirst);
+
+				for ( ; !dagIt.isDone(); dagIt.next() ) {
+					MFnTransform transFn( dagIt.item() );
+					out << "Adding " << transFn.name().asChar() << " to list of existing nodes" << endl;
+					MDagPath nodePath;
+					dagIt.getPath( nodePath );
+					existingNodes[ transFn.name().asChar() ] = nodePath;
+				}
+
+				//Adjust NiNodes in the original file that match names
+				//in the maya scene to have the same transforms before
+				//importing the new mesh over the top of the old one
+				NiAVObjectRef rootAV = DynamicCast<NiAVObject>(root);
+				if ( rootAV != NULL ) {
+					AdjustSkeleton( rootAV );
+				}
 			}
 
 			//Check if the root node has a non-identity transform
@@ -354,9 +424,76 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 		//obj = nodeFn.create( MFn::kFileTexture, MString( ts.fileName.c_str() ) );
 		obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
 
-		string file_path = texture_path + file_name;
+		//--Search for the texture file--//
+		
+		//Replace \ with /
+		unsigned last_slash = 0;
+		for ( unsigned i = 0; i < file_name.size(); ++i ) {
+			if ( file_name[i] == '\\' ) {
+				file_name[i] = '/';
+			}
+		}
 
-		nodeFn.findPlug( MString("ftn") ).setValue( MString( file_path.c_str() ) );
+		//MString fName = file_name.c_str();
+
+		MFileObject mFile;
+		mFile.setName( MString(file_name.c_str()) );
+
+		MString found_file = "";
+
+		//Check if the file exists in the current working directory
+		mFile.setRawPath( importFile.rawPath() );
+		cout << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+		if ( mFile.exists() ) {
+			found_file =  mFile.fullName();
+		} else {
+			cout << "File Not Found." << endl;
+		}
+
+		if ( found_file == "" ) {
+			//Check if the file exists in any of the given search paths
+			MStringArray paths;
+			MString(texture_path.c_str()).split( '|', paths );
+
+			for ( unsigned i = 0; i < paths.length(); ++i ) {
+				if ( paths[i].substring(0,0) == "." ) {
+					//Relative path
+					mFile.setRawPath( importFile.rawPath() + paths[i] );
+				} else {
+					//Absolute path
+					mFile.setRawPath( paths[i] );
+
+				}
+				
+				cout << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+				if ( mFile.exists() ) {
+					//File exists at path entry i
+					found_file = mFile.fullName();
+					break;
+				} else {
+					cout << "File Not Found." << endl;
+				}
+
+				////Maybe it's a relative path
+				//mFile.setRawPath( importFile.rawPath() + paths[i] );
+				//				cout << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+				//if ( mFile.exists() ) {
+				//	//File exists at path entry i
+				//	found_file = mFile.fullName();
+				//	break;
+				//} else {
+				//	cout << "File Not Found." << endl;
+				//}
+			}
+		}
+
+		if ( found_file == "" ) {
+			//None of the searches found the file... just use the original value
+			//from the NIF
+			found_file = file_name.c_str();
+		}
+
+		nodeFn.findPlug( MString("ftn") ).setValue(found_file);
 
 		//Get global texture list
 		MItDependencyNodes nodeIt( MFn::kTextureList );
@@ -490,25 +627,31 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 	//NumPolygons = triangles.size();
 	NumPolygons = niFaces.size();
-	out << "Num Polygons:  " << NumPolygons << endl;
+	cout << "Num Polygons:  " << NumPolygons << endl;
 
-	//Nifs only have triangles, so all polys have 3 verticies
-	//Create an array to tell Maya this
-	int * poly_counts = new int[NumPolygons];
-	for (int i = 0; i < NumPolygons; ++i) {
-		poly_counts[i] = 3;
-	}
-	MIntArray maya_poly_counts( poly_counts, NumPolygons );
-
-	//There are 3 verticies to list per triangle
-	vector<int> connects( NumPolygons * 3 );// = new int[NumPolygons * 3];
-
+	MIntArray maya_poly_counts;
 	MIntArray maya_connects;
 	for (int i = 0; i < NumPolygons; ++i) {
-		//out << "Polygon " << i << " has " << niFaces[i].points.size() << " points" << endl;
-		maya_connects.append( niFaces[i].points[0].vertexIndex );
-		maya_connects.append( niFaces[i].points[1].vertexIndex );
-		maya_connects.append( niFaces[i].points[2].vertexIndex );
+
+		//Only append valid triangles
+		if ( niFaces[i].points.size() != 3 ) {
+			//not a triangle
+			continue;
+		}
+
+		unsigned p0 = niFaces[i].points[0].vertexIndex;
+		unsigned p1 = niFaces[i].points[1].vertexIndex;
+		unsigned p2 = niFaces[i].points[2].vertexIndex;
+		
+		if ( p0 == p1 || p0 == p2 || p1 == p2 ) {
+			//Invalid triangle
+			continue;
+		}
+
+		maya_connects.append( p0 );
+		maya_connects.append( p1 );
+		maya_connects.append( p2 );
+		maya_poly_counts.append(3);
 	}
 
 	//MIntArray maya_connects( connects, NumPolygons * 3 );
@@ -517,7 +660,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	MDagPath meshPath;
 	MFnMesh meshFn;
 	
-	meshFn.create( NumVertices, NumPolygons, maya_verts, maya_poly_counts, maya_connects, parent );
+	meshFn.create( NumVertices, maya_poly_counts.length(), maya_verts, maya_poly_counts, maya_connects, parent );
 	meshFn.getPath( meshPath );
 
 	out << "Importing vertex colors..." << endl;
@@ -645,6 +788,9 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 			if ( uv_set_name != "map1" ) {
 				meshFn.createUVSet( uv_set_name );
 				out << "Creating UV Set:  " << uv_set_name.asChar() << endl;
+			} else {
+				//Clear out the current UV set
+				//meshFn.clearUVs( &uv_set_name );
 			}
 	
 			out << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << " uv_set_name " << uv_set_name.asChar() << endl;
@@ -659,6 +805,15 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 			maya_connects.clear();
 			//Create list of which UV to assign to each polygon vertex
 			for ( unsigned f = 0; f < niFaces.size(); ++f ) {
+				if (
+					niFaces[f].points[0].vertexIndex == niFaces[f].points[1].vertexIndex ||
+					niFaces[f].points[0].vertexIndex == niFaces[f].points[2].vertexIndex ||
+					niFaces[f].points[1].vertexIndex == niFaces[f].points[2].vertexIndex
+				) {
+					//Invalid triangle
+					continue;
+				}
+
 				//Make sure all of the points in this face have color
 				unsigned match[3];
 				int matches_found = 0;
@@ -677,6 +832,8 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 				//out << " Matches found:  " << matches_found << endl;
 				if ( matches_found != 3 ) {
+					//This face is not mapped, 0 points
+					maya_poly_counts.append(0);
 					continue;
 				}
 
@@ -688,6 +845,8 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 
 				if ( tcIndices[0] == CS_NO_INDEX || tcIndices[0] == CS_NO_INDEX || tcIndices[0] == CS_NO_INDEX ) { 
+					//This face is not mapped, 0 points
+					maya_poly_counts.append(0);
 					continue; 
 				}
 
@@ -701,7 +860,16 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				
 			}
 
-			out << "Assign UVs..." << endl;
+			unsigned sum = 0;
+			for ( unsigned i = 0; i < maya_poly_counts.length(); ++i ) {
+				sum += maya_poly_counts[i];
+			}
+
+
+			cout << "Poly Count Length:  " << maya_poly_counts.length() << endl;
+			cout << "Poly Count Sum:  " << sum << endl;
+			cout << "Connects Length:  " << maya_connects.length() << endl;
+
 			stat = meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_name );
 			if ( stat != MS::kSuccess ) {
 				out << stat.errorString().asChar() << endl;
@@ -875,10 +1043,6 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		//Send the weights to Maya
 		clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
 	}			
-	
-	//out << "Deleting poly_counts..." << endl;
-	//Delete everything that was used to load verticies
-	delete [] poly_counts;
 
 	out << "ImportMesh() end" << endl;
 	return meshPath;
@@ -2181,14 +2345,15 @@ void NifTranslator::EnumerateSkinClusters() {
 
 MObject NifTranslator::GetExistingJoint( const string & name ) {
 	//If it's not in the list, return a null object
-	map<string,MObject>::iterator it = existingNodes.find( name );
+	map<string,MDagPath>::iterator it = existingNodes.find( name );
 	if ( it == existingNodes.end() ) {
 		//out << "A joint named " << name << " did not exist in list." << endl;
 		return MObject::kNullObj;
 	}
 
 	//It's in the list
-	MObject jointObj = it->second;
+	MFnDagNode nodeFn( it->second );
+	MObject jointObj = nodeFn.object();
 
 	//Check if it is an Ik joint
 	if ( jointObj.hasFn( MFn::kJoint ) ) {

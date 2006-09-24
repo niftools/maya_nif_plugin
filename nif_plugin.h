@@ -41,6 +41,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
 #include <maya/MEulerRotation.h>
+#include <maya/MFileObject.h>
 #include <maya/MFloatArray.h>
 #include <maya/MFloatVectorArray.h>
 #include <maya/MFnBase.h>
@@ -161,13 +162,15 @@ public:
 private:
 	//Map to hold existing nodes that were found for connecting skins to
 	//skeletons on import
-	map<string, MObject> existingNodes;
+	map<string, MDagPath> existingNodes;
 	//maps to hold information about what has already been imported
 	map< NiAVObjectRef, MDagPath > importedNodes;
 	map< pair<NiMaterialPropertyRef, NiTexturingPropertyRef>, MObject > importedMaterials;
 	map< NiSourceTextureRef, MObject > importedTextures;
 	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
+	MFileObject importFile; //The file currently being imported
 
+	void AdjustSkeleton( NiAVObjectRef & root );
 	void ImportMaterialAndTexture( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list );
 	MObject GetExistingJoint( const string & name );
 	MObject MakeJoint( MObject & jointObj );

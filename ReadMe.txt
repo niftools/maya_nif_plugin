@@ -1,4 +1,4 @@
-Maya 6.5 NIF File Translator
+Maya NIF File Translator
 
 Currently supports importing and exporting static (non-animated) NIF files.
 Pre-compiled versions are available for Maya 6.5 and 7.0 for Windows.  To use on
