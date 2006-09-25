@@ -613,7 +613,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		vis.setValue(false);
 	}
 
-	out << "Try out ComplexShape::Merge" << endl;
+	out << "Try out ComplexShape::Merge on" << root << endl;
 	ComplexShape cs;
 
 	cs.Merge( root );
@@ -1445,11 +1445,14 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 //			
 //#endif
 
-			for ( unsigned int j = 0; j < uvSetNames.length(); ++j ) {
+			//Get the UV set names used by this particular vertex
+			MStringArray vertUvSetNames;
+			itPoly.getUVSetNames( vertUvSetNames );
+			for ( unsigned int j = 0; j < vertUvSetNames.length(); ++j ) {
 				ComplexShape::TexCoordIndex tci;
-				tci.texCoordSetIndex  = uvSetNums[ uvSetNames[j].asChar() ];
+				tci.texCoordSetIndex  = uvSetNums[ vertUvSetNames[j].asChar() ];
 				int uv_index;
-				itPoly.getUVIndex(i, uv_index, &uvSetNames[j] );
+				itPoly.getUVIndex(i, uv_index, &vertUvSetNames[j] );
 				tci.texCoordIndex  = uv_index;
 				cp.texCoordIndices.push_back( tci );
 			}

@@ -58,9 +58,9 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin"
-				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalDependencies="niflib_debug.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="../bin/nifTranslator.mll"
-				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya6.5\lib"
+				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya7.0\lib"
 				ProgramDatabaseFile="../Debug/maya_nif_plugin.pdb"
 				ImportLibrary="Debug/NIF Import/Export.lib"
 			/>
@@ -272,6 +272,7 @@
 				RuntimeLibrary="0"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
+				DebugInformationFormat="3"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
