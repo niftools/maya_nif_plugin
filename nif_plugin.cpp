@@ -1592,7 +1592,9 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
-	ExportAV( avObj, dagNode );
+	avObj->SetName( tempAV->GetName() );
+	avObj->SetVisibility( tempAV->GetVisibility() );
+	avObj->SetFlags( tempAV->GetFlags() );
 
 	//If polygon mesh is hidden, hide tri_shape
 	MPlug vis = visibleMeshFn.findPlug( MString("visibility") );
