@@ -192,7 +192,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			//Root is a NiNode and may have children
 
 			//Check if the user wants us to try to find the bind pose
-			if ( import_bind_pose && !import_comb_skel ) {
+			if ( import_bind_pose ) {
 				SendNifTreeToBindPos( root_node );
 			}
 
@@ -403,7 +403,7 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 
 	if ( niNode != NULL ) {
 
-		//Check to see fi this is a mesh proxy
+		//Check to see if this is a mesh proxy
 		if ( niNode->IsSplitMeshProxy() ) {
 			out << niNode << " is a split mesh proxy." << endl;
 			//Since this is a mesh proxy, treat it like a mesh and do not
