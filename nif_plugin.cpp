@@ -260,6 +260,23 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			MDagPath meshPath = ImportMesh( importedMeshes[i].first, importedMeshes[i].second);
 		}
 		out << "Done importing meshes." << endl;
+
+		out << "Deselecting anything that was selected by MEL commands" << endl;
+		MGlobal::clearSelectionList();
+
+		//Clear temporary data
+		out << "Clearing temporary data" << endl;
+		existingNodes.clear();
+		importedNodes.clear();
+		importedMaterials.clear();
+		importedTextures.clear();
+		importedMeshes.clear();
+		importFile.setFullName("");
+		sceneRoot = NULL;
+		meshes.clear();
+		nodes.clear(); 
+		meshClusters.clear();
+		shaders.clear();
 	}
 	catch( exception & e ) {
 		MGlobal::displayError( e.what() );
@@ -270,8 +287,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		return MStatus::kFailure;
 	}
 
-	out << "Deselecting anything that was selected by MEL commands" << endl;
-	MGlobal::clearSelectionList();
+	
 	
 	out << "Finished Read" << endl;
 
@@ -424,120 +440,120 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 
 	//block = block->GetLink("Base Texture");
 	
-	//If the texture is stored externally, use it
-	if ( niSrcTex->IsTextureExternal() == true ) {
-		//An external texture is used, create a texture node
-		string file_name = niSrcTex->GetExternalFileName();
-		MFnDependencyNode nodeFn;
-		//obj = nodeFn.create( MFn::kFileTexture, MString( ts.fileName.c_str() ) );
-		obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
+	//Internally stored textures are currently unsupported
+	if ( niSrcTex->IsTextureExternal() == false ) {
+		MGlobal::displayWarning( "This file uses an internal texture.  This is currently unsupported." );
+		return MObject::kNullObj;
+	}
 
-		//--Search for the texture file--//
-		
-		//Replace back slash with forward slash
-		unsigned last_slash = 0;
-		for ( unsigned i = 0; i < file_name.size(); ++i ) {
-			if ( file_name[i] == '\\' ) {
-				file_name[i] = '/';
+	//An external texture is used, create a texture node
+	string file_name = niSrcTex->GetExternalFileName();
+	MFnDependencyNode nodeFn;
+	//obj = nodeFn.create( MFn::kFileTexture, MString( ts.fileName.c_str() ) );
+	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
+
+	//--Search for the texture file--//
+	
+	//Replace back slash with forward slash
+	unsigned last_slash = 0;
+	for ( unsigned i = 0; i < file_name.size(); ++i ) {
+		if ( file_name[i] == '\\' ) {
+			file_name[i] = '/';
+		}
+	}
+
+	//MString fName = file_name.c_str();
+
+	MFileObject mFile;
+	mFile.setName( MString(file_name.c_str()) );
+
+	MString found_file = "";
+
+	//Check if the file exists in the current working directory
+	mFile.setRawPath( importFile.rawPath() );
+	out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+	if ( mFile.exists() ) {
+		found_file =  mFile.fullName();
+	} else {
+		out << "File Not Found." << endl;
+	}
+
+	if ( found_file == "" ) {
+		//Check if the file exists in any of the given search paths
+		MStringArray paths;
+		MString(texture_path.c_str()).split( '|', paths );
+
+		for ( unsigned i = 0; i < paths.length(); ++i ) {
+			if ( paths[i].substring(0,0) == "." ) {
+				//Relative path
+				mFile.setRawPath( importFile.rawPath() + paths[i] );
+			} else {
+				//Absolute path
+				mFile.setRawPath( paths[i] );
+
 			}
-		}
-
-		//MString fName = file_name.c_str();
-
-		MFileObject mFile;
-		mFile.setName( MString(file_name.c_str()) );
-
-		MString found_file = "";
-
-		//Check if the file exists in the current working directory
-		mFile.setRawPath( importFile.rawPath() );
-		out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-		if ( mFile.exists() ) {
-			found_file =  mFile.fullName();
-		} else {
-			out << "File Not Found." << endl;
-		}
-
-		if ( found_file == "" ) {
-			//Check if the file exists in any of the given search paths
-			MStringArray paths;
-			MString(texture_path.c_str()).split( '|', paths );
-
-			for ( unsigned i = 0; i < paths.length(); ++i ) {
-				if ( paths[i].substring(0,0) == "." ) {
-					//Relative path
-					mFile.setRawPath( importFile.rawPath() + paths[i] );
-				} else {
-					//Absolute path
-					mFile.setRawPath( paths[i] );
-
-				}
-				
-				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-				if ( mFile.exists() ) {
-					//File exists at path entry i
-					found_file = mFile.fullName();
-					break;
-				} else {
-					out << "File Not Found." << endl;
-				}
-
-				////Maybe it's a relative path
-				//mFile.setRawPath( importFile.rawPath() + paths[i] );
-				//				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-				//if ( mFile.exists() ) {
-				//	//File exists at path entry i
-				//	found_file = mFile.fullName();
-				//	break;
-				//} else {
-				//	out << "File Not Found." << endl;
-				//}
-			}
-		}
-
-		if ( found_file == "" ) {
-			//None of the searches found the file... just use the original value
-			//from the NIF
-			found_file = file_name.c_str();
-		}
-
-		nodeFn.findPlug( MString("ftn") ).setValue(found_file);
-
-		//Get global texture list
-		MItDependencyNodes nodeIt( MFn::kTextureList );
-		MObject texture_list = nodeIt.item();
-		MFnDependencyNode slFn;
-		slFn.setObject( texture_list );
-
-		MPlug textures = slFn.findPlug( MString("textures") );
-
-		// Loop until an available connection is found
-		MPlug element;
-		int next = 0;
-		while( true )
-		{
-			element = textures.elementByLogicalIndex( next );
-
-			// If this plug isn't connected, break and use it below.
-			if ( element.isConnected() == false )
+			
+			out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+			if ( mFile.exists() ) {
+				//File exists at path entry i
+				found_file = mFile.fullName();
 				break;
+			} else {
+				out << "File Not Found." << endl;
+			}
 
-			next++;
+			////Maybe it's a relative path
+			//mFile.setRawPath( importFile.rawPath() + paths[i] );
+			//				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+			//if ( mFile.exists() ) {
+			//	//File exists at path entry i
+			//	found_file = mFile.fullName();
+			//	break;
+			//} else {
+			//	out << "File Not Found." << endl;
+			//}
 		}
-
-		MPlug message = nodeFn.findPlug( MString("message") );
-
-		// Connect '.message' plug of render node to "shaders"/"textures" plug of default*List
-		MDGModifier dgModifier;
-		dgModifier.connect( message, element );
-
-		dgModifier.doIt();
-
-		return obj;
 	}
-	else {
-		throw runtime_error("This file uses an internal texture.  This is currently unsupported.");
+
+	if ( found_file == "" ) {
+		//None of the searches found the file... just use the original value
+		//from the NIF
+		found_file = file_name.c_str();
 	}
+
+	nodeFn.findPlug( MString("ftn") ).setValue(found_file);
+
+	//Get global texture list
+	MItDependencyNodes nodeIt( MFn::kTextureList );
+	MObject texture_list = nodeIt.item();
+	MFnDependencyNode slFn;
+	slFn.setObject( texture_list );
+
+	MPlug textures = slFn.findPlug( MString("textures") );
+
+	// Loop until an available connection is found
+	MPlug element;
+	int next = 0;
+	while( true )
+	{
+		element = textures.elementByLogicalIndex( next );
+
+		// If this plug isn't connected, break and use it below.
+		if ( element.isConnected() == false )
+			break;
+
+		next++;
+	}
+
+	MPlug message = nodeFn.findPlug( MString("message") );
+
+	// Connect '.message' plug of render node to "shaders"/"textures" plug of default*List
+	MDGModifier dgModifier;
+	dgModifier.connect( message, element );
+
+	dgModifier.doIt();
+
+	return obj;
 }
 
 MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp ) {
@@ -631,25 +647,24 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	out << "Getting polygons..." << endl;
 	//Get Polygons
 	int NumPolygons = 0;
-	vector<ComplexShape::ComplexFace> niFaces = cs.GetFaces();
-
-	//NumPolygons = triangles.size();
-	NumPolygons = niFaces.size();
-	out << "Num Polygons:  " << NumPolygons << endl;
+	vector<ComplexShape::ComplexFace> niRawFaces = cs.GetFaces();
 
 	MIntArray maya_poly_counts;
 	MIntArray maya_connects;
-	for (int i = 0; i < NumPolygons; ++i) {
+	vector<ComplexShape::ComplexFace> niFaces;
+	for (unsigned i = 0; i < niRawFaces.size(); ++i) {
 
 		//Only append valid triangles
-		if ( niFaces[i].points.size() != 3 ) {
+		if ( niRawFaces[i].points.size() != 3 ) {
 			//not a triangle
 			continue;
 		}
 
-		unsigned p0 = niFaces[i].points[0].vertexIndex;
-		unsigned p1 = niFaces[i].points[1].vertexIndex;
-		unsigned p2 = niFaces[i].points[2].vertexIndex;
+		const ComplexShape::ComplexFace & f = niRawFaces[i];
+
+		unsigned p0 = f.points[0].vertexIndex;
+		unsigned p1 = f.points[1].vertexIndex;
+		unsigned p2 = f.points[2].vertexIndex;
 		
 		if ( p0 == p1 || p0 == p2 || p1 == p2 ) {
 			//Invalid triangle
@@ -660,7 +675,13 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		maya_connects.append( p1 );
 		maya_connects.append( p2 );
 		maya_poly_counts.append(3);
+		niFaces.push_back( f );
 	}
+	niRawFaces.clear();
+
+	//NumPolygons = triangles.size();
+	NumPolygons = niFaces.size();
+	out << "Num Polygons:  " << NumPolygons << endl;
 
 	//MIntArray maya_connects( connects, NumPolygons * 3 );
 
@@ -668,7 +689,13 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	MDagPath meshPath;
 	MFnMesh meshFn;
 	
-	meshFn.create( NumVertices, maya_poly_counts.length(), maya_verts, maya_poly_counts, maya_connects, parent );
+	MStatus stat;
+	meshFn.create( NumVertices, maya_poly_counts.length(), maya_verts, maya_poly_counts, maya_connects, parent, &stat );
+	if ( stat != MS::kSuccess ) {
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to create mesh.");
+	}
+	
 	meshFn.getPath( meshPath );
 
 	out << "Importing vertex colors..." << endl;
@@ -710,7 +737,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		MStatus stat = meshFn.setFaceVertexColors( maya_colors, face_list, vert_list );
 		if ( stat != MS::kSuccess ) {
 			out << stat.errorString().asChar() << endl;
-			throw runtime_error("Failed to set UVs.");
+			throw runtime_error("Failed to set Colors.");
 		}
 	}
 
@@ -1007,23 +1034,22 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		vector< vector<float> > nif_weights( bone_nodes.size() );
 
 		//out << "Set skin weights & bind pose for each bone" << endl;
-		//Set skin weights & bind pose for each bone
+		//initialize 2D array to zeros
 		for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
-			nif_weights[i].resize( gIt.count() );
+			nif_weights[i].resize( nif_verts.size() );
+			for ( unsigned j = 0; j < nif_verts.size(); ++j ) {
+				nif_weights[i][j] = 0.0f;
+			} 
+		}
 			
-			//out << "Put data in proper slots int he 2D array" << endl;
-			//Put data in proper slots in the 2D array
-			for (unsigned int j = 0; j < nif_verts.size(); ++j ) {
-				//out << "Find a match for this skin influence" << endl;
-				//Find a match for this skin influence
-				float wght = 0.0f;
-				for ( unsigned k = 0; k < nif_verts[j].weights.size(); ++k ) {
-					if ( nif_verts[j].weights[k].influenceIndex == i ) {
-						wght = nif_verts[j].weights[k].weight;
-						break;
-					}
-				}
-				nif_weights[i][j] = wght;
+
+		//out << "Put data in proper slots in the 2D array" << endl;
+		//Put data in proper slots in the 2D array
+		for ( unsigned v = 0; v < nif_verts.size(); ++v ) {
+			for ( unsigned w = 0; w < nif_verts[v].weights.size(); ++w ) {
+				ComplexShape::SkinInfluence & si = nif_verts[v].weights[w];
+
+				nif_weights[si.influenceIndex][v] = si.weight;
 			}
 		}
 
@@ -1055,6 +1081,23 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	return meshPath;
 }
 
+void ApplyAllSkinOffsets( NiAVObjectRef & root ) {
+	NiGeometryRef niGeom = DynamicCast<NiGeometry>(root);
+	if ( niGeom != NULL && niGeom->IsSkin() == true ) {
+		niGeom->ApplySkinOffset();
+	}
+
+	NiNodeRef niNode = DynamicCast<NiNode>(root);
+	if ( niNode != NULL ) {
+		//Call this function on all children
+		vector<NiAVObjectRef> children = niNode->GetChildren();
+
+		for ( unsigned i = 0; i < children.size(); ++i ) {
+			ApplyAllSkinOffsets( children[i] );
+		}
+	}
+}
+
 //--NifTranslator::writer--//
 
 //This routine is called by Maya when it is necessary to save a file of a type supported by this translator.
@@ -1084,10 +1127,13 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		ExportShaders();
 
 
-		out << "Exporting nodes..." << endl;
+		out << "Clearing Nodes" << endl;
 		nodes.clear();
+		out << "Clearing Meshes" << endl;
 		meshes.clear();
 		//Export nodes
+
+		out << "Exporting nodes..." << endl;
 		ExportDAGNodes();
 
 		out << "Enumerating skin clusters..." << endl;
@@ -1099,6 +1145,11 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 			ExportMesh( *mesh );
 		}
 
+		out << "Applying Skin offsets..." << endl;
+		ApplyAllSkinOffsets( StaticCast<NiAVObject>(sceneRoot) );
+
+
+
 		//--Write finished NIF file--//
 
 		out << "Writing Finished NIF file..." << endl;
@@ -1108,6 +1159,20 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
 
 		out << "Export Complete." << endl;
+
+		//Clear temporary data
+		out << "Clearing temporary data" << endl;
+		existingNodes.clear();
+		importedNodes.clear();
+		importedMaterials.clear();
+		importedTextures.clear();
+		importedMeshes.clear();
+		importFile.setFullName("");
+		sceneRoot = NULL;
+		meshes.clear();
+		nodes.clear(); 
+		meshClusters.clear();
+		shaders.clear();
 	}
 	catch( exception & e ) {
 		stringstream out;
@@ -1124,7 +1189,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	//Clear the stringstream so it doesn't waste a bunch of RAM
 	out.clear();
 #endif
-	
+
 	return MS::kSuccess;
 }
 
@@ -1235,6 +1300,12 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		throw runtime_error("Failed to get points.");
 	}
 
+	//Maya won't store any information about objects with no vertices.  Just skip it.
+	if ( vts.length() == 0 ) {
+		MGlobal::displayWarning("An object in this scene has no vertices.  Nothing will be exported.");
+		return;
+	}
+
 	vector<ComplexShape::WeightedVertex> nif_vts( vts.length() );
 	for( int i=0; i != vts.length(); ++i ) {
 		nif_vts[i].position.x = float(vts[i].x);
@@ -1292,6 +1363,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Record assotiation between name and uv set index for later
 	map<string,int> uvSetNums;
 
+	int set_num = 0;
 	for ( unsigned int i = 0; i < uvSetNames.length(); ++i ) {
 		if ( meshFn.numUVs( uvSetNames[i] ) > 0 ) {
 			TexType tt;
@@ -1317,7 +1389,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			}
 
 			//Record the assotiation
-			uvSetNums[set_name] = i;
+			uvSetNums[set_name] = set_num;
 
 			//Get the UVs
 			meshFn.getUVs( myUCoords, myVCoords, &uvSetNames[i] );
@@ -1335,12 +1407,14 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 			baseUVSet = uvSetNames[i];
 			has_uvs = true;
+
+			set_num++;
 		}
 	}
 
 	cs.SetTexCoordSets( nif_uvs );
 
-	out << "===Exported UV Data===" << endl;
+	//out << "===Exported UV Data===" << endl;
 
 	//for ( unsigned int i = 0; i < nif_uvs.size(); ++i ) {
 	//	out << "   UV Set:  " << nif_uvs[i].texType << endl;
@@ -1529,7 +1603,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 				//Create list of NiNodeRefs of influences
 				vector<NiNodeRef> niBones( myBones.length() );
 				for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
-					if ( nodes.find( myBones[0].fullPathName().asChar() ) == nodes.end() ) {
+					if ( nodes.find( myBones[bone_index].fullPathName().asChar() ) == nodes.end() ) {
 						//There is a problem; one of the joints was not exported.  Abort.
 						throw runtime_error("One of the joints necessary to export a bound skin was not exported.");
 					}
@@ -1587,7 +1661,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	NiAVObjectRef tempAV = new NiAVObject;
 	ExportAV(tempAV, dagNode );
 
-	out << "Split ComplexShape" <<endl;
+	out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
 	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform(), export_part_bones, export_tri_strips, export_tan_space );
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
@@ -2728,89 +2802,93 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 						if ( importedTextures.find( niSrcTex ) == importedTextures.end() ) {
 							//New texture - import it and add it to the list
 							txOb = ImportTexture( niSrcTex );
-							importedTextures[niSrcTex] = txOb;
+							if ( txOb != MObject::kNullObj ) {
+								importedTextures[niSrcTex] = txOb;
+							}
 						} else {
 							//Already found, use existing one
 							txOb = importedTextures[niSrcTex];
 						}
 					
-						nodeFn.setObject(txOb);
-						MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
-						switch(i) {
-							case BASE_MAP:
-								//Base Texture
-								dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
-								//Check if Alpha needs to be used
-								if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
-									//Alpha is used, connect it
-									dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
-								}
-								break;
-							case GLOW_MAP:
-								//Glow Texture
-								dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
-								nodeFn.findPlug("alphaGain").setValue(0.25);
-								nodeFn.findPlug("defaultColorR").setValue( 0.0 );
-								nodeFn.findPlug("defaultColorG").setValue( 0.0 );
-								nodeFn.findPlug("defaultColorB").setValue( 0.0 );
-								dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
-								break;
-						}
+						if ( txOb != MObject::kNullObj ) {
+							nodeFn.setObject(txOb);
+							MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
+							switch(i) {
+								case BASE_MAP:
+									//Base Texture
+									dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
+									//Check if Alpha needs to be used
+									if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
+										//Alpha is used, connect it
+										dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
+									}
+									break;
+								case GLOW_MAP:
+									//Glow Texture
+									dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
+									nodeFn.findPlug("alphaGain").setValue(0.25);
+									nodeFn.findPlug("defaultColorR").setValue( 0.0 );
+									nodeFn.findPlug("defaultColorG").setValue( 0.0 );
+									nodeFn.findPlug("defaultColorB").setValue( 0.0 );
+									dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
+									break;
+							}
 
-						//Check for clamp mode
-						bool wrap_u = true, wrap_v = true;
-						if ( tx.clampMode == CLAMP_S_CLAMP_T ) {
-							wrap_u = false;
-							wrap_v = false;
-						} else if ( tx.clampMode == CLAMP_S_WRAP_T ) {
-							wrap_u = false;
-						} else if ( tx.clampMode == WRAP_S_CLAMP_T ) {
-							wrap_v = false;
-						}
+							//Check for clamp mode
+							bool wrap_u = true, wrap_v = true;
+							if ( tx.clampMode == CLAMP_S_CLAMP_T ) {
+								wrap_u = false;
+								wrap_v = false;
+							} else if ( tx.clampMode == CLAMP_S_WRAP_T ) {
+								wrap_u = false;
+							} else if ( tx.clampMode == WRAP_S_CLAMP_T ) {
+								wrap_v = false;
+							}
 
-						//Create 2D Texture Placement
-						MFnDependencyNode tp2dFn;
-						tp2dFn.create( "place2dTexture", "place2dTexture" );
-						tp2dFn.findPlug("wrapU").setValue(wrap_u);
-						tp2dFn.findPlug("wrapV").setValue(wrap_v);
+							//Create 2D Texture Placement
+							MFnDependencyNode tp2dFn;
+							tp2dFn.create( "place2dTexture", "place2dTexture" );
+							tp2dFn.findPlug("wrapU").setValue(wrap_u);
+							tp2dFn.findPlug("wrapV").setValue(wrap_v);
 
-						//Connect all the 18 things
-						dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
-						dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
-						dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
-						dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
-						dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
-						dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
-						dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
-						dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
-						dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
-						dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
-						dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
-						dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
-						dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
-						dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
-						dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
-						dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
-						dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
-						dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
-						//(Whew!)
+							//Connect all the 18 things
+							dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
+							dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
+							dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
+							dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
+							dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
+							dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
+							dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
+							dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
+							dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
+							dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
+							dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
+							dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
+							dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
+							dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
+							dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
+							dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
+							dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
+							dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
+							//(Whew!)
 
-						//Create uvChooser if necessary
-						if ( uv_set > 0 ) {
-							MFnDependencyNode chooserFn;
-							chooserFn.create( "uvChooser", "uvChooser" );
+							//Create uvChooser if necessary
+							if ( uv_set > 0 ) {
+								MFnDependencyNode chooserFn;
+								chooserFn.create( "uvChooser", "uvChooser" );
 
-							//Connection between the mesh and the uvChooser
-							MFnMesh meshFn;
-							meshFn.setObject(meshPath);
-							dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
+								//Connection between the mesh and the uvChooser
+								MFnMesh meshFn;
+								meshFn.setObject(meshPath);
+								dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
 
-							//Connections between the uvChooser and the place2dTexture
-							dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
-							dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
-							dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
-							dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
-							dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
+								//Connections between the uvChooser and the place2dTexture
+								dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
+								dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
+								dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
+								dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
+								dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
+							}
 						}
 					}
 					uv_set++;
