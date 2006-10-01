@@ -132,3 +132,23 @@
  - With no path, only the file name.
  - With the complete path.
  - With a user-specified prefix.
+ 
+ =Version 0.5.8=
+
+* Temporary Niflib data is now freed at the end of the functions that use it.
+* Files with internal textures now generate a warning instead of failing to
+  load entirely.
+* Invalid triangles are now properly taken care of when setting vertex colors.
+* Now apply all skin offsets (propagating interim transforms) as a
+  post-process.  Allows Better Bodies files to be exported in such a way that
+  they can be used in Morrowind without modification.
+* Fixed a bug where a mesh with no vertices would cause export to fail.
+* Fixed a bug in the way UV set numbers were assigned, which could cause
+  export to fail.
+* Fixed a bug where a missing joint was not being properly detected during
+  export.
+* Combine Skeleton and Search for Bind Position should not have been mutually
+  exclusive.
+* Fixed a bug where meshes had different numbers of textures on different
+  parts that were combined with ComplexShape::Split causing a crash on export.
+* Further bug fixes through changes in Niflib.
