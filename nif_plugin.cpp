@@ -1687,7 +1687,74 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			if ( visibility == false ) {
 				children[c]->SetVisibility(false);
 			}
-		}
+
+			//Search for Morrowind-Specific body part names in materials
+			//TODO: Make this optional
+			NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TypeConst()) );
+			if ( niMatProp != NULL ) {
+				string mat_name = niMatProp->GetName();
+				if ( mat_name.find( "Neck" ) != string::npos ) {
+					children[c]->SetName( "Tri Neck" );
+				}
+				if ( mat_name.find( "Chest" ) != string::npos ) {
+					children[c]->SetName( "Tri Chest" );
+				}
+				if ( mat_name.find( "Groin" ) != string::npos ) {
+					children[c]->SetName( "Tri Groin" );
+				}
+				if ( mat_name.find( "Tail" ) != string::npos ) {
+					children[c]->SetName( "Tri Tail" );
+				}
+				if ( mat_name.find( "Right Upper Arm" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Upper Arm" );
+				}
+				if ( mat_name.find( "Left Upper Arm" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Upper Arm" );
+				}
+				if ( mat_name.find( "Right Forearm" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Forearm" );
+				}
+				if ( mat_name.find( "Left Forearm" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Forearm" );
+				}
+				if ( mat_name.find( "Right Wrist" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Wrist" );
+				}
+				if ( mat_name.find( "Left Wrist" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Wrist" );
+				}
+				if ( mat_name.find( "Right Hand" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Hand" );
+				}
+				if ( mat_name.find( "Left Hand" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Hand" );
+				}
+				if ( mat_name.find( "Right Upper Leg" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Upper Leg" );
+				}
+				if ( mat_name.find( "Left Upper Leg" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Upper Leg" );
+				}
+				if ( mat_name.find( "Right Knee" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Knee" );
+				}
+				if ( mat_name.find( "Left Knee" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Knee" );
+				}
+				if ( mat_name.find( "Right Ankle" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Ankle" );
+				}
+				if ( mat_name.find( "Left Ankle" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Ankle" );
+				}
+				if ( mat_name.find( "Right Foot" ) != string::npos ) {
+					children[c]->SetName( "Tri Right Foot" );
+				}
+				if ( mat_name.find( "Left Foot" ) != string::npos ) {
+					children[c]->SetName( "Tri Left Foot" );
+				}
+			}
+		} 
 
 	} else {
 		//Root must be a NiTriBasedGeom.  Make it invisible if necessary
