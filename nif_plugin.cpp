@@ -1884,7 +1884,7 @@ void NifTranslator::ExportAV( NiAVObjectRef avObj, MObject dagNode ) {
 	}
 
 	//Set default collision propogation type of "Use triangles"
-	avObj->SetFlags(2);
+	avObj->SetFlags(10);
 
 	//Set visibility
 	MPlug vis = nodeFn.findPlug( MString("visibility") );
