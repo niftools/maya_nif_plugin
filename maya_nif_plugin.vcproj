@@ -269,7 +269,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya7.0\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 				DebugInformationFormat="3"
