@@ -135,7 +135,7 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
 				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
-				OutputFile="..\bin\nifTranslator.mll"
+				OutputFile="..\bin\Maya6.5\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya6.5\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
 				ImportLibrary="Release/Export.lib"
@@ -269,7 +269,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya7.0\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="2"
+				RuntimeLibrary="0"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -287,8 +287,162 @@
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
 				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
-				OutputFile="..\bin\nifTranslator.mll"
+				OutputFile="..\bin\Maya7.0\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya7.0\lib"
+				ProgramDatabaseFile="Release/Export.pdb"
+				ImportLibrary="Release/Export.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release - 8.5|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /I &quot;.&quot;  /c"
+				Optimization="2"
+				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya7.0\include"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
+				RuntimeLibrary="0"
+				PrecompiledHeaderFile=""
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
+				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				OutputFile="..\bin\Maya8.5\nifTranslator.mll"
+				AdditionalLibraryDirectories="C:\Program Files\Autodesk\Maya8.5\lib"
+				ProgramDatabaseFile="Release/Export.pdb"
+				ImportLibrary="Release/Export.lib"
+			/>
+			<Tool
+				Name="VCALinkTool"
+			/>
+			<Tool
+				Name="VCManifestTool"
+			/>
+			<Tool
+				Name="VCXDCMakeTool"
+			/>
+			<Tool
+				Name="VCBscMakeTool"
+			/>
+			<Tool
+				Name="VCFxCopTool"
+			/>
+			<Tool
+				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
+			/>
+			<Tool
+				Name="VCPostBuildEventTool"
+			/>
+		</Configuration>
+		<Configuration
+			Name="Release - 8.0|Win32"
+			OutputDirectory="$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
+			ConfigurationType="2"
+			InheritedPropertySheets="$(VCInstallDir)VCProjectDefaults\UpgradeFromVC71.vsprops"
+			UseOfMFC="0"
+			>
+			<Tool
+				Name="VCPreBuildEventTool"
+			/>
+			<Tool
+				Name="VCCustomBuildTool"
+			/>
+			<Tool
+				Name="VCXMLDataGeneratorTool"
+			/>
+			<Tool
+				Name="VCWebServiceProxyGeneratorTool"
+			/>
+			<Tool
+				Name="VCMIDLTool"
+			/>
+			<Tool
+				Name="VCCLCompilerTool"
+				AdditionalOptions=" /I &quot;.&quot;  /c"
+				Optimization="2"
+				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya7.0\include"
+				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
+				RuntimeLibrary="0"
+				PrecompiledHeaderFile=""
+				WarningLevel="3"
+				DebugInformationFormat="3"
+			/>
+			<Tool
+				Name="VCManagedResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCResourceCompilerTool"
+			/>
+			<Tool
+				Name="VCPreLinkEventTool"
+			/>
+			<Tool
+				Name="VCLinkerTool"
+				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
+				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				OutputFile="..\bin\Maya8.0\nifTranslator.mll"
+				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya8.0\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
 				ImportLibrary="Release/Export.lib"
 			/>
