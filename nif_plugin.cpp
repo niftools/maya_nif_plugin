@@ -221,7 +221,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			}
 
 			//Check if the root node has a non-identity transform
-			if ( root_node->GetLocalTransform() == Matrix44::IDENTITY ) {
+			if ( root_node->GetLocalTransform() == Matrix44::Identity() ) {
 				//Root has no transform, so treat it as the scene root
 				vector<NiAVObjectRef> root_children = root_node->GetChildren();
 				
