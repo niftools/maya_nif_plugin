@@ -21,6 +21,7 @@ bool use_name_mangling = false;  //Determines whether to replace characters that
 bool export_tri_strips = false;  //Determiens whether to export NiTriShape objects or NiTriStrip objects
 int export_part_bones = 0; //Determines the maximum number of bones per skin partition.
 bool export_tan_space = false; //Determines whether Oblivion tangent space data is generated for meshes on export
+bool export_mor_rename = false; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
 enum TexPathMode {
 	PATH_MODE_AUTO, //Uses search paths to strip intelligently
 	PATH_MODE_FULL, //Uses full path
@@ -1688,70 +1689,71 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 				children[c]->SetVisibility(false);
 			}
 
-			//Search for Morrowind-Specific body part names in materials
-			//TODO: Make this optional
-			NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TypeConst()) );
-			if ( niMatProp != NULL ) {
-				string mat_name = niMatProp->GetName();
-				if ( mat_name.find( "Neck" ) != string::npos ) {
-					children[c]->SetName( "Tri Neck" );
-				}
-				if ( mat_name.find( "Chest" ) != string::npos ) {
-					children[c]->SetName( "Tri Chest" );
-				}
-				if ( mat_name.find( "Groin" ) != string::npos ) {
-					children[c]->SetName( "Tri Groin" );
-				}
-				if ( mat_name.find( "Tail" ) != string::npos ) {
-					children[c]->SetName( "Tri Tail" );
-				}
-				if ( mat_name.find( "Right Upper Arm" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Upper Arm" );
-				}
-				if ( mat_name.find( "Left Upper Arm" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Upper Arm" );
-				}
-				if ( mat_name.find( "Right Forearm" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Forearm" );
-				}
-				if ( mat_name.find( "Left Forearm" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Forearm" );
-				}
-				if ( mat_name.find( "Right Wrist" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Wrist" );
-				}
-				if ( mat_name.find( "Left Wrist" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Wrist" );
-				}
-				if ( mat_name.find( "Right Hand" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Hand" );
-				}
-				if ( mat_name.find( "Left Hand" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Hand" );
-				}
-				if ( mat_name.find( "Right Upper Leg" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Upper Leg" );
-				}
-				if ( mat_name.find( "Left Upper Leg" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Upper Leg" );
-				}
-				if ( mat_name.find( "Right Knee" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Knee" );
-				}
-				if ( mat_name.find( "Left Knee" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Knee" );
-				}
-				if ( mat_name.find( "Right Ankle" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Ankle" );
-				}
-				if ( mat_name.find( "Left Ankle" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Ankle" );
-				}
-				if ( mat_name.find( "Right Foot" ) != string::npos ) {
-					children[c]->SetName( "Tri Right Foot" );
-				}
-				if ( mat_name.find( "Left Foot" ) != string::npos ) {
-					children[c]->SetName( "Tri Left Foot" );
+			//Search for Morrowind-Specific body part names in materials, if requested
+			if( export_mor_rename ) {
+				NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TypeConst()) );
+				if ( niMatProp != NULL ) {
+					string mat_name = niMatProp->GetName();
+					if ( mat_name.find( "Neck" ) != string::npos ) {
+						children[c]->SetName( "Tri Neck" );
+					}
+					if ( mat_name.find( "Chest" ) != string::npos ) {
+						children[c]->SetName( "Tri Chest" );
+					}
+					if ( mat_name.find( "Groin" ) != string::npos ) {
+						children[c]->SetName( "Tri Groin" );
+					}
+					if ( mat_name.find( "Tail" ) != string::npos ) {
+						children[c]->SetName( "Tri Tail" );
+					}
+					if ( mat_name.find( "Right Upper Arm" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Upper Arm" );
+					}
+					if ( mat_name.find( "Left Upper Arm" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Upper Arm" );
+					}
+					if ( mat_name.find( "Right Forearm" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Forearm" );
+					}
+					if ( mat_name.find( "Left Forearm" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Forearm" );
+					}
+					if ( mat_name.find( "Right Wrist" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Wrist" );
+					}
+					if ( mat_name.find( "Left Wrist" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Wrist" );
+					}
+					if ( mat_name.find( "Right Hand" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Hand" );
+					}
+					if ( mat_name.find( "Left Hand" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Hand" );
+					}
+					if ( mat_name.find( "Right Upper Leg" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Upper Leg" );
+					}
+					if ( mat_name.find( "Left Upper Leg" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Upper Leg" );
+					}
+					if ( mat_name.find( "Right Knee" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Knee" );
+					}
+					if ( mat_name.find( "Left Knee" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Knee" );
+					}
+					if ( mat_name.find( "Right Ankle" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Ankle" );
+					}
+					if ( mat_name.find( "Left Ankle" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Ankle" );
+					}
+					if ( mat_name.find( "Right Foot" ) != string::npos ) {
+						children[c]->SetName( "Tri Right Foot" );
+					}
+					if ( mat_name.find( "Left Foot" ) != string::npos ) {
+						children[c]->SetName( "Tri Left Foot" );
+					}
 				}
 			}
 		} 
@@ -2323,12 +2325,29 @@ void NifTranslator::ExportFileTextures() {
 		// attach a dependency node to the file node
 		MFnDependencyNode fn(it.item());
 
-		// get the attribute for the full texture path
+		// get the attribute for the full texture path and size
 		MPlug ftn = fn.findPlug("fileTextureName");
+		MPlug osx = fn.findPlug("outSizeX");
+		MPlug osy = fn.findPlug("outSizeY");
 
 		// get the filename from the attribute
 		MString filename;
 		ftn.getValue(filename);
+		
+		//Get image size
+		float x, y;
+		osx.getValue(x);
+		osy.getValue(y);
+
+		//Determine whether the dimentions of the texture are powers of two
+		if ( ((int(x) & (int(x) - 1)) != 0 ) || ((int(y) & (int(y) - 1)) != 0 ) ) {
+
+			//Print the value for now:
+			stringstream ss;
+
+			ss << "File texture " << filename.asChar() << " has dimentions that are not powers of 2.  Non-power of 2 dimentions will not work in most games.";
+			MGlobal::displayWarning( ss.str().c_str() );
+		}
 
 		//Create the NiSourceTexture block
 		NiSourceTextureRef ni_tex = new NiSourceTexture;
@@ -2491,6 +2510,14 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 				export_tan_space = false;
 			}
 			out << "Export Tangent Space:  " << export_tan_space << endl;
+		}
+		if ( tokens[0] == "exportMorRename" ) {
+			if ( tokens[1] == "1" ) {
+				export_mor_rename = true;
+			} else {
+				export_mor_rename = false;
+			}
+			out << "Export Morrowind Rename:  " << export_mor_rename << endl;
 		}
 		if ( tokens[0] == "importSkelComb" ) {
 			if ( tokens[1] == "1" ) {

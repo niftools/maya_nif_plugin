@@ -54,13 +54,21 @@ global proc int nifTranslatorOpts ( string $parent,
 		setParent $parent;
 		frameLayout -label "Common" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout commonColumnLayout;
+				checkBox -label "Use Name Mangling to Preserve Original Names" 
+						  -value 1
+						  -annotation "Preserves names which are invalid in Maya names using character code numbers for re-export."
+						  useNameManglingCk;
 				rowLayout -numberOfColumns 1;
-					text -label "Texture Search Paths:";
+					text -label "Texture Search Paths:"
+						 -width 150
+						 -annotation "Determines where the importer will search for textures specified in the NIF file."
+						 -font boldLabelFont;;
 				setParent commonColumnLayout;
 				rowLayout -numberOfColumns 3
 						  -columnWidth3 300 50 50
 						  -columnAttach3 "both" "left" "left";
 					  textField -editable true
+					  			-text ""
 								-annotation "Type a path here and press 'Add' to add it to the texture search path list.  './' is current NIF file folder, '../' is parent folder."
 								nifTxPath;
 					button -label "Browse"
@@ -80,10 +88,6 @@ global proc int nifTranslatorOpts ( string $parent,
 				for ( $i = 0; $i < size($defaultPaths); $i++ ) {
 					textScrollList -edit -append $defaultPaths[$i] -width 400 nifPathList;
 				}
-				checkBox -label "Use Name Mangling to Preserve Original Names" 
-						  -value 1
-						  -annotation "Preserves names which are invalid in Maya names using character code numbers for re-export."
-						  useNameManglingCk;
 				setParent $parent;
 		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout importColumnLayout;
@@ -143,6 +147,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 0
 						  -annotation "Exports NiTriStrips instead of NiTriShapes.  May cause problems in Morrowind CS."
 						  expTriStripsCk;
+			checkBox -label "Rename mesh chunks marked with materials with Morrowind body part names." 
+					      -value 0
+						  -annotation "Used for automatically splitting apart a single mesh into multiple meshes for each body part by material assignment."
+						  expMorRenameCk;
 			checkBox -label "Generate Oblivion Tangent Space Data" 
 					      -value 0
 						  -annotation "Check this option if you are exporting for Oblivion.  Otherwise it will just inflate your NIF file."
@@ -158,7 +166,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						  expPartBonesTx;
 			setParent exportColumnLayout;
 			text -label "Texture Path Adjustment:"
-			     -width 200
+			     -width 150
 				 -annotation "Determines the way the texture file paths will be saved in the NIF file."
 				 -font boldLabelFont;
 			columnLayout pathLayout;
@@ -247,6 +255,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false expTanSpaceCk;
 					}
 				}
+				if ($optionBreakDown[0] == "exportMorRename") {
+					if ($optionBreakDown[1] == "1" ) {
+						checkBox -edit -value true expMorRenameCk;
+					} else {
+						checkBox -edit -value false expMorRenameCk;
+					}
+				}
 				if ($optionBreakDown[0] == "importSkelComb") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true impSkelCombCk;
@@ -298,15 +313,8 @@ global proc int nifTranslatorOpts ( string $parent,
 				$currentOptions = $currentOptions + "|";
 			}
 		}
-		$curentOptions = $currentOptions + ";";
-		string $texturePath = `textField -query -text nifTxPath`;
-		if ($texturePath != "") {
-			$currentOptions = $currentOptions + "texturePath=" + $texturePath + ";";
-		} else {
-			//Use Default path
-			$currentOptions = $currentOptions + "texturePath=" + $defaultPath + ";";
-		}
-		
+		$currentOptions = $currentOptions + ";";
+
 		string $version = `textField -query -text nifVersion`;
 		if ($version != "") {
 			$currentOptions = $currentOptions + "exportVersion=" + $version + ";";
@@ -342,6 +350,9 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value expTanSpaceCk`;
 		$currentOptions = $currentOptions + "exportTanSpace=" + $ckVal + ";";
+		
+		$ckVal = `checkBox -query -value expMorRenameCk`;
+		$currentOptions = $currentOptions + "exportMorRename=" + $ckVal + ";";
 		
 		$ckVal = `checkBox -query -value impSkelCombCk`;
 		$currentOptions = $currentOptions + "importSkelComb=" + $ckVal + ";";
