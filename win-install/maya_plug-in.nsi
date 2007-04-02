@@ -54,7 +54,7 @@ Var MAYA_INSTALLDIR
 
 !insertmacro MUI_PAGE_LICENSE ..\license.txt
 
-!define MUI_DIRECTORYPAGE_TEXT_TOP "The field below specifies the folder where the installer has detected your Maya ${MAYA_VERSION} install location. This directory has been detected by analyzing the Windows Registry.$\r$\n$\r$\nFor your convenience, the installer will also remove any old versions of the ${SHORT_NAME} (no other files will be deleted).$\r$\n$\r$\nUnless you really know what you are doing, you should leave the field below as it is."
+!define MUI_DIRECTORYPAGE_TEXT_TOP "The field below specifies the folder where the installer has detected your Maya ${MAYA_VERSION} install location. This directory has been detected by analyzing the Windows Registry.$\r$\n$\r$\nFor your convenience, the installer will attempt to remove any old versions of the ${SHORT_NAME} that it finds (no other files will be deleted).$\r$\n$\r$\nUnless you really know what you are doing, you should leave the field below as it is."
 !define MUI_DIRECTORYPAGE_TEXT_DESTINATION "Maya ${MAYA_VERSION} Location"
 !define MUI_DIRECTORYPAGE_VARIABLE $MAYA_INSTALLDIR
 !insertmacro MUI_PAGE_DIRECTORY
@@ -113,6 +113,14 @@ Function .onInit
   ReadRegStr $MAYA_INSTALLDIR HKLM "SOFTWARE\Alias\Maya\${MAYA_VERSION}\Setup\InstallPath" "MAYA_INSTALL_LOCATION"
   IfErrors 0 MayaFound
   
+  ClearErrors
+  ReadRegStr $MAYA_INSTALLDIR HKLM "SOFTWARE\Autodesk\Maya\${MAYA_VERSION}\Setup\InstallPath" "MAYA_INSTALL_LOCATION"
+  IfErrors 0 MayaFound
+  
+  ClearErrors
+  ReadRegStr $MAYA_INSTALLDIR HKLM "SOFTWARE\Autodesk\Maya\${MAYA_VERSION}\Setup\InstallPath" "MAYA_INSTALL_LOCATION"
+  IfErrors 0 MayaFound
+  
      ; no key, that means that Maya is not installed
      MessageBox MB_OK "The installer cannot find the Maya ${MAYA_VERSION} install location registry key.  Make sure that Maya ${MAYA_VERSION} is properly installed and try again."
      Abort ; causes installer to quit
@@ -124,11 +132,12 @@ FunctionEnd
 Section
   SectionIn RO
 
-  SetShellVarContext all
-
   ; Cleanup: remove old versions of the options script from common locations
+  SetShellVarContext current
   Delete "$DOCUMENTS\Maya\${MAYA_VERSION}\scripts\nifTranslatorOpts.mel"
   Delete "$DOCUMENTS\Maya\scripts\nifTranslatorOpts.mel"
+  
+  SetShellVarContext all
   Delete "$MAYA_INSTALLDIR\scripts\others\nifTranslatorOpts.mel"
   
   ;remove old versions of the plug-in MLL file from common locations
