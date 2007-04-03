@@ -146,7 +146,7 @@ Section
  
   ; Install plug-in file
   SetOutPath "$MAYA_INSTALLDIR\plug-ins"
-  File "..\..\bin\maya${MAYA_VERSION}\nifTranslator.mll"
+  File "..\bin\maya${MAYA_VERSION}\nifTranslator.mll"
   
   ; Install options script
   SetOutPath "$MAYA_INSTALLDIR\scripts\others"
