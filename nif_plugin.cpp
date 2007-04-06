@@ -1155,7 +1155,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 
 		out << "Writing Finished NIF file..." << endl;
 		NifInfo nif_info(export_version, export_user_version);
-		nif_info.endian = NifInfo::INFO_LITTLE_ENDIAN; //Intel endian format
+		nif_info.endian = LITTLE_ENDIAN; //Intel endian format
 		nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
 
