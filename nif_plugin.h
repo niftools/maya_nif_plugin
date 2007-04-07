@@ -81,6 +81,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <maya/MString.h>
 #include <maya/MStringArray.h>
 #include <maya/MVector.h>
+#include <maya/MFnAnimCurve.h>
 
 #include <string> 
 #include <vector>
@@ -106,6 +107,9 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "obj/NiTriShape.h"
 #include "obj/NiTriShapeData.h"
 #include "obj/NiTriStripsData.h"
+#include "obj/NiTimeController.h"
+#include "obj/NiKeyframeController.h"
+#include "obj/NiKeyframeData.h"
 
 using namespace Niflib;
 
@@ -176,6 +180,7 @@ private:
 	MObject MakeJoint( MObject & jointObj );
 	MString MakeMayaName( const string & nifName );
 	string MakeNifName( const MString & mayaName );
+	void ImportControllers( NiAVObjectRef niAVObj, MDagPath & path );
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiAVObjectRef root, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );

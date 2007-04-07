@@ -262,6 +262,18 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		}
 		out << "Done importing meshes." << endl;
 
+		////--Import Animation--//
+		//out << "Importing Animation keyframes..." << endl;
+
+		////Iterate through all imported nodes, looking for any with animation keys
+
+		//for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
+		//	//Check to see if this node has any animation controllers
+		//	if ( it->first->IsAnimated() ) {
+		//		ImportControllers( it->first, it->second );
+		//	}
+		//}
+
 		out << "Deselecting anything that was selected by MEL commands" << endl;
 		MGlobal::clearSelectionList();
 
@@ -300,6 +312,161 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 	return MStatus::kSuccess;
 }
 
+//Function that will import animation controllers from the NIF file
+void NifTranslator::ImportControllers( NiAVObjectRef niAVObj, MDagPath & path ) {
+	list<NiTimeControllerRef> controllers = niAVObj->GetControllers();
+
+	//Iterate over the controllers, reacting properly to each type
+	for ( list<NiTimeControllerRef>::iterator it = controllers.begin(); it != controllers.end(); ++it ) {
+		if ( (*it)->IsDerivedType( NiKeyframeController::TypeConst() ) ) {
+			//--NiKeyframeController--//
+			NiKeyframeControllerRef niKeyCont = DynamicCast<NiKeyframeController>(*it);
+
+			NiKeyframeDataRef niKeyData = niKeyCont->GetData();
+
+			MFnTransform transFn( path.node() );
+
+			MFnAnimCurve traXFn;
+			MFnAnimCurve traYFn;
+			MFnAnimCurve traZFn;
+
+			MObject traXcurve = traXFn.create( transFn.findPlug("translateX") );
+			MObject traYcurve = traYFn.create( transFn.findPlug("translateY") );
+			MObject traZcurve = traZFn.create( transFn.findPlug("translateZ") );
+
+			MTimeArray traTimes;
+			MDoubleArray traXValues;
+			MDoubleArray traYValues;
+			MDoubleArray traZValues;
+
+			vector<Key<Vector3> > tra_keys = niKeyData->GetTranslateKeys();
+
+			for ( size_t i = 0; i < tra_keys.size(); ++i) {
+				traTimes.append( MTime( tra_keys[i].time, MTime::kSeconds ) );
+				traXValues.append( tra_keys[i].data.x );
+				traYValues.append( tra_keys[i].data.y );
+				traZValues.append( tra_keys[i].data.z );
+
+				//traXFn.addKeyframe( tra_keys[i].time * 24.0, tra_keys[i].data.x );
+				//traYFn.addKeyframe( tra_keys[i].time * 24.0, tra_keys[i].data.y );
+				//traZFn.addKeyframe( tra_keys[i].time * 24.0, tra_keys[i].data.z );
+			}
+
+			traXFn.addKeys( &traTimes, &traXValues );
+			traYFn.addKeys( &traTimes, &traYValues );
+			traZFn.addKeys( &traTimes, &traZValues );
+
+			KeyType kt = niKeyData->GetRotateType();
+
+			if ( kt != XYZ_ROTATION_KEY ) {
+				vector<Key<Quaternion> > rot_keys = niKeyData->GetQuatRotateKeys();
+
+				MFnAnimCurve rotXFn;
+				MFnAnimCurve rotYFn;
+				MFnAnimCurve rotZFn;
+
+				MObject rotXcurve = rotXFn.create( transFn.findPlug("rotateX") );
+				//rotXFn.findPlug("rotationInterpolation").setValue(3);
+				MObject rotYcurve = rotYFn.create( transFn.findPlug("rotateY") );
+				//rotYFn.findPlug("rotationInterpolation").setValue(3);
+				MObject rotZcurve = rotZFn.create( transFn.findPlug("rotateZ") );
+				//rotZFn.findPlug("rotationInterpolation").setValue(3);
+
+				MTimeArray rotTimes;
+				MDoubleArray rotXValues;
+				MDoubleArray rotYValues;
+				MDoubleArray rotZValues;
+
+				MEulerRotation mPrevRot;
+				for( size_t i = 0; i < rot_keys.size(); ++i ) {
+					Quaternion niQuat = rot_keys[i].data;
+
+					MQuaternion mQuat( niQuat.x, niQuat.y, niQuat.z, niQuat.w );
+					MEulerRotation mRot = mQuat.asEulerRotation();
+					MEulerRotation mAlt;
+					mAlt[0] = PI + mRot[0];
+					mAlt[1] = PI - mRot[1];
+					mAlt[2] = PI + mRot[2];
+
+					for ( size_t j = 0; j < 3; ++j ) {
+						double prev_diff = abs(mRot[j] - mPrevRot[j]);
+						//Try adding and subtracting multiples of 2 pi radians to get
+						//closer to the previous angle
+						while (true) {
+							double new_angle = mRot[j] - (PI * 2);
+							double diff = abs( new_angle - mPrevRot[j] );
+							if ( diff < prev_diff ) {
+								mRot[j] = new_angle;
+								prev_diff = diff;
+							} else {
+								break;
+							}
+						}
+						while (true) {
+							double new_angle = mRot[j] + (PI * 2);
+							double diff = abs( new_angle - mPrevRot[j] );
+							if ( diff < prev_diff ) {
+								mRot[j] = new_angle;
+								prev_diff = diff;
+							} else {
+								break;
+							}
+						}
+					}
+
+					for ( size_t j = 0; j < 3; ++j ) {
+						double prev_diff = abs(mAlt[j] - mPrevRot[j]);
+						//Try adding and subtracting multiples of 2 pi radians to get
+						//closer to the previous angle
+						while (true) {
+							double new_angle = mAlt[j] - (PI * 2);
+							double diff = abs( new_angle - mPrevRot[j] );
+							if ( diff < prev_diff ) {
+								mAlt[j] = new_angle;
+								prev_diff = diff;
+							} else {
+								break;
+							}
+						}
+						while (true) {
+							double new_angle = mAlt[j] + (PI * 2);
+							double diff = abs( new_angle - mPrevRot[j] );
+							if ( diff < prev_diff ) {
+								mAlt[j] = new_angle;
+								prev_diff = diff;
+							} else {
+								break;
+							}
+						}
+					}
+
+					
+					//Try taking advantage of the fact that:
+					//Rotate(x,y,z) = Rotate(pi + x, pi - y, pi +z)
+					double rot_diff = ( (abs(mRot[0] - mPrevRot[0]) + abs(mRot[1] - mPrevRot[1]) + abs(mRot[2] - mPrevRot[2]) ) / 3.0 );
+					double alt_diff = ( (abs(mAlt[0] - mPrevRot[0]) + abs(mAlt[1] - mPrevRot[1]) + abs(mAlt[2] - mPrevRot[2]) ) / 3.0 );
+
+					if ( alt_diff < rot_diff ) {
+						mRot = mAlt;
+					}
+
+					mPrevRot = mRot;
+
+					rotTimes.append( MTime(rot_keys[i].time, MTime::kSeconds) );
+					rotXValues.append( mRot[0] );
+					rotYValues.append( mRot[1] );
+					rotZValues.append( mRot[2] );
+				}
+
+				
+				rotXFn.addKeys( &rotTimes, &rotXValues );
+				rotYFn.addKeys( &rotTimes, &rotYValues );
+				rotZFn.addKeys( &rotTimes, &rotZValues );
+			}
+		}
+	}
+}
+
 // Recursive function to crawl down tree looking for children and translate those that are understood
 void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )  {
 	MObject obj;
@@ -309,6 +476,36 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	////Stop at a non-node
 	//if ( node == NULL )
 	//	return;
+
+	//Check if this node is a skinned NiTriBasedGeom.  If so, parent it to the scene instead
+	//of whereever the NIF file has it.
+
+	bool is_skin = false;
+
+	vector<NiAVObjectRef> nodesToTest;
+
+	if ( niAVObj->IsDerivedType( NiNode::TypeConst() ) ) {
+		NiNodeRef nnr = DynamicCast<NiNode>(niAVObj);
+		if ( nnr->IsSplitMeshProxy() ) {
+			//Test all children
+			nodesToTest = nnr->GetChildren();
+		}
+	} else if ( niAVObj->IsDerivedType(NiTriBasedGeom::TypeConst() ) ) {
+		//This is a shape, so test it.
+		nodesToTest.push_back(niAVObj);
+	}
+
+	for ( size_t i = 0; i < nodesToTest.size(); ++i ) {
+		NiTriBasedGeomRef niTriGeom = DynamicCast<NiTriBasedGeom>( nodesToTest[i] );
+		if ( niTriGeom && niTriGeom->IsSkin() ) {
+			is_skin = true;
+			break;
+		}
+	}
+
+	if ( is_skin ) {
+		parent = MObject::kNullObj;
+	}
 
 	//This must be a node, so process its basic attributes	
 	MFnTransform transFn;
@@ -359,7 +556,11 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 		//--Set the Transform Matrix--//
 		Matrix44 transform;
 
-		transform = niAVObj->GetLocalTransform();
+		if ( is_skin ) {
+			transform = niAVObj->GetWorldTransform();
+		} else {
+			transform = niAVObj->GetLocalTransform();
+		}
 
 		//put matrix into a float array
 		float trans_arr[4][4];
@@ -1155,7 +1356,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 
 		out << "Writing Finished NIF file..." << endl;
 		NifInfo nif_info(export_version, export_user_version);
-		nif_info.endian = LITTLE_ENDIAN; //Intel endian format
+		nif_info.endian = ENDIAN_LITTLE; //Intel endian format
 		nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
 
@@ -1657,13 +1858,31 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	//Get parent
 	NiNodeRef parNode = GetDAGParent( dagNode );
+	Matrix44 transform = Matrix44::Identity();
+	vector<NiNodeRef> influences = cs.GetSkinInfluences();
+	if ( influences.size() > 0 ) {
+		//This is a skin, so we use the common ancestor of all influences
+		//as the parent
+		vector<NiAVObjectRef> objects;
+		for ( size_t i = 0; i < influences.size(); ++i ) {
+			objects.push_back( StaticCast<NiAVObject>(influences[i]) );
+		}
+
+		//Get world transform of existing parent
+		Matrix44 oldParWorld = parNode->GetWorldTransform();
+
+		//Set new parent node
+		parNode = FindCommonAncestor( objects );
+
+		transform = oldParWorld * parNode->GetWorldTransform().Inverse();
+	}
 
 	//Get transform using temporary NiAVObject
 	NiAVObjectRef tempAV = new NiAVObject;
 	ExportAV(tempAV, dagNode );
 
 	out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
-	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform(), export_part_bones, export_tri_strips, export_tan_space );
+	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, export_part_bones, export_tri_strips, export_tan_space );
 
 	out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
