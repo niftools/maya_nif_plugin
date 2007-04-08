@@ -152,3 +152,22 @@
 * Fixed a bug where meshes had different numbers of textures on different
   parts that were combined with ComplexShape::Split causing a crash on export.
 * Further bug fixes through changes in Niflib.
+
+=Version 0.6=
+
+* Skins are now imported to the root of the Maya scene and exported as children
+  of their skeleton root regardless of their location in the Maya HyperGraph.
+* Gave Maya Plug-in, Niflyze, and Niflib projects each their own bin folder.
+* Fixed bug in options script that was causing "texturePath" to be appended to
+  one of the entries in the path list over and over.
+* Made renaming Morrowind body parts by material optional and put a check box
+  for it into the options script.
+* Niflib fix cures the issue of not being able to load and then export an
+  Oblivion skin NIF and view it in the game.
+* Added a warning if dimensions of an exported texture are not powers of 2.
+* Created a NSIS install script for the Maya NIF Plug-in.
+* Fix to Maya 8.0 and 8.5 configurations.  At least 8.5 should work now.
+* Added configurations for Maya 8.0 and 8.5 to Maya solution.  May not work.
+* Automated renaming of Morrowind body parts based on material names to speed
+  myself up.  Will make it optional later.
+* Corrected NiAVObject flag default to 10.
