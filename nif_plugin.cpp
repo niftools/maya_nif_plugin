@@ -836,7 +836,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 	cs.Merge( root );
 
-	vector<ComplexShape::WeightedVertex> nif_verts = cs.GetVertices();
+	vector<WeightedVertex> nif_verts = cs.GetVertices();
 	unsigned NumVertices = unsigned(nif_verts.size());
 	out << "Num Vertices:  " << NumVertices << endl;
 	
@@ -849,11 +849,11 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	out << "Getting polygons..." << endl;
 	//Get Polygons
 	int NumPolygons = 0;
-	vector<ComplexShape::ComplexFace> niRawFaces = cs.GetFaces();
+	vector<ComplexFace> niRawFaces = cs.GetFaces();
 
 	MIntArray maya_poly_counts;
 	MIntArray maya_connects;
-	vector<ComplexShape::ComplexFace> niFaces;
+	vector<ComplexFace> niFaces;
 	for (unsigned i = 0; i < niRawFaces.size(); ++i) {
 
 		//Only append valid triangles
@@ -862,7 +862,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 			continue;
 		}
 
-		const ComplexShape::ComplexFace & f = niRawFaces[i];
+		const ComplexFace & f = niRawFaces[i];
 
 		unsigned p0 = f.points[0].vertexIndex;
 		unsigned p1 = f.points[1].vertexIndex;
@@ -946,7 +946,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	out << "Creating a list of the UV sets..." << endl;
 	//Create a list of the UV sets used by the complex shape if any
 
-	vector<ComplexShape::TexCoordSet> niUVSets = cs.GetTexCoordSets();
+	vector<TexCoordSet> niUVSets = cs.GetTexCoordSets();
 	vector<MString> uv_set_list( niUVSets.size() );
 
 	for ( unsigned i = 0; i < niUVSets.size(); ++i ) {
@@ -1249,7 +1249,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		//Put data in proper slots in the 2D array
 		for ( unsigned v = 0; v < nif_verts.size(); ++v ) {
 			for ( unsigned w = 0; w < nif_verts[v].weights.size(); ++w ) {
-				ComplexShape::SkinInfluence & si = nif_verts[v].weights[w];
+				SkinInfluence & si = nif_verts[v].weights[w];
 
 				nif_weights[si.influenceIndex][v] = si.weight;
 			}
@@ -1508,7 +1508,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		return;
 	}
 
-	vector<ComplexShape::WeightedVertex> nif_vts( vts.length() );
+	vector<WeightedVertex> nif_vts( vts.length() );
 	for( int i=0; i != vts.length(); ++i ) {
 		nif_vts[i].position.x = float(vts[i].x);
 		nif_vts[i].position.y = float(vts[i].y);
@@ -1560,7 +1560,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	// get the names of the uv sets on the mesh
 	meshFn.getUVSetNames(uvSetNames);
 
-	vector<ComplexShape::TexCoordSet> nif_uvs;
+	vector<TexCoordSet> nif_uvs;
 
 	//Record assotiation between name and uv set index for later
 	map<string,int> uvSetNums;
@@ -1597,7 +1597,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			meshFn.getUVs( myUCoords, myVCoords, &uvSetNames[i] );
 
 			//Store the data
-			ComplexShape::TexCoordSet tcs;
+			TexCoordSet tcs;
 			tcs.texType = tt;
 			tcs.texCoords.resize( myUCoords.length() );
 			for ( unsigned int j = 0; j < myUCoords.length(); ++j ) {
@@ -1645,7 +1645,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		
 	}
 
-	vector<ComplexShape::ComplexFace> nif_faces;
+	vector<ComplexFace> nif_faces;
 
 
 	//Add shaders to propGroup array
@@ -1695,13 +1695,13 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			continue;
 		}
 
-		ComplexShape::ComplexFace cf;
+		ComplexFace cf;
 
 		//Assume all faces use material 0 for now
 		cf.propGroupIndex = 0;
 		
 		for( int i = 0; i < poly_vert_count; ++i ) {
-			ComplexShape::ComplexPoint cp;
+			ComplexPoint cp;
 
 			cp.vertexIndex = itPoly.vertexIndex(i);
 			cp.normalIndex = itPoly.normalIndex(i);
@@ -1725,7 +1725,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			MStringArray vertUvSetNames;
 			itPoly.getUVSetNames( vertUvSetNames );
 			for ( unsigned int j = 0; j < vertUvSetNames.length(); ++j ) {
-				ComplexShape::TexCoordIndex tci;
+				TexCoordIndex tci;
 				tci.texCoordSetIndex  = uvSetNums[ vertUvSetNames[j].asChar() ];
 				int uv_index;
 				itPoly.getUVIndex(i, uv_index, &vertUvSetNames[j] );
@@ -1832,7 +1832,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 				//out << "Number of Maya vertices:  " << gIt.count() << endl;
 				//out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
 				unsigned int weight_index = 0;
-				ComplexShape::SkinInfluence sk;
+				SkinInfluence sk;
 				for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
 					for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
 						//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
