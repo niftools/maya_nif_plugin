@@ -262,17 +262,17 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		}
 		out << "Done importing meshes." << endl;
 
-		////--Import Animation--//
-		//out << "Importing Animation keyframes..." << endl;
+		//--Import Animation--//
+		out << "Importing Animation keyframes..." << endl;
 
-		////Iterate through all imported nodes, looking for any with animation keys
+		//Iterate through all imported nodes, looking for any with animation keys
 
-		//for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
-		//	//Check to see if this node has any animation controllers
-		//	if ( it->first->IsAnimated() ) {
-		//		ImportControllers( it->first, it->second );
-		//	}
-		//}
+		for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
+			//Check to see if this node has any animation controllers
+			if ( it->first->IsAnimated() ) {
+				ImportControllers( it->first, it->second );
+			}
+		}
 
 		out << "Deselecting anything that was selected by MEL commands" << endl;
 		MGlobal::clearSelectionList();
@@ -649,7 +649,7 @@ MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
 	}
 
 	//An external texture is used, create a texture node
-	string file_name = niSrcTex->GetExternalFileName();
+	string file_name = niSrcTex->GetTextureFileName();
 	MFnDependencyNode nodeFn;
 	//obj = nodeFn.create( MFn::kFileTexture, MString( ts.fileName.c_str() ) );
 	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
@@ -2635,7 +2635,7 @@ void NifTranslator::ExportFileTextures() {
 
 		out << "File Name:  " << fileName << endl;
 
-		ni_tex->SetExternalTexture( fileName, NULL );
+		ni_tex->SetExternalTexture( fileName );
 
 		//Associate NIF object with fileTexture DagPath
 		string path = fn.name().asChar();
