@@ -4,15 +4,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Maya NIF Plugin", "maya_nif
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
-		Debug|Win32 = Debug|Win32
+		Debug - 7.0|Win32 = Debug - 7.0|Win32
 		Release - 6.5|Win32 = Release - 6.5|Win32
 		Release - 7.0|Win32 = Release - 7.0|Win32
 		Release - 8.0|Win32 = Release - 8.0|Win32
 		Release - 8.5|Win32 = Release - 8.5|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{DE2F121F-8326-4144-A766-444451895AFA}.Debug|Win32.ActiveCfg = Debug|Win32
-		{DE2F121F-8326-4144-A766-444451895AFA}.Debug|Win32.Build.0 = Debug|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - 7.0|Win32.ActiveCfg = Release - 6.5|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - 7.0|Win32.Build.0 = Release - 6.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Release - 6.5|Win32.ActiveCfg = Release - 6.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Release - 6.5|Win32.Build.0 = Release - 6.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Release - 7.0|Win32.ActiveCfg = Release - 7.0|Win32

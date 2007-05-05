@@ -222,7 +222,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 			}
 
 			//Check if the root node has a non-identity transform
-			if ( root_node->GetLocalTransform() == Matrix44::Identity() ) {
+			if ( root_node->GetLocalTransform() == Matrix44::IDENTITY ) {
 				//Root has no transform, so treat it as the scene root
 				vector<NiAVObjectRef> root_children = root_node->GetChildren();
 				
@@ -318,7 +318,7 @@ void NifTranslator::ImportControllers( NiAVObjectRef niAVObj, MDagPath & path ) 
 
 	//Iterate over the controllers, reacting properly to each type
 	for ( list<NiTimeControllerRef>::iterator it = controllers.begin(); it != controllers.end(); ++it ) {
-		if ( (*it)->IsDerivedType( NiKeyframeController::TypeConst() ) ) {
+		if ( (*it)->IsDerivedType( NiKeyframeController::TYPE ) ) {
 			//--NiKeyframeController--//
 			NiKeyframeControllerRef niKeyCont = DynamicCast<NiKeyframeController>(*it);
 
@@ -484,13 +484,13 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 
 	vector<NiAVObjectRef> nodesToTest;
 
-	if ( niAVObj->IsDerivedType( NiNode::TypeConst() ) ) {
+	if ( niAVObj->IsDerivedType( NiNode::TYPE ) ) {
 		NiNodeRef nnr = DynamicCast<NiNode>(niAVObj);
 		if ( nnr->IsSplitMeshProxy() ) {
 			//Test all children
 			nodesToTest = nnr->GetChildren();
 		}
-	} else if ( niAVObj->IsDerivedType(NiTriBasedGeom::TypeConst() ) ) {
+	} else if ( niAVObj->IsDerivedType(NiTriBasedGeom::TYPE ) ) {
 		//This is a shape, so test it.
 		nodesToTest.push_back(niAVObj);
 	}
@@ -614,7 +614,7 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	}
 
 	//Check to see if this is a mesh
-	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TypeConst() ) ) {
+	if ( niAVObj->IsDerivedType( NiTriBasedGeom::TYPE ) ) {
 		//This is a mesh, so add it to the mesh list
 		importedMeshes.push_back( pair<NiAVObjectRef,MObject>(niAVObj,obj) );
 	}
@@ -1858,7 +1858,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 	//Get parent
 	NiNodeRef parNode = GetDAGParent( dagNode );
-	Matrix44 transform = Matrix44::Identity();
+	Matrix44 transform = Matrix44::IDENTITY;
 	vector<NiNodeRef> influences = cs.GetSkinInfluences();
 	if ( influences.size() > 0 ) {
 		//This is a skin, so we use the common ancestor of all influences
@@ -1910,7 +1910,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 			//Search for Morrowind-Specific body part names in materials, if requested
 			if( export_mor_rename ) {
-				NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TypeConst()) );
+				NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TYPE) );
 				if ( niMatProp != NULL ) {
 					string mat_name = niMatProp->GetName();
 					if ( mat_name.find( "Neck" ) != string::npos ) {
@@ -3024,13 +3024,13 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 	NiAlphaPropertyRef niAlphaProp = NULL;
 
 	for ( unsigned i = 0; i < properties.size(); ++i ) {
-		if ( properties[i]->IsDerivedType( NiMaterialProperty::TypeConst() ) ) {
+		if ( properties[i]->IsDerivedType( NiMaterialProperty::TYPE ) ) {
 			niMatProp = DynamicCast<NiMaterialProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiTexturingProperty::TypeConst() ) ) {
+		} else if ( properties[i]->IsDerivedType( NiTexturingProperty::TYPE ) ) {
 			niTexProp = DynamicCast<NiTexturingProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiSpecularProperty::TypeConst() ) ) {
+		} else if ( properties[i]->IsDerivedType( NiSpecularProperty::TYPE ) ) {
 			niSpecProp = DynamicCast<NiSpecularProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiAlphaProperty::TypeConst() ) ) {
+		} else if ( properties[i]->IsDerivedType( NiAlphaProperty::TYPE ) ) {
 			niAlphaProp = DynamicCast<NiAlphaProperty>( properties[i] );
 		}
 	}

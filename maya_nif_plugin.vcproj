@@ -15,7 +15,7 @@
 	</ToolFiles>
 	<Configurations>
 		<Configuration
-			Name="Debug|Win32"
+			Name="Debug - 7.0|Win32"
 			OutputDirectory="..\Debug"
 			IntermediateDirectory="..\Debug"
 			ConfigurationType="2"
@@ -42,7 +42,7 @@
 				Optimization="0"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya7.0\include"
 				PreprocessorDefinitions="WIN32,_DEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="1"
+				RuntimeLibrary="3"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 			/>
@@ -58,7 +58,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin"
-				AdditionalDependencies="niflib_debug.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalDependencies="niflib_dll_debug.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="bin\Maya7.0\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya7.0\lib"
 				ProgramDatabaseFile="../Debug/maya_nif_plugin.pdb"
@@ -118,7 +118,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya6.5\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 			/>
@@ -134,7 +134,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
-				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalDependencies="niflib_dll.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="bin\Maya6.5\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya6.5\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
@@ -194,7 +194,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya7.0\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -211,7 +211,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
-				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalDependencies="niflib_dll.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="bin\Maya7.0\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya7.0\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
@@ -271,7 +271,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Autodesk\Maya8.5\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -288,7 +288,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
-				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalDependencies="niflib_dll.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="bin\Maya8.5\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Autodesk\Maya8.5\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
@@ -348,7 +348,7 @@
 				Optimization="2"
 				AdditionalIncludeDirectories="C:\Program Files\Alias\Maya8.0\include"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
-				RuntimeLibrary="0"
+				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""
 				WarningLevel="3"
 				DebugInformationFormat="3"
@@ -365,7 +365,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/subsystem:windows /incremental:no /machine:I386 /export:initializePlugin /export:uninitializePlugin"
-				AdditionalDependencies="niflib.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
+				AdditionalDependencies="niflib_dll.lib Foundation.lib OpenMaya.lib OpenMayaAnim.lib OpenMayaUI.lib OpenMayaFX.lib OpenMayaRender.lib Image.lib"
 				OutputFile="bin\Maya8.0\nifTranslator.mll"
 				AdditionalLibraryDirectories="C:\Program Files\Alias\Maya8.0\lib"
 				ProgramDatabaseFile="Release/Export.pdb"
