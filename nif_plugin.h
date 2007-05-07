@@ -110,6 +110,8 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "obj/NiTimeController.h"
 #include "obj/NiKeyframeController.h"
 #include "obj/NiKeyframeData.h"
+#include "obj/NiTextureProperty.h"
+#include "obj/NiImage.h"
 
 using namespace Niflib;
 
@@ -169,8 +171,8 @@ private:
 	map<string, MDagPath> existingNodes;
 	//maps to hold information about what has already been imported
 	map< NiAVObjectRef, MDagPath > importedNodes;
-	map< pair<NiMaterialPropertyRef, NiTexturingPropertyRef>, MObject > importedMaterials;
-	map< NiSourceTextureRef, MObject > importedTextures;
+	map< pair<NiMaterialPropertyRef, NiObjectRef>, MObject > importedMaterials;
+	map< NiObjectRef, MObject > importedTextures;
 	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
 	MFileObject importFile; //The file currently being imported
 
@@ -184,7 +186,7 @@ private:
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiAVObjectRef root, MObject parent = MObject::kNullObj );
 	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
-	MObject ImportTexture( NiSourceTextureRef niSrcTex );
+	MObject ImportTexture( NiObject * tex );
 	void ExportDAGNodes();
 	//A map to hold associations between names and NIF objects
 	map<string, NiSourceTextureRef> textures;

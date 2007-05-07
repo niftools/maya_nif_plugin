@@ -262,17 +262,17 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		}
 		out << "Done importing meshes." << endl;
 
-		//--Import Animation--//
-		out << "Importing Animation keyframes..." << endl;
+		////--Import Animation--//
+		//out << "Importing Animation keyframes..." << endl;
 
-		//Iterate through all imported nodes, looking for any with animation keys
+		////Iterate through all imported nodes, looking for any with animation keys
 
-		for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
-			//Check to see if this node has any animation controllers
-			if ( it->first->IsAnimated() ) {
-				ImportControllers( it->first, it->second );
-			}
-		}
+		//for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
+		//	//Check to see if this node has any animation controllers
+		//	if ( it->first->IsAnimated() ) {
+		//		ImportControllers( it->first, it->second );
+		//	}
+		//}
 
 		out << "Deselecting anything that was selected by MEL commands" << endl;
 		MGlobal::clearSelectionList();
@@ -637,21 +637,33 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	}
 }
 
-MObject NifTranslator::ImportTexture( NiSourceTextureRef niSrcTex ) {
+MObject NifTranslator::ImportTexture( NiObject * tex ) {
 	MObject obj;
 
 	//block = block->GetLink("Base Texture");
+
+	NiSourceTextureRef niSrcTex = DynamicCast<NiSourceTexture>(tex);
+	NiImageRef niImg = DynamicCast<NiImage>(tex);
+
+	//Different NIF formats store texture names in different objects
+	string file_name;
+	if ( niSrcTex != NULL ) {
 	
-	//Internally stored textures are currently unsupported
-	if ( niSrcTex->IsTextureExternal() == false ) {
-		MGlobal::displayWarning( "This file uses an internal texture.  This is currently unsupported." );
-		return MObject::kNullObj;
+		//Internally stored textures are currently unsupported
+		if ( niSrcTex->IsTextureExternal() == false ) {
+			MGlobal::displayWarning( "This file uses an internal texture.  This is currently unsupported." );
+			return MObject::kNullObj;
+		}
+
+		//An external texture is used, get file name
+		file_name = niSrcTex->GetTextureFileName();
+		
+	} else if ( niImg != NULL ) {
+		file_name = niImg->GetTextureFileName();
 	}
 
-	//An external texture is used, create a texture node
-	string file_name = niSrcTex->GetTextureFileName();
+	//create a texture node
 	MFnDependencyNode nodeFn;
-	//obj = nodeFn.create( MFn::kFileTexture, MString( ts.fileName.c_str() ) );
 	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
 
 	//--Search for the texture file--//
@@ -3019,7 +3031,8 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 	out << "Looking for material and texturing properties" << endl;
 	//Get Material and Texturing properties, if any
 	NiMaterialPropertyRef niMatProp = NULL;
-	NiTexturingPropertyRef niTexProp = NULL;
+	NiTexturingPropertyRef niTexingProp = NULL;
+	NiTexturePropertyRef niTexProp = NULL;
 	NiSpecularPropertyRef niSpecProp = NULL;
 	NiAlphaPropertyRef niAlphaProp = NULL;
 
@@ -3027,7 +3040,9 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 		if ( properties[i]->IsDerivedType( NiMaterialProperty::TYPE ) ) {
 			niMatProp = DynamicCast<NiMaterialProperty>( properties[i] );
 		} else if ( properties[i]->IsDerivedType( NiTexturingProperty::TYPE ) ) {
-			niTexProp = DynamicCast<NiTexturingProperty>( properties[i] );
+			niTexingProp = DynamicCast<NiTexturingProperty>( properties[i] );
+		} else if ( properties[i]->IsDerivedType( NiTextureProperty::TYPE ) ) {
+			niTexProp = DynamicCast<NiTextureProperty>( properties[i] );
 		} else if ( properties[i]->IsDerivedType( NiSpecularProperty::TYPE ) ) {
 			niSpecProp = DynamicCast<NiSpecularProperty>( properties[i] );
 		} else if ( properties[i]->IsDerivedType( NiAlphaProperty::TYPE ) ) {
@@ -3039,13 +3054,23 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 	//Process Material Property
 	if ( niMatProp != NULL ) {
 		//Check to see if material has already been found
-		if ( importedMaterials.find( pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp) ) == importedMaterials.end() ) {
+		NiObjectRef niTexObj = NULL;
+
+		if ( niTexingProp != NULL ) {
+			niTexObj = StaticCast<NiObject>(niTexingProp);
+		} else if ( niTexProp != NULL ) {
+			niTexObj = StaticCast<NiObject>(niTexProp);
+		}
+
+		pair<NiMaterialPropertyRef, NiObjectRef> mat_tex_pair( niMatProp, niTexObj );
+
+		if ( importedMaterials.find( mat_tex_pair ) == importedMaterials.end() ) {
 			//New material/texture combo  - import and add to the list
 			matOb = ImportMaterial( niMatProp, niSpecProp );
-			importedMaterials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ] = matOb;
+			importedMaterials[mat_tex_pair] = matOb;
 		} else {
 			// Use the existing material
-			matOb = importedMaterials[ pair<NiMaterialPropertyRef, NiTexturingPropertyRef>( niMatProp, niTexProp ) ];
+			matOb = importedMaterials[mat_tex_pair];
 		}
 
 		//--Create a Shading Group--//
@@ -3073,7 +3098,7 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 		
 		out << "Looking for textures..." << endl;
 		//--Look for textures--//
-		if ( niTexProp != NULL ) {
+		if ( niTexingProp != NULL ) {
 			MFnDependencyNode nodeFn;
 			NiSourceTextureRef niSrcTex;
 			TexDesc tx;
@@ -3082,8 +3107,8 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 			//Cycle through for each type of texture
 			int uv_set = 0;
 			for (int i = 0; i < 8; ++i) {
-				if ( niTexProp->HasTexture( i ) ) {
-					tx = niTexProp->GetTexture( i );
+				if ( niTexingProp->HasTexture( i ) ) {
+					tx = niTexingProp->GetTexture( i );
 					niSrcTex = tx.source;
 
 					switch(i) {
@@ -3112,15 +3137,16 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 
 					if ( niSrcTex != NULL ) {
 						//Check if texture has already been used
-						if ( importedTextures.find( niSrcTex ) == importedTextures.end() ) {
+						NiObjectRef niSrcObj = StaticCast<NiObject>(niSrcTex);
+						if ( importedTextures.find( niSrcObj ) == importedTextures.end() ) {
 							//New texture - import it and add it to the list
 							txOb = ImportTexture( niSrcTex );
 							if ( txOb != MObject::kNullObj ) {
-								importedTextures[niSrcTex] = txOb;
+								importedTextures[niSrcObj] = txOb;
 							}
 						} else {
 							//Already found, use existing one
-							txOb = importedTextures[niSrcTex];
+							txOb = importedTextures[niSrcObj];
 						}
 					
 						if ( txOb != MObject::kNullObj ) {
@@ -3207,6 +3233,40 @@ void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & prop
 					uv_set++;
 				}
 			}
+		} else if ( niTexProp != NULL ) {
+			NiImageRef niImg = niTexProp->GetImage();
+			MFnDependencyNode nodeFn;
+
+			if ( niImg != NULL ) {
+					//Check if texture has already been used
+					NiObjectRef niSrcObj = StaticCast<NiObject>(niImg);
+					if ( importedTextures.find( niSrcObj ) == importedTextures.end() ) {
+						//New texture - import it and add it to the list
+						txOb = ImportTexture( niImg );
+						if ( txOb != MObject::kNullObj ) {
+							importedTextures[niSrcObj] = txOb;
+						}
+					} else {
+						//Already found, use existing one
+						txOb = importedTextures[niSrcObj];
+					}
+
+			}
+
+			//Connect the texture node
+			if ( txOb != MObject::kNullObj ) {
+				nodeFn.setObject(txOb);
+				MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
+						
+				//NiTextureProperties only contain base texture
+				dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
+				//Check if Alpha needs to be used
+				if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
+					//Alpha is used, connect it
+					dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
+				}
+			}
+	
 		}
 		
 		out << "Invoking dgModifier..." << endl;
