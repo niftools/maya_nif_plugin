@@ -1,6 +1,6 @@
 #include "nif_plugin.h"
 
-//#define DEBUG
+//#define _DEBUG
 ofstream out;
 
 const char PLUGIN_VERSION [] = "0.6";	
@@ -65,7 +65,7 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 
 // Code adapted from lepTranslator example that comes with Maya 6.5
 MStatus initializePlugin( MObject obj ) {
-	#ifdef DEBUG
+	#ifdef _DEBUG
 	out.open( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary );
 	#endif
 
@@ -304,7 +304,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 	
 	out << "Finished Read" << endl;
 
-#ifndef DEBUG
+#ifndef _DEBUG
 	//Clear the stringstream so it doesn't waste a bunch of RAM
 	out.clear();
 #endif
@@ -1399,7 +1399,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		return MStatus::kFailure;
 	}
 
-#ifndef DEBUG
+#ifndef _DEBUG
 	//Clear the stringstream so it doesn't waste a bunch of RAM
 	out.clear();
 #endif
