@@ -91,6 +91,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <iostream>
 
 #include "ComplexShape.h"
+#include "MatTexCollection.h"
 #include "niflib.h"
 #include "obj/NiAlphaProperty.h"
 #include "obj/NiMaterialProperty.h"
@@ -171,13 +172,14 @@ private:
 	map<string, MDagPath> existingNodes;
 	//maps to hold information about what has already been imported
 	map< NiAVObjectRef, MDagPath > importedNodes;
-	map< pair<NiMaterialPropertyRef, NiObjectRef>, MObject > importedMaterials;
-	map< NiObjectRef, MObject > importedTextures;
+	map< unsigned int, MObject > importedMaterials;
+	MatTexCollection mtCollection;
+	map< unsigned int, MObject > importedTextures;
 	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
 	MFileObject importFile; //The file currently being imported
 
 	void AdjustSkeleton( NiAVObjectRef & root );
-	void ImportMaterialAndTexture( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list );
+	MObject ImportMaterial( MaterialWrapper & mw );
 	MObject GetExistingJoint( const string & name );
 	MObject MakeJoint( MObject & jointObj );
 	MString MakeMayaName( const string & nifName );
@@ -185,11 +187,12 @@ private:
 	void ImportControllers( NiAVObjectRef niAVObj, MDagPath & path );
 	void ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent = MObject::kNullObj );
 	MDagPath ImportMesh( NiAVObjectRef root, MObject parent = MObject::kNullObj );
-	MObject ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp = NULL );
-	MObject ImportTexture( NiObject * tex );
+	void ImportMaterialsAndTextures( NiAVObjectRef & root );
+	void ConnectShader( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list );
+	MObject ImportTexture( TextureWrapper & tw );
 	void ExportDAGNodes();
 	//A map to hold associations between names and NIF objects
-	map<string, NiSourceTextureRef> textures;
+	map<string, unsigned int> textures;
 	NiNodeRef sceneRoot;
 	void ExportFileTextures();
 	list< MObject > meshes;

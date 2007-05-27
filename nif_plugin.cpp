@@ -177,6 +177,7 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		importedNodes.clear();
 		importedTextures.clear();
 		importedMaterials.clear();
+		mtCollection.Clear();
 		importedMeshes.clear();
 
 		//Save file
@@ -244,12 +245,18 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 				return MStatus::kFailure;
 			}
 		}
-		
 
-		//Report total number of NIF Objects in memory
-		out << "Objects in memory:  " << NiObject::NumObjectsInMemory() << endl;
+		//--Import Materials--//
+		out << "Importing Materials..." << endl;
 		
-		//--Import Meshes-//
+		NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
+		if ( rootAVObj != NULL ) {
+			//Root is importable
+			ImportMaterialsAndTextures( rootAVObj );
+		}
+		
+		
+		//--Import Meshes--//
 		out << "Importing Meshes..." << endl;
 
 		//Iterate through all meshes that were imported.
@@ -637,185 +644,6 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	}
 }
 
-MObject NifTranslator::ImportTexture( NiObject * tex ) {
-	MObject obj;
-
-	//block = block->GetLink("Base Texture");
-
-	NiSourceTextureRef niSrcTex = DynamicCast<NiSourceTexture>(tex);
-	NiImageRef niImg = DynamicCast<NiImage>(tex);
-
-	//Different NIF formats store texture names in different objects
-	string file_name;
-	if ( niSrcTex != NULL ) {
-	
-		//Internally stored textures are currently unsupported
-		if ( niSrcTex->IsTextureExternal() == false ) {
-			MGlobal::displayWarning( "This file uses an internal texture.  This is currently unsupported." );
-			return MObject::kNullObj;
-		}
-
-		//An external texture is used, get file name
-		file_name = niSrcTex->GetTextureFileName();
-		
-	} else if ( niImg != NULL ) {
-		file_name = niImg->GetTextureFileName();
-	}
-
-	//create a texture node
-	MFnDependencyNode nodeFn;
-	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
-
-	//--Search for the texture file--//
-	
-	//Replace back slash with forward slash
-	unsigned last_slash = 0;
-	for ( unsigned i = 0; i < file_name.size(); ++i ) {
-		if ( file_name[i] == '\\' ) {
-			file_name[i] = '/';
-		}
-	}
-
-	//MString fName = file_name.c_str();
-
-	MFileObject mFile;
-	mFile.setName( MString(file_name.c_str()) );
-
-	MString found_file = "";
-
-	//Check if the file exists in the current working directory
-	mFile.setRawPath( importFile.rawPath() );
-	out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-	if ( mFile.exists() ) {
-		found_file =  mFile.fullName();
-	} else {
-		out << "File Not Found." << endl;
-	}
-
-	if ( found_file == "" ) {
-		//Check if the file exists in any of the given search paths
-		MStringArray paths;
-		MString(texture_path.c_str()).split( '|', paths );
-
-		for ( unsigned i = 0; i < paths.length(); ++i ) {
-			if ( paths[i].substring(0,0) == "." ) {
-				//Relative path
-				mFile.setRawPath( importFile.rawPath() + paths[i] );
-			} else {
-				//Absolute path
-				mFile.setRawPath( paths[i] );
-
-			}
-			
-			out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-			if ( mFile.exists() ) {
-				//File exists at path entry i
-				found_file = mFile.fullName();
-				break;
-			} else {
-				out << "File Not Found." << endl;
-			}
-
-			////Maybe it's a relative path
-			//mFile.setRawPath( importFile.rawPath() + paths[i] );
-			//				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-			//if ( mFile.exists() ) {
-			//	//File exists at path entry i
-			//	found_file = mFile.fullName();
-			//	break;
-			//} else {
-			//	out << "File Not Found." << endl;
-			//}
-		}
-	}
-
-	if ( found_file == "" ) {
-		//None of the searches found the file... just use the original value
-		//from the NIF
-		found_file = file_name.c_str();
-	}
-
-	nodeFn.findPlug( MString("ftn") ).setValue(found_file);
-
-	//Get global texture list
-	MItDependencyNodes nodeIt( MFn::kTextureList );
-	MObject texture_list = nodeIt.item();
-	MFnDependencyNode slFn;
-	slFn.setObject( texture_list );
-
-	MPlug textures = slFn.findPlug( MString("textures") );
-
-	// Loop until an available connection is found
-	MPlug element;
-	int next = 0;
-	while( true )
-	{
-		element = textures.elementByLogicalIndex( next );
-
-		// If this plug isn't connected, break and use it below.
-		if ( element.isConnected() == false )
-			break;
-
-		next++;
-	}
-
-	MPlug message = nodeFn.findPlug( MString("message") );
-
-	// Connect '.message' plug of render node to "shaders"/"textures" plug of default*List
-	MDGModifier dgModifier;
-	dgModifier.connect( message, element );
-
-	dgModifier.doIt();
-
-	return obj;
-}
-
-MObject NifTranslator::ImportMaterial( NiMaterialPropertyRef niMatProp, NiSpecularPropertyRef niSpecProp ) {
-	//Create the material but don't connect it to parent yet
-	MFnPhongShader phongFn;
-	MObject obj = phongFn.create();
-	Color3 color;
-
-	//See if the user wants the ambient color imported
-	if ( !import_no_ambient ) {
-		color = niMatProp->GetAmbientColor();
-		phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
-	}
-
-	color = niMatProp->GetDiffuseColor();
-	phongFn.setColor( MColor(color.r, color.g, color.b) );
-
-	
-	//Set Specular color to 0 unless the mesh has a NiSpecularProperty
-	phongFn.setSpecularColor( MColor( 0.0f, 0.0f, 0.0f) );
-
-	if ( niSpecProp != NULL && (niSpecProp->GetFlags() & 1) == true ) {
-		//This mesh uses specular color - load it
-		color = niMatProp->GetSpecularColor();
-		phongFn.setSpecularColor( MColor(color.r, color.g, color.b) );
-	}
-
-	color = niMatProp->GetEmissiveColor();
-	phongFn.setIncandescence( MColor(color.r, color.g, color.b) );
-
-	if ( color.r > 0.0 || color.g > 0.0 || color.b > 0.0) {
-		phongFn.setGlowIntensity( 0.25 );
-	}
-
-	float glossiness = niMatProp->GetGlossiness();
-	phongFn.setCosPower( glossiness );
-
-	float alpha = niMatProp->GetTransparency();
-	//Maya's concept of alpha is the reverse of the NIF's concept
-	alpha = 1.0f - alpha;
-	phongFn.setTransparency( MColor( alpha, alpha, alpha, alpha) );
-
-	MString name = MakeMayaName( niMatProp->GetName() );
-	phongFn.setName( name );
-
-	return obj;
-}
-
 MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	out << "ImportMesh() begin" << endl;
 
@@ -1198,7 +1026,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}
 
 	for ( unsigned i = 0; i < propGroups.size(); ++i ) {
-		ImportMaterialAndTexture( propGroups[i], meshPath, sel_lists[i] );
+		ConnectShader( propGroups[i], meshPath, sel_lists[i] );
 	}
 
 	out << "Bind skin if any" << endl;
@@ -2238,6 +2066,9 @@ NiNodeRef NifTranslator::GetDAGParent( MObject dagNode ) {
 			return sceneRoot;
 		}
 	}
+
+	//Block was created, parent to scene root
+	return sceneRoot;
 }
 
 void NifTranslator::GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ) {
@@ -2304,15 +2135,14 @@ void NifTranslator::ExportShaders() {
 	//
 	for ( ; !itDep.isDone(); itDep.next() ) {
 
-		//We will at least need a NiMaterialProperty
-		NiMaterialPropertyRef niMatProp = new NiMaterialProperty;
-		//Only create these if necessary
-		NiTexturingPropertyRef niTexProp = NULL;  
-		NiAlphaPropertyRef niAlphaProp = NULL;
-		NiSpecularPropertyRef niSpecProp = NULL;
-
-		MColor color;
-		MObject texture;
+		MColor diffuse, ambient, emissive, transparency, specular(0.0, 0.0, 0.0, 0.0);
+		string mat_name;
+		float glossiness = 20.0f;
+		bool use_alpha = false;
+		bool use_spec = false;
+		bool base_texture = false;
+		bool multi_texture = false;
+		MObject diff_tex, ambi_tex, emis_tex, glos_tex, spec_tex, tran_tex;
 
 		out << "Testing for MFnLambertShader function set." << endl;
 		if ( itDep.item().hasFn( MFn::kLambert ) ) {
@@ -2320,226 +2150,210 @@ void NifTranslator::ExportShaders() {
 			//All shaders inherit from lambert
 			MFnLambertShader lambertFn( itDep.item() );
 
-			//Set Name
-			niMatProp->SetName( MakeNifName( lambertFn.name() ) );
+			//Get name
+			mat_name = MakeNifName( lambertFn.name() );
 
 			//--Get info from Color slots--//
-			out << "Getting base color" << endl;
-			GetColor( lambertFn, "color", color, texture );
-			out << "Checking whether base texture is used" << endl;
-			//If a texture is used, the color is white and the texture is used
-			if ( texture.isNull() == true ) {
-				//No texture
-				niMatProp->SetDiffuseColor( Color3( color.r, color.g, color.b ) );
-			} else {
-				niMatProp->SetDiffuseColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				//See if the user wants us to export white ambient if there is a texture
-				if ( export_white_ambient ) {
-					niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+			out << "Getting color slot info..." << endl;
+			GetColor( lambertFn, "color", diffuse, diff_tex );
+			GetColor( lambertFn,"ambientColor", ambient, ambi_tex );
+			GetColor( lambertFn,"incandescence", emissive, emis_tex );
+			GetColor( lambertFn,"transparency", transparency, tran_tex );
+
+			//Shader may also have specular color
+			if ( itDep.item().hasFn( MFn::kReflect ) ) {
+				out << "Attaching MFnReflectShader function set" << endl;
+				MFnReflectShader reflectFn( itDep.item() );
+
+				out << "Getting specular color" << endl;
+				GetColor( reflectFn, "specularColor", specular, spec_tex );
+
+				if ( specular.r != 0.0 && specular.g != 0.0 && specular.b != 0.0 ) {
+					use_spec = true;
 				}
 
-				out << "Base texture is used.  Create NiTexturingProperty." << endl;
-				//Base texture is used.  Create NiTexturingProperty.
-				if ( niTexProp == NULL ) {
-					niTexProp = new NiTexturingProperty;
-				}
-				//Find texture with the same maya name
-				if ( texture.hasFn( MFn::kDependencyNode ) ) {
-					MFnDependencyNode depFn(texture);
-					string texname = depFn.name().asChar();
-					out << "Texture found:  " << texname << endl;
-					if ( textures.find( texname ) != textures.end() ) {
-						TexDesc td;
-						td.source = textures[texname];
-						niTexProp->SetTexture( BASE_MAP, td );
-						//Check if texture has alpha
-						MPlug fha = depFn.findPlug("fileHasAlpha");
-						bool value;
-						fha.getValue( value );
-						if ( value == true ) {
-							if ( niAlphaProp == NULL ) {
-								out << "Base texture has alpha, so create a NiAlphaProperty" << endl;
-								//Base texture has alpha, so create a NiAlphaProperty
-								niAlphaProp = new NiAlphaProperty;
-								niAlphaProp->SetFlags(237);
-							}
+				//Handle cosine power/glossiness
+				if ( itDep.item().hasFn( MFn::kPhong ) ) {
+					out << "Attaching MFnReflectShader function set" << endl;
+					MFnPhongShader phongFn( itDep.item() );
+
+					out << "Getting cosine power" << endl;
+					MPlug p = phongFn.findPlug("cosinePower");
+					glossiness = phongFn.cosPower();
+
+					out << "Get plugs connected to cosinePower attribute" << endl;
+					// get plugs connected to cosinePower attribute
+					MPlugArray plugs;
+					p.connectedTo(plugs,true,false);
+
+					out << "See if any file textures are present" << endl;
+					// see if any file textures are present
+					for( int i = 0; i != plugs.length(); ++i ) {
+
+  						// if file texture found
+						if( plugs[i].node().apiType() == MFn::kFileTexture ) {
+							out << "File texture found" << endl;
+							glos_tex = plugs[i].node();
+
+							// stop looping
+							break;
 						}
 					}
-				}
-			}
 
-			//Make sure white ambient wasn't already exported
-			if ( !(texture.isNull() == false && export_white_ambient) ) {
-				out << "Getting ambient color" << endl;
-				GetColor( lambertFn,"ambientColor", color, texture );
-				//Textures are not supported
-				if ( texture.isNull() == true ) {
-					//No texture
-					niMatProp->SetAmbientColor( Color3( color.r, color.g, color.b ) );
 				} else {
-					niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-					MGlobal::displayWarning("Ambient textures are not supported by the NIF format.  Ignored.");
+					//Not a phong texture so not currently supported
+					MGlobal::displayWarning("Only Shaders with Cosine Power, such as Phong, can currently be used to set exported glossiness.  Default value of 20.0 used.");
+					//TODO:  Figure out how to guestimate glossiness from Blin shaders.
 				}
-			}
-
-			out << "Getting incandescence color" << endl;
-			GetColor( lambertFn,"incandescence", color, texture );
-			//Textures are not supported
-			if ( texture.isNull() == true ) {
-				//No texture
-				//This color is reversed
-				niMatProp->SetEmissiveColor( Color3( color.r, color.g, color.b ) );
 			} else {
-				niMatProp->SetEmissiveColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				
-				out << "Glow texture is used.  Create NiTexturingProperty." << endl;
-				//Glow texture is used.  Create NiTexturingProperty.
-				if ( niTexProp == NULL ) {
-					niTexProp = new NiTexturingProperty;
-				}
-				//Find texture with the same maya name
-				if ( texture.hasFn( MFn::kDependencyNode ) ) {
-					MFnDependencyNode depFn(texture);
-					string texname = depFn.name().asChar();
-					out << "Texture found:  " << texname << endl;
-					if ( textures.find( texname ) != textures.end() ) {
-						TexDesc td;
-						td.source = textures[texname];
-						niTexProp->SetTexture( GLOW_MAP, td );
-					}
-				}			
+				//No reflecting shader used, so set some defautls
 			}
-
-			out << "Getting transparency color" << endl;
-			GetColor( lambertFn,"transparency", color, texture );
-			//Textures are probably set because the base texture has
-			//alpha which is connected to this node.  So just set the
-			//transparency and don't worry about whethere there's a
-			//texture connected or not.
-			float trans = (color.r + color.g + color.b) / 3.0f;
-			if ( trans != color.r ) {
-				MGlobal::displayWarning("Colored transparency is not supported by the NIF format.  An average of the color channels will be used.");
-			}
-			//Maya trans is reverse of NIF trans
-			trans = 1.0f - trans;
-			niMatProp->SetTransparency( trans );
-
-			if ( trans < 1.0f ) {
-				if ( niAlphaProp == NULL ) {
-					out << "Transparency is used, so create a NiAlphaProperty" << endl;
-					//Transparency is used, so create a NiAlphaProperty
-					niAlphaProp = new NiAlphaProperty;
-					niAlphaProp->SetFlags(237);
-				}
-			}
-
-			//TODO: Support bump maps, environment maps, gloss maps, and multi-texturing (detail, dark, and decal?)
 		}
 
-		out << "Testing for MFnReflectShader function set" << endl;
-		//Shader may also have specular color
-		if ( itDep.item().hasFn( MFn::kReflect ) ) {
-			out << "Attaching MFnReflectShader function set" << endl;
-			MFnReflectShader reflectFn( itDep.item() );
+		out << "Checking whether base texture is used and if it has alpha" << endl;
+		//Check whether base texture is used and if it has has alpha
+		if ( diff_tex.isNull() == false ) {
+			base_texture = true;
 
-			out << "Getting specular color" << endl;
-			GetColor( reflectFn, "specularColor", color, texture );
-			//Textures are not supported
-			if ( texture.isNull() == true ) {
-				//No texture
-				niMatProp->SetSpecularColor( Color3( color.r, color.g, color.b ) );
-
-				//Only build a NiSpecularProperty if specular color is not black
-
-				if ( color.r != 0.0f || color.g != 0.0f || color.b != 0.0f ) {
-					//Specularity is used, so create a NiSpecularProperty and put it in the list
-					if ( niSpecProp == NULL ) {
-						niSpecProp = new NiSpecularProperty;
-						niSpecProp->SetFlags(1);
-					}
+			if ( diff_tex.hasFn( MFn::kDependencyNode ) ) {
+				MFnDependencyNode depFn(diff_tex);
+				MPlug fha = depFn.findPlug("fileHasAlpha");
+				bool value;
+				fha.getValue( value );
+				if ( value == true ) {
+					use_alpha = true;
 				}
+			}
+		}
 
-			} else {
-				niMatProp->SetSpecularColor( Color3(1.0f, 1.0f, 1.0f) ); // white
-				MGlobal::displayWarning("Gloss textures are not supported yet.  Ignored.");
+		out << "Checking whether any other supported texture types are being used" << endl;
+		//Check whether any other supported texture types are being used
+		if ( emis_tex.isNull() == false ) {
+			multi_texture = true;
+		}
+
+		//Create a NIF Material Wrapper and put the collected values into it
+		unsigned int mat_index = mtCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, export_version );
+		MaterialWrapper mw = mtCollection.GetMaterial( mat_index );
+
+		NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
+		
+		if ( use_alpha ) {
+			NiAlphaPropertyRef niAlphaProp = mw.GetTranslucencyInfo();
+			niAlphaProp->SetFlags(237);
+		}
+
+		if ( use_spec ) {
+			NiSpecularPropertyRef niSpecProp = mw.GetSpecularInfo();
+			niSpecProp->SetSpecularState(true);
+		}
+		
+		//Set Name
+		niMatProp->SetName( mat_name );
+
+		//--Diffuse Color--//
+
+		if ( diff_tex.isNull() == true ) {
+			//No Texture
+			niMatProp->SetDiffuseColor( Color3( diffuse.r, diffuse.g, diffuse.b ) );
+		} else {
+			//Has Texture, so set diffuse color to white
+			niMatProp->SetDiffuseColor( Color3(1.0f, 1.0f, 1.0f) );
+
+			//Attach texture
+			if ( diff_tex.hasFn( MFn::kDependencyNode ) ) {
+				MFnDependencyNode depFn(diff_tex);
+				string texname = depFn.name().asChar();
+				out << "Base texture found:  " << texname << endl;
+				
+				if ( textures.find( texname ) != textures.end() ) {
+					mw.SetTextureIndex( BASE_MAP, textures[texname] );
+				}
 			}
 
-			//Handle cosine power/glossiness
-			out << "Testing for MFnPhongShader function set" << endl;
-			if ( itDep.item().hasFn( MFn::kPhong ) ) {
-				out << "Attaching MFnReflectShader function set" << endl;
-				MFnPhongShader phongFn( itDep.item() );
+		}
 
-				out << "Getting cosine power" << endl;
-				MPlug p = phongFn.findPlug("cosinePower");
+		//--Ambient Color--//	
 
-				out << "Get plugs connected to cosinePower attribute" << endl;
-				// get plugs connected to cosinePower attribute
-				MPlugArray plugs;
-				p.connectedTo(plugs,true,false);
-
-				out << "See if any file textures are present" << endl;
-				// see if any file textures are present
-				for( int i = 0; i != plugs.length(); ++i ) {
-
-  					// if file texture found
-					if( plugs[i].node().apiType() == MFn::kFileTexture ) {
-						out << "File texture found" << endl;
-						texture = plugs[i].node();
-
-						// stop looping
-						break;
-					}
-				}
-
-				//Textures are not supported
-				if ( texture.isNull() == true ) {
-					//No texture
-					niMatProp->SetGlossiness( phongFn.cosPower() );
-				} else {
-					niMatProp->SetGlossiness( 20.0f );
-					MGlobal::displayWarning("Gloss textures are not yet supported.  Ignored.");
-				}
+		if ( ambi_tex.isNull() == true ) {
+			//No Texture.  Check if we should expot white ambient
+			if ( diff_tex.isNull() == false && export_white_ambient == true ) {
+				niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
 			} else {
-				//Not a phong texture so not currently supported
-				MGlobal::displayWarning("Only Shaders with Cosine Power, such as Phong, can currently be used to set exported glossiness.  Default value of 20.0 used.");
-				niMatProp->SetGlossiness( 20.0f );
+				niMatProp->SetAmbientColor( Color3( ambient.r, ambient.g, ambient.b ) );
 			}
 		} else {
-			//No reflecting shader used, so set some defautls
-			niMatProp->SetSpecularColor( Color3( 0.0f, 0.0f, 0.0f) );
-			niMatProp->SetGlossiness( 20.0f );
+			//Ambient texture found.  This is not supported so set ambient to white and warn user.
+			niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
+			MGlobal::displayWarning("Ambient textures are not supported by the NIF format.  Ignored.");
 		}
 
-		
+		//--Emmissive Color--//
 
-		//TODO:  Figure out how to guestimate glossiness from Blin shaders.
+		if ( emis_tex.isNull() == true ) {
+			//No Texture
+			niMatProp->SetEmissiveColor( Color3( emissive.r, emissive.g, emissive.b ) );
+		} else {
+			//Has texture, so set emissive color to white
+			niMatProp->SetEmissiveColor( Color3(1.0f, 1.0f, 1.0f) ); //white
 
-
-		out << "Putting created properties into a vector" << endl;
-		//Put properties into a vector
-		vector<NiPropertyRef> niProps;
-
-		//We will at least need a NiMaterialProperty
-		if ( niMatProp != NULL ) {
-			niProps.push_back( StaticCast<NiProperty>(niMatProp) );
-		}
-		if ( niTexProp != NULL ) {
-			niProps.push_back( StaticCast<NiProperty>(niTexProp) );
-		}
-		if ( niAlphaProp != NULL ) {
-			out << "Adding " << niAlphaProp << " to vector" << endl;
-			niProps.push_back( StaticCast<NiProperty>(niAlphaProp) );
-		}
-		if ( niSpecProp != NULL ) {
-			niProps.push_back( StaticCast<NiProperty>(niSpecProp) );
+			//Attach texture
+			if ( emis_tex.hasFn( MFn::kDependencyNode ) ) {
+				MFnDependencyNode depFn(emis_tex);
+				string texname = depFn.name().asChar();
+				out << "Glow texture found:  " << texname << endl;
+				
+				if ( textures.find( texname ) != textures.end() ) {
+					mw.SetTextureIndex( GLOW_MAP, textures[texname] );
+				}
+			}
 		}
 
-		out << "Associating proprety vector with Maya shader name: ";
-		//Associate property vector with Maya shader name
+		//--Transparency--//
+
+		//Any alpha textures are probably set because the base texture has
+		//alpha which is connected to this node.  So just set the
+		//transparency and don't worry about whethere there's a
+		//texture connected or not.
+		float trans = (transparency.r + transparency.g + transparency.b) / 3.0f;
+		if ( trans != transparency.r ) {
+			MGlobal::displayWarning("Colored transparency is not supported by the NIF format.  An average of the color channels will be used.");
+		}
+		//Maya trans is reverse of NIF trans
+		trans = 1.0f - trans;
+		niMatProp->SetTransparency( trans );
+
+		//--Specular Color--//
+
+		if ( spec_tex.isNull() == true ) {
+			//No Texture.  Check if we should expot black specular
+			if ( use_spec == false ) {
+				niMatProp->SetSpecularColor( Color3(0.0f, 0.0f, 0.0f) ); // black
+			} else {
+				niMatProp->SetSpecularColor( Color3( specular.r, specular.g, specular.b ) );
+			}
+		} else {
+			//Specular texture found.  This is not supported so set specular to black and warn user.
+			niMatProp->SetSpecularColor( Color3(0.0f, 0.0f, 0.0f) ); // black
+			MGlobal::displayWarning("Gloss textures are not supported yet.  Ignored.");
+		}
+
+		//--Glossiness--//
+
+		niMatProp->SetGlossiness( glossiness );
+
+		if ( glos_tex.isNull() == false ) {
+			//Cosine Power texture found.  This is not supported so warn user.
+			MGlobal::displayWarning("Gloss textures are not supported yet.  Ignored.");
+		}
+
+		//TODO: Support bump maps, environment maps, gloss maps, and multi-texturing (detail, dark, and decal?)
+
+		out << "Associating material index with Maya shader name";
+		//Associate material index with Maya shader name
 		MFnDependencyNode depFn( itDep.item() );
 		out << depFn.name().asChar() << endl;
-		shaders[ depFn.name().asChar() ] = niProps;
+		shaders[ depFn.name().asChar() ] = mw.GetProperties();
 	}
 
 	out << "}" << endl;
@@ -2580,11 +2394,12 @@ void NifTranslator::ExportFileTextures() {
 			MGlobal::displayWarning( ss.str().c_str() );
 		}
 
-		//Create the NiSourceTexture block
-		NiSourceTextureRef ni_tex = new NiSourceTexture;
+		//Create a NIF texture wrapper
+		unsigned int tex_index = mtCollection.CreateTexture( export_version );
+		TextureWrapper tw = mtCollection.GetTexture( tex_index );
 
 		//Get Node Name
-		ni_tex->SetName( MakeNifName( fn.name() ) );
+		tw.SetObjectName( MakeNifName( fn.name() ) );
 
 		MString fname;
 		ftn.getValue(fname);
@@ -2647,14 +2462,11 @@ void NifTranslator::ExportFileTextures() {
 
 		out << "File Name:  " << fileName << endl;
 
-		ni_tex->SetExternalTexture( fileName );
+		tw.SetExternalTexture( fileName );
 
-		//Associate NIF object with fileTexture DagPath
+		//Associate NIF texture index with fileTexture DagPath
 		string path = fn.name().asChar();
-		textures[path] = ni_tex;
-
-		//TEMP: Write the block so we can see it worked
-		out << ni_tex->asString();
+		textures[path] = tex_index;
 
 		// get next fileTexture
 		it.next();
@@ -3021,259 +2833,6 @@ string NifTranslator::MakeNifName( const MString & mayaName ) {
 	}
 }
 
-void NifTranslator::ImportMaterialAndTexture( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list ) {
-	//--Look for Materials--//
-	MObject grpOb;
-	MObject matOb;
-	MObject txOb;
-
-
-	out << "Looking for material and texturing properties" << endl;
-	//Get Material and Texturing properties, if any
-	NiMaterialPropertyRef niMatProp = NULL;
-	NiTexturingPropertyRef niTexingProp = NULL;
-	NiTexturePropertyRef niTexProp = NULL;
-	NiSpecularPropertyRef niSpecProp = NULL;
-	NiAlphaPropertyRef niAlphaProp = NULL;
-
-	for ( unsigned i = 0; i < properties.size(); ++i ) {
-		if ( properties[i]->IsDerivedType( NiMaterialProperty::TYPE ) ) {
-			niMatProp = DynamicCast<NiMaterialProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiTexturingProperty::TYPE ) ) {
-			niTexingProp = DynamicCast<NiTexturingProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiTextureProperty::TYPE ) ) {
-			niTexProp = DynamicCast<NiTextureProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiSpecularProperty::TYPE ) ) {
-			niSpecProp = DynamicCast<NiSpecularProperty>( properties[i] );
-		} else if ( properties[i]->IsDerivedType( NiAlphaProperty::TYPE ) ) {
-			niAlphaProp = DynamicCast<NiAlphaProperty>( properties[i] );
-		}
-	}
-				
-	out << "Processing material property..." << endl;
-	//Process Material Property
-	if ( niMatProp != NULL ) {
-		//Check to see if material has already been found
-		NiObjectRef niTexObj = NULL;
-
-		if ( niTexingProp != NULL ) {
-			niTexObj = StaticCast<NiObject>(niTexingProp);
-		} else if ( niTexProp != NULL ) {
-			niTexObj = StaticCast<NiObject>(niTexProp);
-		}
-
-		pair<NiMaterialPropertyRef, NiObjectRef> mat_tex_pair( niMatProp, niTexObj );
-
-		if ( importedMaterials.find( mat_tex_pair ) == importedMaterials.end() ) {
-			//New material/texture combo  - import and add to the list
-			matOb = ImportMaterial( niMatProp, niSpecProp );
-			importedMaterials[mat_tex_pair] = matOb;
-		} else {
-			// Use the existing material
-			matOb = importedMaterials[mat_tex_pair];
-		}
-
-		//--Create a Shading Group--//
-
-		//Create the shading group from the list
-		MFnSet setFn;
-		setFn.create( sel_list, MFnSet::kRenderableOnly, false );
-		setFn.setName("shadingGroup");
-		
-		//--Connect the mesh to the shading group--//
-
-		//Set material to a phong function set
-		MFnPhongShader phongFn;
-		phongFn.setObject( matOb );
-		
-		//Break the default connection that is created
-		MPlugArray arr;
-		MPlug surfaceShader = setFn.findPlug("surfaceShader");
-		surfaceShader.connectedTo( arr, true, true );
-		MDGModifier dgModifier;
-		dgModifier.disconnect( arr[0], surfaceShader );
-		
-		//Connect outColor to surfaceShader
-		dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
-		
-		out << "Looking for textures..." << endl;
-		//--Look for textures--//
-		if ( niTexingProp != NULL ) {
-			MFnDependencyNode nodeFn;
-			NiSourceTextureRef niSrcTex;
-			TexDesc tx;
-
-			//Get TexturingProperty Interface						
-			//Cycle through for each type of texture
-			int uv_set = 0;
-			for (int i = 0; i < 8; ++i) {
-				if ( niTexingProp->HasTexture( i ) ) {
-					tx = niTexingProp->GetTexture( i );
-					niSrcTex = tx.source;
-
-					switch(i) {
-						case DARK_MAP:
-							//Temporary until/if Dark Textures are supported
-							MGlobal::displayWarning( "Dark Textures are not yet supported." );
-							continue;
-						case DETAIL_MAP:
-							//Temporary until/if Detail Textures are supported
-							MGlobal::displayWarning( "Detail Textures are not yet supported." );
-							continue;
-						case GLOSS_MAP:
-							//Temporary until/if Detail Textures are supported
-							MGlobal::displayWarning( "Gloss Textures are not yet supported." );
-							continue;
-						case BUMP_MAP:
-							//Temporary until/if Bump Map Textures are supported
-							MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
-							continue;
-						case DECAL_0_MAP:
-						case DECAL_1_MAP:
-							//Temporary until/if Decal Textures are supported
-							MGlobal::displayWarning( "Decal Textures are not yet supported." );
-							continue;
-					};
-
-					if ( niSrcTex != NULL ) {
-						//Check if texture has already been used
-						NiObjectRef niSrcObj = StaticCast<NiObject>(niSrcTex);
-						if ( importedTextures.find( niSrcObj ) == importedTextures.end() ) {
-							//New texture - import it and add it to the list
-							txOb = ImportTexture( niSrcTex );
-							if ( txOb != MObject::kNullObj ) {
-								importedTextures[niSrcObj] = txOb;
-							}
-						} else {
-							//Already found, use existing one
-							txOb = importedTextures[niSrcObj];
-						}
-					
-						if ( txOb != MObject::kNullObj ) {
-							nodeFn.setObject(txOb);
-							MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
-							switch(i) {
-								case BASE_MAP:
-									//Base Texture
-									dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
-									//Check if Alpha needs to be used
-									if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
-										//Alpha is used, connect it
-										dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
-									}
-									break;
-								case GLOW_MAP:
-									//Glow Texture
-									dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
-									nodeFn.findPlug("alphaGain").setValue(0.25);
-									nodeFn.findPlug("defaultColorR").setValue( 0.0 );
-									nodeFn.findPlug("defaultColorG").setValue( 0.0 );
-									nodeFn.findPlug("defaultColorB").setValue( 0.0 );
-									dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
-									break;
-							}
-
-							//Check for clamp mode
-							bool wrap_u = true, wrap_v = true;
-							if ( tx.clampMode == CLAMP_S_CLAMP_T ) {
-								wrap_u = false;
-								wrap_v = false;
-							} else if ( tx.clampMode == CLAMP_S_WRAP_T ) {
-								wrap_u = false;
-							} else if ( tx.clampMode == WRAP_S_CLAMP_T ) {
-								wrap_v = false;
-							}
-
-							//Create 2D Texture Placement
-							MFnDependencyNode tp2dFn;
-							tp2dFn.create( "place2dTexture", "place2dTexture" );
-							tp2dFn.findPlug("wrapU").setValue(wrap_u);
-							tp2dFn.findPlug("wrapV").setValue(wrap_v);
-
-							//Connect all the 18 things
-							dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
-							dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
-							dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
-							dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
-							dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
-							dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
-							dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
-							dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
-							dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
-							dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
-							dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
-							dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
-							dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
-							dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
-							dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
-							dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
-							dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
-							dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
-							//(Whew!)
-
-							//Create uvChooser if necessary
-							if ( uv_set > 0 ) {
-								MFnDependencyNode chooserFn;
-								chooserFn.create( "uvChooser", "uvChooser" );
-
-								//Connection between the mesh and the uvChooser
-								MFnMesh meshFn;
-								meshFn.setObject(meshPath);
-								dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
-
-								//Connections between the uvChooser and the place2dTexture
-								dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
-								dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
-								dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
-								dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
-								dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
-							}
-						}
-					}
-					uv_set++;
-				}
-			}
-		} else if ( niTexProp != NULL ) {
-			NiImageRef niImg = niTexProp->GetImage();
-			MFnDependencyNode nodeFn;
-
-			if ( niImg != NULL ) {
-					//Check if texture has already been used
-					NiObjectRef niSrcObj = StaticCast<NiObject>(niImg);
-					if ( importedTextures.find( niSrcObj ) == importedTextures.end() ) {
-						//New texture - import it and add it to the list
-						txOb = ImportTexture( niImg );
-						if ( txOb != MObject::kNullObj ) {
-							importedTextures[niSrcObj] = txOb;
-						}
-					} else {
-						//Already found, use existing one
-						txOb = importedTextures[niSrcObj];
-					}
-
-			}
-
-			//Connect the texture node
-			if ( txOb != MObject::kNullObj ) {
-				nodeFn.setObject(txOb);
-				MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
-						
-				//NiTextureProperties only contain base texture
-				dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
-				//Check if Alpha needs to be used
-				if ( niAlphaProp != NULL && ( niAlphaProp->GetFlags() & 1) == true ) {
-					//Alpha is used, connect it
-					dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
-				}
-			}
-	
-		}
-		
-		out << "Invoking dgModifier..." << endl;
-		dgModifier.doIt();
-	}
-}
-
 MMatrix MatrixN2M( const Matrix44 & n ) {
 	//Copy Niflib matrix to Maya matrix
 
@@ -3295,4 +2854,384 @@ Matrix44 MatrixM2N( const MMatrix & n ) {
 		(float)n[2][0], (float)n[2][1], (float)n[2][2], (float)n[2][3],
 		(float)n[3][0], (float)n[3][1], (float)n[3][2], (float)n[3][3]
 	);
+}
+
+MObject NifTranslator::ImportMaterial( MaterialWrapper & mw ) {
+
+	//Create the material but don't connect it to parent yet
+	MFnPhongShader phongFn;
+	MObject obj = phongFn.create();
+	Color3 color;
+
+	NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
+
+	//See if the user wants the ambient color imported
+	if ( !import_no_ambient ) {
+		color = niMatProp->GetAmbientColor();
+		phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
+	}
+
+	color = niMatProp->GetDiffuseColor();
+	phongFn.setColor( MColor(color.r, color.g, color.b) );
+
+	
+	//Set Specular color to 0 unless the mesh has a NiSpecularProperty
+	NiSpecularPropertyRef niSpecProp = mw.GetSpecularInfo();
+
+	if ( niSpecProp != NULL && (niSpecProp->GetFlags() & 1) == true ) {
+		//This mesh uses specular color - load it
+		color = niMatProp->GetSpecularColor();
+		phongFn.setSpecularColor( MColor(color.r, color.g, color.b) );
+	} else {
+		phongFn.setSpecularColor( MColor( 0.0f, 0.0f, 0.0f) );
+	}
+
+	color = niMatProp->GetEmissiveColor();
+	phongFn.setIncandescence( MColor(color.r, color.g, color.b) );
+
+	if ( color.r > 0.0 || color.g > 0.0 || color.b > 0.0) {
+		phongFn.setGlowIntensity( 0.25 );
+	}
+
+	float glossiness = niMatProp->GetGlossiness();
+	phongFn.setCosPower( glossiness );
+
+	float alpha = niMatProp->GetTransparency();
+	//Maya's concept of alpha is the reverse of the NIF's concept
+	alpha = 1.0f - alpha;
+	phongFn.setTransparency( MColor( alpha, alpha, alpha, alpha) );
+
+	MString name = MakeMayaName( niMatProp->GetName() );
+	phongFn.setName( name );
+
+	return obj;
+}
+
+MObject NifTranslator::ImportTexture( TextureWrapper & tw ) {
+	MObject obj;
+
+	string file_name = tw.GetTextureFileName();
+
+	//Warn the user that internal textures are not supported
+	if ( tw.IsTextureExternal() == false ) {
+		MGlobal::displayWarning( "This NIF file contains an internaly stored texture.  This is not currently supported." );
+		return MObject::kNullObj;
+	}
+
+	//create a texture node
+	MFnDependencyNode nodeFn;
+	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
+
+	//--Search for the texture file--//
+	
+	//Replace back slash with forward slash
+	unsigned last_slash = 0;
+	for ( unsigned i = 0; i < file_name.size(); ++i ) {
+		if ( file_name[i] == '\\' ) {
+			file_name[i] = '/';
+		}
+	}
+
+	//MString fName = file_name.c_str();
+
+	MFileObject mFile;
+	mFile.setName( MString(file_name.c_str()) );
+
+	MString found_file = "";
+
+	//Check if the file exists in the current working directory
+	mFile.setRawPath( importFile.rawPath() );
+	out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+	if ( mFile.exists() ) {
+		found_file =  mFile.fullName();
+	} else {
+		out << "File Not Found." << endl;
+	}
+
+	if ( found_file == "" ) {
+		//Check if the file exists in any of the given search paths
+		MStringArray paths;
+		MString(texture_path.c_str()).split( '|', paths );
+
+		for ( unsigned i = 0; i < paths.length(); ++i ) {
+			if ( paths[i].substring(0,0) == "." ) {
+				//Relative path
+				mFile.setRawPath( importFile.rawPath() + paths[i] );
+			} else {
+				//Absolute path
+				mFile.setRawPath( paths[i] );
+
+			}
+			
+			out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+			if ( mFile.exists() ) {
+				//File exists at path entry i
+				found_file = mFile.fullName();
+				break;
+			} else {
+				out << "File Not Found." << endl;
+			}
+
+			////Maybe it's a relative path
+			//mFile.setRawPath( importFile.rawPath() + paths[i] );
+			//				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
+			//if ( mFile.exists() ) {
+			//	//File exists at path entry i
+			//	found_file = mFile.fullName();
+			//	break;
+			//} else {
+			//	out << "File Not Found." << endl;
+			//}
+		}
+	}
+
+	if ( found_file == "" ) {
+		//None of the searches found the file... just use the original value
+		//from the NIF
+		found_file = file_name.c_str();
+	}
+
+	nodeFn.findPlug( MString("ftn") ).setValue(found_file);
+
+	//Get global texture list
+	MItDependencyNodes nodeIt( MFn::kTextureList );
+	MObject texture_list = nodeIt.item();
+	MFnDependencyNode slFn;
+	slFn.setObject( texture_list );
+
+	MPlug textures = slFn.findPlug( MString("textures") );
+
+	// Loop until an available connection is found
+	MPlug element;
+	int next = 0;
+	while( true )
+	{
+		element = textures.elementByLogicalIndex( next );
+
+		// If this plug isn't connected, break and use it below.
+		if ( element.isConnected() == false )
+			break;
+
+		next++;
+	}
+
+	MPlug message = nodeFn.findPlug( MString("message") );
+
+	// Connect '.message' plug of render node to "shaders"/"textures" plug of default*List
+	MDGModifier dgModifier;
+	dgModifier.connect( message, element );
+
+	dgModifier.doIt();
+
+	return obj;
+}
+
+void NifTranslator::ConnectShader( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list ) {
+	//--Look for Materials--//
+	MObject grpOb;
+	
+	out << "Looking for previously imported shaders..." << endl;
+
+	unsigned int mat_index = mtCollection.GetMaterialIndex( properties );
+
+	if ( mat_index == NO_MATERIAL ) {
+		//No material to connect
+		return;
+	}
+
+	//Look up Maya Shader
+	if ( importedMaterials.find( mat_index ) == importedMaterials.end() ) {
+		throw runtime_error("The material was previously imported, but does not appear in the list.  This should not happen.");
+	}
+
+	MObject matOb = importedMaterials[mat_index];
+
+	if ( matOb == MObject::kNullObj ) {
+		//No material to connect
+		return;
+	}
+
+	//Connect the shader
+	out << "Connecting shader..." << endl;
+
+	//--Create a Shading Group--//
+
+	//Create the shading group from the list
+	MFnSet setFn;
+	setFn.create( sel_list, MFnSet::kRenderableOnly, false );
+	setFn.setName("shadingGroup");
+	
+	//--Connect the mesh to the shading group--//
+
+	//Set material to a phong function set
+	MFnPhongShader phongFn;
+	phongFn.setObject( matOb );
+	
+	//Break the default connection that is created
+	MPlugArray arr;
+	MPlug surfaceShader = setFn.findPlug("surfaceShader");
+	surfaceShader.connectedTo( arr, true, true );
+	MDGModifier dgModifier;
+	dgModifier.disconnect( arr[0], surfaceShader );
+	
+	//Connect outColor to surfaceShader
+	dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
+		
+	out << "Looking for previously imported textures..." << endl;
+
+	MaterialWrapper mw = mtCollection.GetMaterial( mat_index );
+
+	//Cycle through for each type of texture
+	for (int i = 0; i < 8; ++i) {
+		//Texture type is supported, get Texture
+		unsigned int tex_index = mw.GetTextureIndex( TexType(i) );
+
+		//If there is no matching texture for this slot, continue to the next one.
+		if ( tex_index == NO_TEXTURE ) {
+			continue;
+		}
+
+		//Skip this texture slot if it's an un-supported type.
+		switch(i) {
+			case DARK_MAP:
+				//Temporary until/if Dark Textures are supported
+				MGlobal::displayWarning( "Dark Textures are not yet supported." );
+				continue;
+			case DETAIL_MAP:
+				//Temporary until/if Detail Textures are supported
+				MGlobal::displayWarning( "Detail Textures are not yet supported." );
+				continue;
+			case GLOSS_MAP:
+				//Temporary until/if Detail Textures are supported
+				MGlobal::displayWarning( "Gloss Textures are not yet supported." );
+				continue;
+			case BUMP_MAP:
+				//Temporary until/if Bump Map Textures are supported
+				MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
+				continue;
+			case DECAL_0_MAP:
+			case DECAL_1_MAP:
+				//Temporary until/if Decal Textures are supported
+				MGlobal::displayWarning( "Decal Textures are not yet supported." );
+				continue;
+		};
+
+
+		//Look up Maya fileTexture
+		if ( importedTextures.find( tex_index ) == importedTextures.end() ) {
+			//There was no match in the previously imported textures.
+			//This may be caused by the NIF textures being stored internally, so just continue to the next slot.
+			continue;
+		}
+
+		MObject txOb = importedTextures[tex_index];
+
+		out << "Connecting a texture..." << endl;
+		//Connect the texture
+		MFnDependencyNode nodeFn;
+		NiAlphaPropertyRef niAlphaProp = mw.GetTranslucencyInfo();
+		if ( txOb != MObject::kNullObj ) {
+			nodeFn.setObject(txOb);
+			MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
+			switch(i) {
+				case BASE_MAP:
+					//Base Texture
+					dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
+					//Check if Alpha needs to be used
+					
+					if ( niAlphaProp != NULL && ( niAlphaProp->GetBlendState() == true || niAlphaProp->GetTestState() == true ) ) {
+						//Alpha is used, connect it
+						dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
+					}
+					break;
+				case GLOW_MAP:
+					//Glow Texture
+					dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
+					nodeFn.findPlug("alphaGain").setValue(0.25);
+					nodeFn.findPlug("defaultColorR").setValue( 0.0 );
+					nodeFn.findPlug("defaultColorG").setValue( 0.0 );
+					nodeFn.findPlug("defaultColorB").setValue( 0.0 );
+					dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
+					break;
+			}
+
+			//Check for clamp mode
+			bool wrap_u = true, wrap_v = true;
+			TexClampMode clamp_mode = mw.GetTexClampMode( TexType(i) );
+			if ( clamp_mode == CLAMP_S_CLAMP_T ) {
+				wrap_u = false;
+				wrap_v = false;
+			} else if ( clamp_mode == CLAMP_S_WRAP_T ) {
+				wrap_u = false;
+			} else if ( clamp_mode == WRAP_S_CLAMP_T ) {
+				wrap_v = false;
+			}
+
+			//Create 2D Texture Placement
+			MFnDependencyNode tp2dFn;
+			tp2dFn.create( "place2dTexture", "place2dTexture" );
+			tp2dFn.findPlug("wrapU").setValue(wrap_u);
+			tp2dFn.findPlug("wrapV").setValue(wrap_v);
+
+			//Connect all the 18 things
+			dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
+			dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
+			dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
+			dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
+			dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
+			dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
+			dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
+			dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
+			dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
+			dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
+			dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
+			dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
+			dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
+			dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
+			dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
+			dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
+			dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
+			dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
+			//(Whew!)
+
+			//Create uvChooser if necessary
+			unsigned int uv_set = mw.GetTexUVSetIndex( TexType(i) );
+			if ( uv_set > 0 ) {
+				MFnDependencyNode chooserFn;
+				chooserFn.create( "uvChooser", "uvChooser" );
+
+				//Connection between the mesh and the uvChooser
+				MFnMesh meshFn;
+				meshFn.setObject(meshPath);
+				dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
+
+				//Connections between the uvChooser and the place2dTexture
+				dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
+				dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
+				dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
+				dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
+				dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
+			}
+		}
+	}
+
+	out << "Invoking dgModifier..." << endl;
+	dgModifier.doIt();
+}
+
+void NifTranslator::ImportMaterialsAndTextures( NiAVObjectRef & root ) {
+	//Gather all materials and textures from the file
+	mtCollection.GatherMaterials( root );
+
+	out << mtCollection.GetNumTextures() << " textures and " << mtCollection.GetNumMaterials() << " found." << endl;
+
+	//Cycle through each texture that was found, creating a Maya fileTexture for it
+	for ( size_t i = 0; i < mtCollection.GetNumTextures(); ++i ) {
+		importedTextures[i] = ImportTexture( mtCollection.GetTexture(i) );
+	}
+
+	//Cycle through each material that was found, creating a Maya phong shader for it
+	for ( size_t i = 0; i < mtCollection.GetNumMaterials(); ++i ) {
+		importedMaterials[i] = ImportMaterial( mtCollection.GetMaterial(i) );
+	}
 }
