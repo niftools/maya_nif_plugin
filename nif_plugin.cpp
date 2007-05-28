@@ -269,17 +269,17 @@ MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsSt
 		}
 		out << "Done importing meshes." << endl;
 
-		////--Import Animation--//
-		//out << "Importing Animation keyframes..." << endl;
+		//--Import Animation--//
+		out << "Importing Animation keyframes..." << endl;
 
-		////Iterate through all imported nodes, looking for any with animation keys
+		//Iterate through all imported nodes, looking for any with animation keys
 
-		//for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
-		//	//Check to see if this node has any animation controllers
-		//	if ( it->first->IsAnimated() ) {
-		//		ImportControllers( it->first, it->second );
-		//	}
-		//}
+		for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
+			//Check to see if this node has any animation controllers
+			if ( it->first->IsAnimated() ) {
+				ImportControllers( it->first, it->second );
+			}
+		}
 
 		out << "Deselecting anything that was selected by MEL commands" << endl;
 		MGlobal::clearSelectionList();
@@ -1436,6 +1436,11 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			//Get the UVs
 			meshFn.getUVs( myUCoords, myVCoords, &uvSetNames[i] );
 
+			//Make sure this set actually has some UVs in it.  Maya sometimes returns empty UV sets.
+			if ( myUCoords.length() == 0 ) {
+				continue;
+			}
+
 			//Store the data
 			TexCoordSet tcs;
 			tcs.texType = tt;
@@ -1491,6 +1496,20 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	//Add shaders to propGroup array
 	vector< vector<NiPropertyRef> > propGroups;
 	for ( unsigned int shader_num = 0; shader_num < Shaders.length(); ++shader_num ) {
+
+		//Maya sometimes lists shaders that are not actually attached to any face.  Disregard them.
+		bool shader_is_used = false;
+		for ( size_t f = 0; f < FaceIndices.length(); ++f ) {
+			if ( FaceIndices[f] == shader_num ) {
+				shader_is_used = true;
+				break;
+			}
+		}
+
+		if ( shader_is_used == false ) {
+			//Shader isn't actually used, so continue to the next one.
+			continue;
+		}
 		
 		out << "Found attached shader:  ";
 		//Attach all properties previously associated with this shader to
