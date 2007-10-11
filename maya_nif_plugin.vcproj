@@ -269,7 +269,7 @@
 				Name="VCCLCompilerTool"
 				AdditionalOptions=" /I &quot;.&quot;  /c"
 				Optimization="2"
-				AdditionalIncludeDirectories="C:\Program Files\Autodesk\Maya8.5\include"
+				AdditionalIncludeDirectories="&quot;C:\Program Files\Autodesk\Maya8.5\include&quot;;C:\NifTools\niflib;C:\NifTools\niflib\bin;C:\NifTools\niflib\lib"
 				PreprocessorDefinitions="WIN32,NDEBUG,_WINDOWS,_AFXDLL,_MBCS,NT_PLUGIN,REQUIRE_IOSTREAM"
 				RuntimeLibrary="2"
 				PrecompiledHeaderFile=""

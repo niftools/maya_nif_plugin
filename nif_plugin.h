@@ -90,29 +90,29 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <iomanip>
 #include <iostream>
 
-#include "ComplexShape.h"
-#include "MatTexCollection.h"
-#include "niflib.h"
-#include "obj/NiAlphaProperty.h"
-#include "obj/NiMaterialProperty.h"
-#include "obj/NiNode.h"
-#include "obj/NiObject.h"
-#include "obj/NiProperty.h"
-#include "obj/NiSkinData.h"
-#include "obj/NiSkinInstance.h"
-#include "obj/NiSourceTexture.h"
-#include "obj/NiSpecularProperty.h"
-#include "obj/NiTexturingProperty.h"
-#include "obj/NiTriBasedGeom.h"
-#include "obj/NiTriBasedGeomData.h"
-#include "obj/NiTriShape.h"
-#include "obj/NiTriShapeData.h"
-#include "obj/NiTriStripsData.h"
-#include "obj/NiTimeController.h"
-#include "obj/NiKeyframeController.h"
-#include "obj/NiKeyframeData.h"
-#include "obj/NiTextureProperty.h"
-#include "obj/NiImage.h"
+#include <include/ComplexShape.h>
+#include <include/MatTexCollection.h>
+#include <include/niflib.h>
+#include <include/obj/NiAlphaProperty.h>
+#include <include/obj/NiMaterialProperty.h>
+#include <include/obj/NiNode.h>
+#include <include/obj/NiObject.h>
+#include <include/obj/NiProperty.h>
+#include <include/obj/NiSkinData.h>
+#include <include/obj/NiSkinInstance.h>
+#include <include/obj/NiSourceTexture.h>
+#include <include/obj/NiSpecularProperty.h>
+#include <include/obj/NiTexturingProperty.h>
+#include <include/obj/NiTriBasedGeom.h>
+#include <include/obj/NiTriBasedGeomData.h>
+#include <include/obj/NiTriShape.h>
+#include <include/obj/NiTriShapeData.h>
+#include <include/obj/NiTriStripsData.h>
+#include <include/obj/NiTimeController.h>
+#include <include/obj/NiKeyframeController.h>
+#include <include/obj/NiKeyframeData.h>
+#include <include/obj/NiTextureProperty.h>
+#include <include/obj/NiImage.h>
 
 using namespace Niflib;
 
