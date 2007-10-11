@@ -167,7 +167,7 @@ Section
 
   ; Install shortcuts
   CreateDirectory "$SMPROGRAMS\NifTools\${MED_NAME}\"
-  CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Documentation & Tutorials.lnk" "http://www.niftools.org/wiki/index.php/Maya"
+  CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Documentation & Tutorials.lnk" "http://niftools.sourceforge.net/wiki/index.php/Maya"
  
   CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Support.lnk" "http://www.niftools.org/forum/viewforum.php?f=23"
   CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\License.lnk" "$INSTDIR\license .txt"
