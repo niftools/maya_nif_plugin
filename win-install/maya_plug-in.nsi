@@ -143,6 +143,8 @@ Section
   ;remove old versions of the plug-in MLL file from common locations
   Delete "$MAYA_INSTALLDIR\plugins\nifTranslator.mll"
   Delete "$MAYA_INSTALLDIR\plug-ins\nifTranslator.mll"
+  Delete "$MAYA_INSTALLDIR\bin\plug-ins\nifTranslator.mll"
+  Delete "$MAYA_INSTALLDIR\bin\plugins\nifTranslator.mll"
   
   ;remove old version of the dll file
   Delete "$MAYA_INSTALLDIR\niflib.dll"
