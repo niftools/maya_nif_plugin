@@ -143,6 +143,9 @@ Section
   ;remove old versions of the plug-in MLL file from common locations
   Delete "$MAYA_INSTALLDIR\plugins\nifTranslator.mll"
   Delete "$MAYA_INSTALLDIR\plug-ins\nifTranslator.mll"
+  
+  ;remove old version of the dll file
+  Delete "$MAYA_INSTALLDIR\niflib.dll"
  
   ; Install plug-in file
   SetOutPath "$MAYA_INSTALLDIR\plug-ins"
@@ -152,6 +155,10 @@ Section
   SetOutPath "$MAYA_INSTALLDIR\scripts\others"
   File ..\nifTranslatorOpts.mel
 
+  ; Install Niflib DLL
+  SetOutPath "$MAYA_INSTALLDIR"
+  File ..\..\niflib\bin\niflib.dll
+  
   ; Install documentation files
   SetOutPath $INSTDIR
   File ..\change_log.txt
