@@ -148,7 +148,7 @@ Section
   Delete "$MAYA_INSTALLDIR\niflib.dll"
  
   ; Install plug-in file
-  SetOutPath "$MAYA_INSTALLDIR\plug-ins"
+  SetOutPath "$MAYA_INSTALLDIR\bin\plug-ins"
   File "..\bin\maya${MAYA_VERSION}\nifTranslator.mll"
   
   ; Install options script
