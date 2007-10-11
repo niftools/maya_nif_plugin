@@ -156,7 +156,7 @@ Section
   File ..\nifTranslatorOpts.mel
 
   ; Install Niflib DLL
-  SetOutPath "$MAYA_INSTALLDIR"
+  SetOutPath "$MAYA_INSTALLDIR\bin"
   File ..\..\niflib\bin\niflib.dll
   
   ; Install documentation files
@@ -201,6 +201,10 @@ Section "Uninstall"
   
   ; Remove options script
   Delete "$MAYA_INSTALLDIR\scripts\others\nifTranslatorOpts.mel"
+  
+  ;Remove niflib DLL
+  Delete "$MAYA_INSTALLDIR\bin\niflib.dll"
+  
 
   ; remove program files and program directory
   Delete "$INSTDIR\*.*"
