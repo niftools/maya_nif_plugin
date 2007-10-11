@@ -66,7 +66,7 @@ Var MAYA_INSTALLDIR
 
 !insertmacro MUI_PAGE_INSTFILES
 
-!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\Wiki Documentation.URL"
+!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\change_log.txt"
 !define MUI_FINISHPAGE_LINK "Visit us at http://niftools.sourceforge.net/"
 !define MUI_FINISHPAGE_LINK_LOCATION "http://niftools.sourceforge.net/"
 !insertmacro MUI_PAGE_FINISH

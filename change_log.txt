@@ -174,4 +174,9 @@
 
 =Version 0.6.1=
 
-Added Manipulator1 to the exception list to prevent it from being exported over. Manipulator1 is a blank node that was added by Maya 8.5 as default.
+* Added Manipulator1 to the exception list to prevent it from being exported over. Manipulator1 is a blank node that was added by Maya 8.5 as default.
+* Reconfigured the Install script to handle niflib.dll handling for when niflib is updated the exported will not need to be updated unless a breaking change was done to the niflib code.
+* Organzied the source code link to the niflib folder when compiling the code to better optomize compiling without having to copy the files from niflib to the maya exported source folder to compile the exporter.
+* Updated the Documentation to the correct url on the site.
+* Minor changes to the code to better suit my way of thinking.
+* Updated the Debugger to support debugging with maya 8.5
