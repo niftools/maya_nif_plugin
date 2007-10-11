@@ -171,3 +171,7 @@
 * Automated renaming of Morrowind body parts based on material names to speed
   myself up.  Will make it optional later.
 * Corrected NiAVObject flag default to 10.
+
+=Version 0.6.1=
+
+Added Manipulator1 to the exception list to prevent it from being exported over. Manipulator1 is a blank node that was added by Maya 8.5 as default.

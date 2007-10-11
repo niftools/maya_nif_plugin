@@ -3,7 +3,7 @@
 //#define _DEBUG
 ofstream out;
 
-const char PLUGIN_VERSION [] = "0.6";	
+const char PLUGIN_VERSION [] = "0.6.1";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
@@ -1871,6 +1871,7 @@ void NifTranslator::ExportDAGNodes() {
 			nodeFn.name().substring(0, 13) == "UniversalManip" ||
 			nodeFn.name() == "groundPlane_transform" ||
 			nodeFn.name() == "ViewCompass" ||
+			nodeFn.name() == "Manipulator1" ||
 			nodeFn.name() == "persp" ||
 			nodeFn.name() == "top" ||
 			nodeFn.name() == "front" ||

@@ -35,8 +35,8 @@
 
 !include "MUI.nsh"
 
-!define VERSION "0.6"
-!define MAYA_VERSION "6.5"
+!define VERSION "0.6.1"
+!define MAYA_VERSION "8.5"
 !define FULL_NAME "NIF Plug-in ${VERSION} for Maya ${MAYA_VERSION}"
 !define MED_NAME "NIF Plug-in for Maya ${MAYA_VERSION}"
 !define SHORT_NAME "Maya NIF Plug-in"
