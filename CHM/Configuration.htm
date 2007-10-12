@@ -1,0 +1,298 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>You can access the options by choosing the option box ( ) next to either
+File &gt; Open Scene or File &gt; Export All rather than clicking the words</title>
+
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h2
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:18.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+h3
+	{margin-top:12.0pt;
+	margin-right:0pt;
+	margin-bottom:3.0pt;
+	margin-left:0pt;
+	page-break-after:avoid;
+	font-size:13.0pt;
+	font-family:Arial;
+	font-weight:bold;}
+h4
+	{margin-top:12.0pt;
+	margin-right:0pt;
+	margin-bottom:3.0pt;
+	margin-left:0pt;
+	page-break-after:avoid;
+	font-size:14.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+p
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+@page Section1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US>
+
+<div class=Section1>
+
+<p>You can access the options by choosing the option box (<a
+href="http://niftools.sourceforge.net/wiki/Image:Option_box.gif"
+title="Image:option_box.gif"><span style='text-decoration:none'><img border=0
+width=18 height=14 src="Configuration_files/image001.gif"
+alt="Image:option_box.gif" longdesc="/wiki/Image:Option_box.gif"></span></a>)
+next to either <b>File &gt; Open Scene</b> or <b>File &gt; Export All</b>
+rather than clicking the words. </p>
+
+<p class=MsoNormal><a
+href="http://niftools.sourceforge.net/wiki/Image:Maya_config_boxes.gif"
+title="Image:maya_config_boxes.gif"><span style='text-decoration:none'><img
+border=0 width=241 height=254 src="Configuration_files/image002.gif"
+alt="Image:maya_config_boxes.gif" longdesc="/wiki/Image:Maya_config_boxes.gif"></span></a></p>
+
+<p>Then choose <b>NetImmerse Format</b> from the <b>File Type</b> drop down
+box. If you have installed the NIF plug-in correctly, the options should appear
+below. </p>
+
+<p class=MsoNormal><a
+href="http://niftools.sourceforge.net/wiki/Image:Maya_options.gif"
+title="Image:maya_options.gif"><span style='text-decoration:none'><img
+border=0 width=484 height=215 src="Configuration_files/image003.gif"
+alt="Image:maya_options.gif" longdesc="/wiki/Image:Maya_options.gif"></span></a></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h2>Common</h2>
+
+<p>These settings apply to both import and export. </p>
+
+<p class=MsoNormal><a
+href="http://niftools.sourceforge.net/wiki/Image:Maya_common_options.gif"
+title="Image:maya_common_options.gif"><span style='text-decoration:none'><img
+border=0 width=532 height=191 src="Configuration_files/image004.gif"
+alt="Image:maya_common_options.gif"
+longdesc="/wiki/Image:Maya_common_options.gif"></span></a></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>Use Name Mangling to Preserve Original Names</h3>
+
+<p>This will cause characters that are invalid for Maya names to be replaced
+with hex equivalents on import, and translated back to the original character
+on export. Disabling it will cause all invalid characters to be changed to
+underscores on import and names will be exported with no changes. </p>
+
+<h3>Texture Search Paths</h3>
+
+<p>This lists the paths that the plug-in will look for textures in addition to
+the location of the NIF file. Each path will be searched and, if the texture is
+not found in any of them, only its file name will be saved in the resulting
+Maya file texture node. </p>
+
+<p>To add a path, either type one into the text box or press <b>Browse</b> and
+choose one. Once you have it the way you like it, press <b>Add</b> to insert it
+at the top of the list. </p>
+
+<p>If you want to remove a path, highlight it and press the <b>Delete</b> key. </p>
+
+<p>You can also double-click a path to copy it back into the text box. </p>
+
+<p>Paths can also be relative, for example, most Freedom Force NIF files have
+their textures stored in a folder called &quot;textures&quot; within the folder
+that the NIF file was found in. If you start your path with <b>./</b> it means
+&quot;The path where the NIF file was loaded from&quot; and you can add on from
+there. So to find hose Freedom Force files, you would use: <b>./textures</b> </p>
+
+<p>Similarly, you can use <b>../</b> to mean &quot;The parent folder of the one
+where the NIF was found.&quot; You can use several of these in a row to move up
+multiple folders. </p>
+
+<p>This list is also used on export if the Texture Path Adjustment mode is set
+to Automatic. </p>
+
+<h2>Import</h2>
+
+<p>These settings apply to importing and opening NIF files. </p>
+
+<p class=MsoNormal><a
+href="http://niftools.sourceforge.net/wiki/Image:Maya_import_options.gif"
+title="Image:maya_import_options.gif"><span style='text-decoration:none'><img
+border=0 width=432 height=116 src="Configuration_files/image005.gif"
+alt="Image:maya_import_options.gif"
+longdesc="/wiki/Image:Maya_import_options.gif"></span></a></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>Attempt to Find Original Bind Pose</h3>
+
+<p>NIF files do not store their original bind pose, but sometimes a reasonable
+substitute can be calculated by trying to line up the bones with the
+pre-deformed skins. Checking this activates this option. Clearing it will cause
+the NIF file to import in whatever position it is actually in. </p>
+
+<h3>Try to Use Original Normal’s</h3>
+
+<p>Usually Maya will automatically calculate the normals of a polygon, but it
+optionally supports the setting of &quot;user normals.&quot; This type of fixed
+normal does not seem to work well with skins, but may allow you to retain the
+original normal information from the NIF file exactly if successful. </p>
+
+<h3>Ignore Ambient Color</h3>
+
+<p>Most NIF files with textures have their ambient color set to white. These
+cause these to be no shading on the model when rendered with Maya. Enable this
+if you plan to render a NIF with textures. NIF files without textures, however,
+may lose important lighting information if this enabled. </p>
+
+<h3>Combine New Skins with Existing Skeleton</h3>
+
+<p>This is useful when using the Import, rather than Open command. If you have
+already opened or created an IK joint hierarchy, this option will cause the
+import command to search for names in the NIF file which match the names in the
+joint hierarchy, and use the existing joints instead of the ones in the
+original file. If the original skeletons are not compatible, this may distort
+the imported file or simply do nothing. </p>
+
+<h3>Import nodes with the following in their name as joints</h3>
+
+<p>Usually only NiNodes flagged as skin influences will be imported as IK
+joints, but this will cause any with the given sub string somewhere in their
+name to be imported as IK joints as well. </p>
+
+<h2>Export</h2>
+
+<p>These options apply to the Export All command. Export Selection is not yet supported.
+</p>
+
+<p class=MsoNormal><a
+href="http://niftools.sourceforge.net/wiki/Image:Maya_export_options.gif"
+title="Image:maya_export_options.gif"><span style='text-decoration:none'><img
+border=0 width=533 height=264 src="Configuration_files/image006.gif"
+alt="Image:maya_export_options.gif"
+longdesc="/wiki/Image:Maya_export_options.gif"></span></a></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h3>NIF Version</h3>
+
+<p>This determines what version of NIF files the export process creates. If an
+invalid version string is specified, the default of 4.0.0.2 is used; the lowest
+NIF version that Niflib supports. </p>
+
+<h3>Game Specific Version</h3>
+
+<p>This used only in Oblivion so far. Set to 10 or 11 for this game. For all
+other games set to zero. This might be useful in the future for other games. </p>
+
+<h3>Export White Ambient if Texture is Present</h3>
+
+<p>Every NIF file from a game I have seen has a white ambient component if
+there is a texture present, but Maya's default is black. You can get some
+interesting effects by setting the ambient color to something other than white,
+but they will look very different from all the other objects in the game. </p>
+
+<h3>Arrange Triangles in Strips</h3>
+
+<p>This will option arranges the triangles within meshes into efficient strips.
+This may cause problems in some games, but generally increases performance. </p>
+
+<h3>Rename mesh chunks with materials with Morrowind body part names</h3>
+
+<p>This option will scan the material names for Morrowind body part names, such
+as &quot;Right Ankle&quot; or &quot;Left Upper Arm,&quot; and re-name
+corresponding meshes to the proper Morrowind body part name, such as &quot;Tri
+Right Ankle&quot; or &quot;Tri Left Upper Arm.&quot; This is useful if you have
+a skin that is intended to cover many body parts, and you would like to keep it
+in one piece. You can tag different parts of the mesh with identical, but
+differently named, materials to determine which faces will become each body
+part. </p>
+
+<h3>Generate Oblivion Tangent Space Data</h3>
+
+<p>Oblivion NIF files have some game-specific data packed into the file. This
+command causes this extra data to be calculated and included in the exported
+NIF file. Has no affect for other games. </p>
+
+<h3>Maximum Number of Bones per Skin Partition</h3>
+
+<p>Skin partitions hold skin information optimized for hardware-assisted
+skinning. Depending on the shader version, there are different limits on the
+number of bones that can be in each partition. 4 should always be safe, but a
+limit similar to the other files in the game should provide the best
+performance. All official Oblivion files seems to use a max of 20. On the other
+hand, Civ4 provides two versions of each file, one with 4 bones per partition
+for backwards compatibility, and one with up to 16 bones per partition for more
+recent video cards. </p>
+
+<h3>Texture Path Adjustment</h3>
+
+<p>Most games have strict requirements about the texture image paths that must
+be used in the NIF file. These options give you control over what paths written
+to the file exported. </p>
+
+<h4>Automatic based on texture search path selections</h4>
+
+<p>When this mode enabled, the plug-in will try to intelligently guess what the
+path should be. If the beginning of your texture path starts with one of the
+texture search paths, the plug-in will strip that part out. So say one of your
+texture search paths is <b>C:\Textures</b> and one of the file textures in your
+Maya scene has a path of <b>C:\Textures\buildings\house.dds</b>. Using this
+option, the resulting path in the NIF file would be <b>buildings\house.dds</b>.
+</p>
+
+<p class=MsoNormal>If none of the search paths matches the beginning of the
+file's path, then only the file name will be exported. So continuing the
+example above, if you did <i>not</i> have <b>C:\Textures</b> in your texture
+search paths, the resulting path in the NIF file would be <b>house.dds</b>.</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<h4>Export file name only</h4>
+
+<p>When enabled all folder, this modes will be stripped from the path, and only
+the file name will be written to the NIF file. </p>
+
+<h4>Export full path</h4>
+
+<p>With this mode enabled, the entire path, including drive letter, all
+folders, and the file name, will be written to the NIF file. </p>
+
+<h4>Prefix file name with the following</h4>
+
+<p>This mode allows you to specify a prefix in the following text box, which will
+add to the beginning of the file name after all folders have been stripped
+away. </p>
+
+<p>For example, if you've been working a texture called <b>texture.dds</b> and
+its in your My Pictures folder, but your game needs them to be prefixed with <b>textures/characters/male/</b>,
+you can type that into the box and the resulting path written to the NIF file
+will be <b>textures/characters/male/texture.dds</b>. </p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

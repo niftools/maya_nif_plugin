@@ -1,0 +1,182 @@
+=Version 0.1=
+
+* Initial Release
+
+=Version 0.2=
+
+* Updated to Niflib 0.4.  Now most Nif files from version 4.0.0.0 to 10.2.0.0
+  can be imported.
+* Added support for importing vertex colors.
+* Scene Root no longer translated to a Maya transform node on import.
+
+=Version 0.3=
+
+* Expanded NIF support including Oblivion and Civ4
+* Filter now works correctly in open dialog box (only NIF files are shown when
+  NetImmerse Format is selected)
+* Errors and warnings show in Maya's main window instead of the Output Window.
+
+=Version 0.3.1=
+
+* Sped up loading of skinned meshes significantly.  These now load almost as
+  fast as NIF files without skins.
+* Included Pre-release Niflib code in source archive to make it easier for
+  people to compile the plug-in themselves.
+  
+=Version 0.4=
+
+* Added experimental export support.
+
+=Version 0.5=
+
+* Realized that one of the functions I called is not supported by Maya 6.5.
+  Removed vertex color export from that version for now.
+* Organized options into Common, Import, and Export groups.
+* Added new options:  Attempt to Find Original Bind Pose, Try to Use Original
+  Normals, Ignore Ambient Color, and Export White Ambient if Texture is
+  Present.
+* Fixed problem with import of glow textures.  Texture index was off by one
+  due to being incremented at the wrong time.
+* Skin clusters should now always be properly detected no matter how distantly
+  they're connected to the mesh they deform.
+* A NiAlphaProperty is now created on export if the base texture has any
+  transparency specified in its alpha channel.
+* Glow textures are now supported for export.
+* Removed warning for transparency texture.  This was caused by the alpha
+  channel of the base map being connected to transparency as it should be.
+* Changed all cout statements to use the out file stream so they would not
+  write to the Maya Output window.
+* Only NiNodes that are skin influences are now imported as IKJoints.
+  Previously nodes with the word "Bip" in the name were also made into joints
+  but this was incorrect.
+* Now import ambient as well.  It looks bad in renders, but not importing it
+  results in exports that do not match the original file.
+* Vertex colors are now exported.
+* Maya's default objects (such as the top, front, side, and persp camera) are
+  no longer exported.
+* Exported the name of the FileTexture node in the resulting NiSourceTexture
+  object.
+* Paths of textures are now fixed by removing any part of the beginning that
+  matches the texture path specified in the options.
+* Texture path can now optionally end with an extra \ character after the last
+  directory name.
+* Fixed a bug where two \ characters were always added to whatever texture
+  path the user specified.
+* Added skin export support. For now, just exports the mesh in its present
+  position.  Disabled old behavior of searching for the bind position of the
+  mesh.
+* Fixed detection of history items to be more accurate.
+* Names of split meshes now set properly.
+* Moved all vertex cloning/triangulation code into Niflib and can now support
+  multiple materials and UV sets per mesh.
+* Properly handle glossiness/cosine power for Phong shaders.  Blinn now
+  defaults to a glossiness of 20.
+* Moved export parent query to its own function.
+* Deferred export mesh creation until after all nodes are imported to prepare
+  to implement support for skinning.
+* Simplified export parent connection.  Two loops are no longer required.
+
+
+=Version 0.5.3=
+* Added name mangling option to preserve original names
+* Added ability to import nodes with a user-selected sub-string in their names
+  as joints.
+* Added option to merge newly imported skins with existing skeletons
+* Changed vertex color export code so that Maya 6.5 and Maya 7.0 are both
+  supported.
+* Niflib change fixes the problem with Oblivion skins not having the skin flag
+  set properly, making the import of the skin weights fail.
+* Added warnings if the user tries to export something with scale not 1.0 or
+  with separate values for scale x, y, and z.
+* Now import root nodes with non-identity transforms instead of treating them
+  as the scene root and ignoring them.  Fixes some Morrowind skins.
+  
+=Version 0.5.5=
+* Added Config options to:
+  - Generate Oblivion tangent space.
+  - Export triangles in strips
+  - Set User Version
+  - Generate skin partitions of specified size
+* Config UI controls now have tool-tips.
+* Fixed bug in skinning where shapes were bound as if the they had identity
+  transforms, even if they didn't.
+* Added bounding box import/export support.  This is non-Oblivion Collision.
+* Changed default flags that are exported to be more standard.
+* Invisibility is now correctly marked on imported transform node instead of the
+  geometry node.
+* You can now leave parts of the version number off at the end.  So 4 is equivalent
+  to 4.0.0.0 and 10.2 is equivalent to 10.2.0.0, etc.
+* Niflib improvements
+  - Additional skinning bug fix - The better bodies meshes can now be imported and
+    re-exported without problems.
+  - Support for most files from the Freedom Force games
+  - Corrected support for importing and exporting glow textures.
+  
+=Version 0.5.7=
+* Bug Fixes:
+  - The endian type was being set wrong, causing later version NIF files to be
+    invalid.
+  - Allowed files with invalid triangles to load.
+  - Fixed bug where objects without textures could cause a file to fail to load.
+* Combine With Existing Skeleton option now works even if the skeleton is in a
+  different pose than the skeleton in the file being imported.
+* New Texture Search Features
+  - Ability to specify multiple texture search paths with new UI
+  - Ability to use relative paths
+  - The location of the NIF file is now searched.
+  - Several games's default locations are now included in the default settings in
+    addition to Morrowind's.
+* Can now export texture paths:
+ - Automatically as before, but now stripping parts that match any of the search
+   paths in the list.
+ - With no path, only the file name.
+ - With the complete path.
+ - With a user-specified prefix.
+ 
+ =Version 0.5.8=
+
+* Temporary Niflib data is now freed at the end of the functions that use it.
+* Files with internal textures now generate a warning instead of failing to
+  load entirely.
+* Invalid triangles are now properly taken care of when setting vertex colors.
+* Now apply all skin offsets (propagating interim transforms) as a
+  post-process.  Allows Better Bodies files to be exported in such a way that
+  they can be used in Morrowind without modification.
+* Fixed a bug where a mesh with no vertices would cause export to fail.
+* Fixed a bug in the way UV set numbers were assigned, which could cause
+  export to fail.
+* Fixed a bug where a missing joint was not being properly detected during
+  export.
+* Combine Skeleton and Search for Bind Position should not have been mutually
+  exclusive.
+* Fixed a bug where meshes had different numbers of textures on different
+  parts that were combined with ComplexShape::Split causing a crash on export.
+* Further bug fixes through changes in Niflib.
+
+=Version 0.6=
+
+* Skins are now imported to the root of the Maya scene and exported as children
+  of their skeleton root regardless of their location in the Maya HyperGraph.
+* Gave Maya Plug-in, Niflyze, and Niflib projects each their own bin folder.
+* Fixed bug in options script that was causing "texturePath" to be appended to
+  one of the entries in the path list over and over.
+* Made renaming Morrowind body parts by material optional and put a check box
+  for it into the options script.
+* Niflib fix cures the issue of not being able to load and then export an
+  Oblivion skin NIF and view it in the game.
+* Added a warning if dimensions of an exported texture are not powers of 2.
+* Created a NSIS install script for the Maya NIF Plug-in.
+* Fix to Maya 8.0 and 8.5 configurations.  At least 8.5 should work now.
+* Added configurations for Maya 8.0 and 8.5 to Maya solution.  May not work.
+* Automated renaming of Morrowind body parts based on material names to speed
+  myself up.  Will make it optional later.
+* Corrected NiAVObject flag default to 10.
+
+=Version 0.6.1=
+
+* Added Manipulator1 to the exception list to prevent it from being exported over. Manipulator1 is a blank node that was added by Maya 8.5 as default.
+* Reconfigured the Install script to handle niflib.dll handling for when niflib is updated the exported will not need to be updated unless a breaking change was done to the niflib code.
+* Organzied the source code link to the niflib folder when compiling the code to better optomize compiling without having to copy the files from niflib to the maya exported source folder to compile the exporter.
+* Updated the Documentation to the correct url on the site.
+* Minor changes to the code to better suit my way of thinking.
+* Updated the Debugger to support debugging with maya 8.5

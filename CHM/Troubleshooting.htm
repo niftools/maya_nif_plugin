@@ -1,0 +1,75 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>Troubleshooting</title>
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h2
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:18.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+p
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+pre
+	{margin:0pt;
+	margin-bottom:.0001pt;
+	font-size:10.0pt;
+	font-family:"Courier New";}
+@page Section1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;}
+div.Section1
+	{page:Section1;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US>
+
+<div class=Section1>
+
+<h2>Troubleshooting</h2>
+
+<p>If you have put the script in some other location before, it may take
+precedence over your new copy. If you are having trouble getting a new version
+to work, you can get a list of all the paths that Maya is looking for scripts
+by entering this command in Maya's command line: </p>
+
+<p><b>getenv &quot;MAYA_SCRIPT_PATH&quot;;</b> </p>
+
+<p>Check each one to make sure there is not another copy of <b>nifTranslatorOpts.mel</b>
+somewhere preventing your new one from working. Delete any extra copies you
+find. </p>
+
+<p>Just as an example of how many places Maya might look for scripts, my output
+from this command shows the following locations: </p>
+
+<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse;border:none'>
+ <tr style='height:216.25pt'>
+  <td width=590 valign=top style='width:442.8pt;border:solid windowtext 1.0pt;
+  padding:0pt 5.4pt 0pt 5.4pt;height:216.25pt'><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/projects/<i>CurrentProject</i>/mel</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/scripts</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/scripts</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/presets</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/prefs/shelves</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/prefs/markingMenus</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/startup</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/others</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/AETemplates</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/paintEffects</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/fluidEffects</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/hair</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/cloth</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/live</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/fur</pre></td>
+ </tr>
+</table>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>

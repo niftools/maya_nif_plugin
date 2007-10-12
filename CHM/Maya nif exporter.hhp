@@ -1,0 +1,35 @@
+[OPTIONS]
+Compatibility=1.1 or later
+Compiled file=Maya nif exporter.chm
+Contents file=Maya.hhc
+Index file=Maya.hhk
+Binary Index=Yes
+Full-text search=Yes
+Language=0x0409
+Title=Maya Nif Exporter Help
+Error log file=Errlog.txt
+Default Window=main
+
+[WINDOWS]
+main="Maya Nif Exporter Help","Maya.hhc","Maya.hhk","About.htm",,,,,,0x41520,240,0x180E,[262,184,762,584],,,,0,0,0,0
+
+[FILES]
+About.htm
+Overview.htm
+Overview.htm
+About.htm
+Configuration.htm
+Configuration.htm
+Installation.htm
+Troubleshooting.htm
+Compiling.htm
+license.txt
+change_log.txt
+C:\Program Files\PowerCHM\QuickStart\images\quickstart1.gif
+C:\Program Files\PowerCHM\QuickStart\images\quickstart2.gif
+C:\Program Files\PowerCHM\QuickStart\images\quickstart3.gif
+C:\Program Files\PowerCHM\QuickStart\images\quickstart4.gif
+C:\Program Files\PowerCHM\QuickStart\scripts\dtuelink.js
+C:\Program Files\PowerCHM\QuickStart\scripts\msdn.css
+C:\Program Files\PowerCHM\QuickStart\scripts\msdn_ie4.js
+C:\Program Files\PowerCHM\QuickStart\scripts\msdn_ie5.js

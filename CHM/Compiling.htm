@@ -1,0 +1,150 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>Compiling from Source</title>
+<style>
+<!--
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h2
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:18.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+h3
+	{margin-top:12.0pt;
+	margin-right:0pt;
+	margin-bottom:3.0pt;
+	margin-left:0pt;
+	page-break-after:avoid;
+	font-size:13.0pt;
+	font-family:Arial;
+	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;}
+p
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+@page Section1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0pt;}
+ul
+	{margin-bottom:0pt;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US link=blue vlink=purple>
+
+<div class=Section1>
+
+<h2>Compiling from Source</h2>
+
+<p>If you have Maya for Windows version 6.5, 7.0, 8.0, or 8.5, the above is all
+you need to worry about since you can use the pre-compiled version. But if you
+have a different version, or you want to use the latest unreleased code from
+SVN, you're going to have to compile the MLL plug-in file from the source code.
+</p>
+
+<h3>Preparation</h3>
+
+<ol start=1 type=1>
+ <li class=MsoNormal>On your C: drive, add a folder called NifTools. </li>
+ <li class=MsoNormal>Inside the NifTools folder, create two subfolders called
+     niflib and maya. </li>
+ <li class=MsoNormal>Right click on the maya folder and use it to check out the
+     maya code from SVN. </li>
+ <li class=MsoNormal>Right click on the niflib folder and use it to check out
+     the niflib code from SVN. </li>
+</ol>
+
+<h3>Compiling the code</h3>
+
+<p>To to compile the most current code, you will need to check out both Niflib
+and the Maya plug-in source code from SVN, as described above. You should then
+first compile Niflib as a dynamic library. On Windows, using MSVC, you can open
+the Niflib solution and choose the <b>Release - DLL</b> configuration from the
+drop-down on the tool bar, and then select <b>Build &gt; Build Solution</b>
+from the menu. This will create the <b>niflib.dll</b> file in the <b>bin</b>
+folder within the folder where you downloaded the Niflib code. </p>
+
+<p>If you haven't already, you should also add the location of the include and
+lib folders within this same folder to your compiler's search paths so that
+your other projects which use Niflib will be able to include the code. This is
+done in MSVC by selecting <b>Tools &gt; Options...</b> from the menu, and then
+expanding &quot;Projects and Solutions&quot; and selecting &quot;VC++
+Directories&quot; in the left pane. Then in the right pane, you should select <b>Include
+Files</b> from the <b>Show directories for</b> drop down box, and then add the
+location of the Niflib <b>include</b> folder. Next, do the same thing for <b>Library
+Files</b> and add the Niflib <b>lib</b> folder. </p>
+
+<p>Finally, you will compile the Maya Plug-in code. This process requires that
+your compiler be aware of the location of both Niflib and the Maya SDK include
+and lib files. On Windows, using MSVC, you can open the Maya Plug-in solution
+and select the version of Maya you have from the configuration drop down. If
+your version is not listed or if you installed Maya in a non-standard location,
+however, you will need to add the correct paths similar to the way the Niflib
+paths were added above. Alternatively, if you know what you're doing, you can
+create a new configuration with the proper path or edit an existing
+configuration to correct the path. Once you have the path configured correctly,
+you can select <b>Build &gt; Build Solution</b> and the result will be the <b>nifTranslator.mll</b>
+file created in the <b>bin</b> folder within the folder where the Plug-in code
+was downloaded. It should be located in a sub-folder that indicates the version
+of Maya that selected in the configuration drop-down when the solution was
+built. </p>
+
+<p>If you have any problems at this phase, such as code errors involving
+functions not being found or having the wrong number of parameters, Niflib may been
+changed in ways that break the Maya plug-in. The version of Niflib that was
+current when the plug-in worked on last was 0.7.2, so using that version may
+fix the problems. </p>
+
+<p>Once you have everything compiled, you will have to move the resulting files
+to their proper locations. On Windows, the <b>niflib.dll</b> file can be moved
+to the Maya folder, while the <b>nifTranslator.mll</b> file can be moved to the
+<b>plug-ins</b> folder within the Maya folder. The nifTranslatorOpts.mel
+options script should also be placed in a location where Maya can find it, such
+as the <b>scripts/others</b> folder within the Maya folder. You should now be
+able to activate the plug-in from within Maya as described at the beginning of
+this page. </p>
+
+<p>This code <i>should</i> be compatible with multiple versions of Maya on
+multiple operating systems, but only the above-mentioned versions for Windows
+have been tested. If you successfully compile this code for another version of
+Maya, please post a link to your build on the <a
+href="http://niftools.sourceforge.net/forum/viewforum.php?f=12"
+title="http://niftools.sourceforge.net/forum/viewforum.php?f=12">niftools forum</a>
+so others can use it! </p>
+
+<h2>Want to Help?</h2>
+
+<p>If you can program in C++, have Maya, and want to help make this plug-in
+better, we can always use more people working on the project. Just let us know
+you're interested on the NifTools <a
+href="http://niftools.sourceforge.net/forum/"
+title="http://niftools.sourceforge.net/forum/">forum</a>.</p>
+
+</div>
+
+</body>
+
+</html>

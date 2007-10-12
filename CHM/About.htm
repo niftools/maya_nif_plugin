@@ -1,0 +1,178 @@
+<html>
+
+<head>
+<meta http-equiv=Content-Type content="text/html; charset=windows-1252">
+<meta name=Generator content="Microsoft Word 11 (filtered)">
+<title>About</title>
+<style>
+<!--
+ /* Font Definitions */
+ @font-face
+	{font-family:Wingdings;
+	panose-1:5 0 0 0 0 0 0 0 0 0;}
+ /* Style Definitions */
+ p.MsoNormal, li.MsoNormal, div.MsoNormal
+	{margin:0pt;
+	margin-bottom:.0001pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+h1
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:24.0pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+h2
+	{margin-top:12.0pt;
+	margin-right:0pt;
+	margin-bottom:3.0pt;
+	margin-left:0pt;
+	page-break-after:avoid;
+	font-size:14.0pt;
+	font-family:Arial;
+	font-weight:bold;
+	font-style:italic;}
+h3
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:13.5pt;
+	font-family:"Times New Roman";
+	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;}
+p
+	{margin-right:0pt;
+	margin-left:0pt;
+	font-size:12.0pt;
+	font-family:"Times New Roman";}
+@page Section1
+	{size:612.0pt 792.0pt;
+	margin:72.0pt 90.0pt 72.0pt 90.0pt;}
+div.Section1
+	{page:Section1;}
+ /* List Definitions */
+ ol
+	{margin-bottom:0pt;}
+ul
+	{margin-bottom:0pt;}
+-->
+</style>
+
+</head>
+
+<body lang=EN-US link=blue vlink=purple>
+
+<div class=Section1>
+
+<h1>About</h1>
+
+<h3 id=siteSub>From NifTools</h3>
+
+<p>The Maya NIF File Translator currently supports importing and exporting
+static (non-animated) NIF files. Pre-compiled versions are available for Maya
+6.5, 7.0, 8.0, and 8.5 for Windows. To use on other versions of Maya or other
+operating systems, you will need to compile from source. </p>
+
+<p>This Plug-in will not import all data in the NIF file or export all data
+from your Maya scene. Make sure you do not overwrite your original NIF files.
+See below for a list of what is and not supported as of version 0.5.7. </p>
+
+<p>&nbsp;</p>
+
+<h2>Known Issues</h2>
+
+<ul type=disc>
+ <li class=MsoNormal>Importing normal’s does not work on skinned meshes </li>
+ <li class=MsoNormal>Changes to an already bound skin will not show up in the
+     export. This issue is because of the way Maya works. The solution is to
+     delete all <b>non-deformer</b> history. Note that if you accidentally
+     delete <b>all</b> history, all your skins will be detached, so check to
+     make sure your skins still work before saving. </li>
+</ul>
+
+<h2>What is Currently Supported</h2>
+
+<p>&nbsp;</p>
+
+<h3>Import</h3>
+
+<p>The following are imported: </p>
+
+<ul type=disc>
+ <li class=MsoNormal>NiNodes are imported as either transforms or ikJoints. </li>
+ <li class=MsoNormal>NiTriShapes and NiTriStrips are imported as polygon
+     meshes. </li>
+ <li class=MsoNormal>NiAlphaProperty and NiSpecularProperty are honored. </li>
+ <li class=MsoNormal>NiMaterialProperties and NiTexturingProperties are
+     imported as Phong shaders. </li>
+ <li class=MsoNormal>Meshes with a NiSkinInstance are bound to the skeleton. </li>
+ <li class=MsoNormal>Simple collision boxes used in some games are imported as
+     implicitBox nodes. </li>
+</ul>
+
+<p>The following are <b>not</b> imported: </p>
+
+<ul type=disc>
+ <li class=MsoNormal>Animation of any kind </li>
+ <li class=MsoNormal>Oblivion Havok collision information. </li>
+ <li class=MsoNormal>Special nodes like Billboards lose their special
+     properties. </li>
+ <li class=MsoNormal>Cameras </li>
+ <li class=MsoNormal>Lights </li>
+ <li class=MsoNormal>Environment Maps </li>
+ <li class=MsoNormal>Anything else not listed </li>
+</ul>
+
+<h3>Export</h3>
+
+<p>The following are exported: </p>
+
+<ul type=disc>
+ <li class=MsoNormal>Polygon meshes (triangulation is not necessary).
+     Components exported are vertex positions, normals, vertex colors and UV
+     coordinates for supported texture types. They can either be in triangle
+     list or triangle strip format. </li>
+ <li class=MsoNormal>DAG nodes other than meshes are exported as NiNodes and
+     include transform information. Maya's default DAG nodes like the default
+     cameras are ignored. Visibility is exported by flagging the NiNode as
+     hidden. History items are not exported. </li>
+ <li class=MsoNormal>Any shaders connected to a mesh. Meshes are automatically
+     split into multiple NiTriShapes by material. Attributes exported are
+     color, transparency (averaged), ambient color, incandescence, and specular
+     color. Color and incandescence can be textures. </li>
+ <li class=MsoNormal>Any textures connected to a mesh through a material's
+     color or incandescence attributes. Paths are fixed to remove anything in
+     the texture folder option. </li>
+ <li class=MsoNormal>Skin bindings are exported so long as only one skin
+     cluster affects a mesh. </li>
+ <li class=MsoNormal>Implicit box nodes with their transform parented to
+     another transform node are treated as simple collision boxes used in some
+     games. To create one, execute the following command in the command line at
+     the bottom of the screen: <b>createNode implicitBox;</b> You can then
+     parent this box to the node that will hold the simple collision box. </li>
+</ul>
+
+<p>The following are <b>not</b> exported: </p>
+
+<ul type=disc>
+ <li class=MsoNormal>Animation of any kind </li>
+ <li class=MsoNormal>Oblivion Havok collision information. </li>
+ <li class=MsoNormal>Cameras </li>
+ <li class=MsoNormal>Lights </li>
+ <li class=MsoNormal>Environment Maps </li>
+ <li class=MsoNormal>Anything else not listed </li>
+</ul>
+
+<p>&nbsp;</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+</div>
+
+</body>
+
+</html>
