@@ -1,8 +1,8 @@
 [OPTIONS]
 Compatibility=1.1 or later
 Compiled file=Maya nif exporter.chm
-Contents file=Maya.hhc
-Index file=Maya.hhk
+Contents file=Maya nif exporter.hhc
+Index file=Maya nif exporter.hhk
 Binary Index=Yes
 Full-text search=Yes
 Language=0x0409
@@ -11,16 +11,16 @@ Error log file=Errlog.txt
 Default Window=main
 
 [WINDOWS]
-main="Maya Nif Exporter Help","Maya.hhc","Maya.hhk","About.htm",,,,,,0x41520,240,0x180E,[262,184,762,584],,,,0,0,0,0
+main="Maya Nif Exporter Help","Maya nif exporter.hhc","Maya nif exporter.hhk","About.htm",,,,,,0x41520,240,0x180E,[262,184,762,584],,,,0,1,1,0
 
 [FILES]
 About.htm
 Overview.htm
 Overview.htm
 About.htm
-Configuration.htm
-Configuration.htm
 Installation.htm
+Installation.htm
+Configuration.htm
 Troubleshooting.htm
 Compiling.htm
 license.txt

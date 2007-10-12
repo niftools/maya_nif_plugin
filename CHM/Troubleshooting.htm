@@ -18,6 +18,12 @@ h2
 	font-size:18.0pt;
 	font-family:"Times New Roman";
 	font-weight:bold;}
+a:link, span.MsoHyperlink
+	{color:blue;
+	text-decoration:underline;}
+a:visited, span.MsoHyperlinkFollowed
+	{color:purple;
+	text-decoration:underline;}
 p
 	{margin-right:0pt;
 	margin-left:0pt;
@@ -38,7 +44,7 @@ div.Section1
 
 </head>
 
-<body lang=EN-US>
+<body lang=EN-US link=blue vlink=purple>
 
 <div class=Section1>
 
@@ -58,15 +64,102 @@ find. </p>
 <p>Just as an example of how many places Maya might look for scripts, my output
 from this command shows the following locations: </p>
 
-<table class=MsoTableGrid border=1 cellspacing=0 cellpadding=0
- style='border-collapse:collapse;border:none'>
- <tr style='height:216.25pt'>
-  <td width=590 valign=top style='width:442.8pt;border:solid windowtext 1.0pt;
-  padding:0pt 5.4pt 0pt 5.4pt;height:216.25pt'><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/projects/<i>CurrentProject</i>/mel</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/scripts</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/scripts</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/presets</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/prefs/shelves</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/prefs/markingMenus</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/startup</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/others</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/AETemplates</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/paintEffects</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/fluidEffects</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/hair</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/cloth</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/live</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/fur</pre></td>
+<table class=MsoNormalTable border=0 cellspacing=0 cellpadding=0
+ style='border-collapse:collapse'>
+ <tr style='height:221.8pt'>
+  <td width=584 valign=top style='width:438.15pt;border:solid windowtext 1.0pt;
+  padding:0pt 5.4pt 0pt 5.4pt;height:221.8pt'><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/projects/<i>CurrentProject</i>/mel</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/scripts</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/scripts</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/presets</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/prefs/shelves</pre><pre>C:/Documents and Settings/<i>UserName</i>/My Documents/maya/7.0/prefs/markingMenus</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/startup</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/others</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/AETemplates</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/paintEffects</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/fluidEffects</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/hair</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/cloth</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/live</pre><pre>C:/Program Files/Alias/Maya7.0/scripts/fur</pre></td>
  </tr>
 </table>
 
 <p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b><span style='font-size:18.0pt'>Bogus NiNodes on Exporting</span></b></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Question</b></p>
+
+<p class=MsoNormal><span class=postbody>I am having issues with the exporting
+and importing. </span><br>
+<br>
+<span class=postbody>When I export the nif file, it exports just fine, well at
+first. </span><br>
+<br>
+<span class=postbody>I take the nif file load it up in NifSkope. I have a huge
+chain of NiNodes. </span><br>
+<br>
+<span class=postbody>I do a clean and it removes like 75 of them leaving me
+with a ninode-ninode-tripshape </span><br>
+<br>
+<span class=postbody>Export Test A Part 1</span></p>
+
+<p class=MsoNormal><span class=postbody>&nbsp;</span></p>
+
+<p class=MsoNormal><span class=postbody><img width=683 height=512
+src="Troubleshooting_files/image001.jpg"></span></p>
+
+<p class=MsoNormal><span class=postbody>&nbsp;</span></p>
+
+<p class=MsoNormal><span class=postbody>Export Test A Part 2</span></p>
+
+<p class=MsoNormal><span class=postbody>&nbsp;</span></p>
+
+<p class=MsoNormal><span class=postbody><img width=683 height=512
+src="Troubleshooting_files/image002.jpg"></span></p>
+
+<p class=MsoNormal><span class=postbody>&nbsp;</span></p>
+
+<p class=MsoNormal><span class=postbody>Export Test A Part 3</span></p>
+
+<p class=MsoNormal><span class=postbody>&nbsp;</span></p>
+
+<p class=MsoNormal><span class=postbody><img width=683 height=512
+src="Troubleshooting_files/image003.jpg"></span></p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal>&nbsp;</p>
+
+<p class=MsoNormal><b>Answer</b></p>
+
+<p class=MsoNormal><span class=postbody>Since all named &quot;PolyShape&quot;
+with sequential numbers, I can only assume that they are all actual transform
+nodes that exist in your Maya scene. There is nothing in the exporter that
+would give things sequential numbers like that, and that naming convention is
+the standard Maya one for default names of Polygon Shapes, so it must be coming
+from Maya itself. In general, the exporter will create a NIF file that looks
+almost exactly like what you see in the HyperGraph, so that's the first place
+to start looking for extra things like that. </span><br>
+<br>
+<span class=postbody>One possibility is that at some point while working on
+your scene in Maya, you deleted the actual polygon shape node, but did not
+delete the transform node above it, which determines its placement in the
+scene. This would cause the exporter to create a NiNode for that transform,
+instead of a NiTriShape or NiTriStrips for the transform/shape node pair. </span><br>
+<br>
+<span class=postbody>I would suggest looking at the HyperGraph of your scene to
+try to find out what the extra nodes with &quot;PolyShape&quot; in their name
+that you do not want are doing there. The easiest way is to type, &quot;select
+&lt;name&gt;;&quot; in the command line text box at the bottom of the screen
+and press enter. Then open the Hypergraph in &quot;Input and Output
+Connections&quot; mode and you should see the selected node in Yellow, along
+with all nodes that are connected to inputs or outputs of that node. I would do
+this for each of the names of the NiNodes that you show in your sceen shot, if it
+is not obvious what is going on from the first one. </span><br>
+<br>
+<span class=postbody>In addition, the exporter tries to ignore history items,
+but sometimes Maya does not mark them as history or other problems caused by
+their presence, so you should always delete non-deformer history before running
+a Maya exporter. </span><br>
+<br>
+<span class=postbody>Also, realize that hidden objects are exported just like
+non-hidden ones, they are just simply marked &quot;hidden&quot; in the NIF
+file. This allows you to more seamlessly import and re-export NIF files that
+have hidden but necessary elements, such as the shadows in Morrowind NIF files.
+</span></p>
 
 </div>
 
