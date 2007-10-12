@@ -66,7 +66,7 @@ Var MAYA_INSTALLDIR
 
 !insertmacro MUI_PAGE_INSTFILES
 
-!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\change_log.txt"
+!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\Maya nif exporter.chm"
 !define MUI_FINISHPAGE_LINK "Visit us at http://niftools.sourceforge.net/"
 !define MUI_FINISHPAGE_LINK_LOCATION "http://niftools.sourceforge.net/"
 !insertmacro MUI_PAGE_FINISH
@@ -163,9 +163,9 @@ Section
   
   ; Install documentation files
   SetOutPath $INSTDIR
-  File ..\change_log.txt
-  File ..\license.txt
-  File "..\Wiki Documentation.URL"
+  File ..\Maya nif exporter.chm
+  
+
 
   ; Install shortcuts
   CreateDirectory "$SMPROGRAMS\NifTools\${MED_NAME}\"
