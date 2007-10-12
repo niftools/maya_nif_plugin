@@ -1,8 +1,8 @@
 [OPTIONS]
 Compatibility=1.1 or later
-Compiled file=Maya nif exporter.chm
-Contents file=Maya nif exporter.hhc
-Index file=Maya nif exporter.hhk
+Compiled file=Maya_nif_exporter.chm
+Contents file=Maya_nif_exporter.hhc
+Index file=Maya_nif_exporter.hhk
 Binary Index=Yes
 Full-text search=Yes
 Language=0x0409
@@ -11,20 +11,19 @@ Error log file=Errlog.txt
 Default Window=main
 
 [WINDOWS]
-main="Maya Nif Exporter Help","Maya nif exporter.hhc","Maya nif exporter.hhk","About.htm",,,,,,0x41520,240,0x180E,[262,184,762,584],,,,0,1,1,0
+main="Maya Nif Exporter Help","Maya_nif_exporter.hhc","Maya_nif_exporter.hhk","Introduction.htm",,,,,,0x41520,240,0x180E,[262,184,762,584],,,,0,1,1,0
 
 [FILES]
-About.htm
+Introduction.htm
 Overview.htm
-Overview.htm
-About.htm
 Installation.htm
 Installation.htm
 Configuration.htm
 Troubleshooting.htm
 Compiling.htm
 license.txt
-change_log.txt
+change_log.htm
+Updates.htm
 C:\Program Files\PowerCHM\QuickStart\images\quickstart1.gif
 C:\Program Files\PowerCHM\QuickStart\images\quickstart2.gif
 C:\Program Files\PowerCHM\QuickStart\images\quickstart3.gif

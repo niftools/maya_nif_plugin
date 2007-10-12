@@ -66,7 +66,7 @@ Var MAYA_INSTALLDIR
 
 !insertmacro MUI_PAGE_INSTFILES
 
-!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\Maya nif exporter.chm"
+!define MUI_FINISHPAGE_SHOWREADME "$INSTDIR\Maya_nif_exporter.chm"
 !define MUI_FINISHPAGE_LINK "Visit us at http://niftools.sourceforge.net/"
 !define MUI_FINISHPAGE_LINK_LOCATION "http://niftools.sourceforge.net/"
 !insertmacro MUI_PAGE_FINISH
@@ -163,16 +163,15 @@ Section
   
   ; Install documentation files
   SetOutPath $INSTDIR
-  File ..\Maya nif exporter.chm
+  File ..\CHM\Maya_nif_exporter.chm
   
 
 
   ; Install shortcuts
   CreateDirectory "$SMPROGRAMS\NifTools\${MED_NAME}\"
-  CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Documentation & Tutorials.lnk" "http://niftools.sourceforge.net/wiki/index.php/Maya"
+  CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Maya nif exporter Help.lnk" "$INSTDIR\Maya_nif_exporter.chm"
  
   CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Support.lnk" "http://www.niftools.org/forum/viewforum.php?f=23"
-  CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\License.lnk" "$INSTDIR\license .txt"
   CreateShortCut "$SMPROGRAMS\NifTools\${MED_NAME}\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 
   ; Write the installation path into the registry

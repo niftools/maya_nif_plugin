@@ -8,19 +8,11 @@
 <UL>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Introduction">
-		<param name="Local" value="About.htm">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="QuickStart">
-		<param name="Local" value="Overview.htm">
+		<param name="Local" value="Introduction.htm">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Overview">
 		<param name="Local" value="Overview.htm">
-		</OBJECT>
-	<LI> <OBJECT type="text/sitemap">
-		<param name="Name" value="About">
-		<param name="Local" value="About.htm">
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Documents">
@@ -48,7 +40,11 @@
 		</OBJECT>
 	<LI> <OBJECT type="text/sitemap">
 		<param name="Name" value="Change Log">
-		<param name="Local" value="change_log.txt">
+		<param name="Local" value="change_log.htm">
+		</OBJECT>
+	<LI> <OBJECT type="text/sitemap">
+		<param name="Name" value="Updates">
+		<param name="Local" value="Updates.htm">
 		</OBJECT>
 </UL>
 </BODY>
