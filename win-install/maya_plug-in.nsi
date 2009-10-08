@@ -36,7 +36,7 @@
 !include "MUI.nsh"
 
 !define VERSION "0.6.1"
-!define MAYA_VERSION "8.5"
+!define MAYA_VERSION "2009"
 !define FULL_NAME "NIF Plug-in ${VERSION} for Maya ${MAYA_VERSION}"
 !define MED_NAME "NIF Plug-in for Maya ${MAYA_VERSION}"
 !define SHORT_NAME "Maya NIF Plug-in"
@@ -115,6 +115,10 @@ Function .onInit
   
   ClearErrors
   ReadRegStr $MAYA_INSTALLDIR HKLM "SOFTWARE\Autodesk\Maya\${MAYA_VERSION}\Setup\InstallPath" "MAYA_INSTALL_LOCATION"
+  IfErrors 0 MayaFound
+  
+  ClearErrors
+  ReadRegStr $MAYA_INSTALLDIR HKLM "SOFTWARE\Autodesk\${MAYA_VERSION}\Setup\InstallPath" "MAYA_INSTALL_LOCATION"
   IfErrors 0 MayaFound
   
   ClearErrors
