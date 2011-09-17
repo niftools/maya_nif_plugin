@@ -12,6 +12,8 @@ unsigned int export_version = VER_4_0_0_2; //Version of NIF file to export
 unsigned int export_user_version = 0; //Game-specific user version of NIF file to export
 bool import_bind_pose = false; //Determines whether or not the bind pose should be searched for
 
+vector<string> exportedShapes;
+vector<string> exportedJoints;
 bool import_normals= false; //Determines whether normals are imported
 bool import_no_ambient = false; //Determines whether ambient color is imported
 bool export_white_ambient = false; //Determines whether ambient color is automatically set to white if a texture is present
@@ -682,9 +684,46 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	
 	MPointArray maya_verts(NumVertices);
 
+#if _DEBUG
+	//we manually extract the vertices from the mesh 
+	//all the vertices that have the exact position are ignored 
+	//in a way they are merged
+	NiTriBasedGeomRef nif_geometry = DynamicCast<NiTriBasedGeom>(root);
+	NiGeometryDataRef nif_geometry_data = nif_geometry->GetData();
+	vector<Vector3> nif_vertices = nif_geometry_data->GetVertices();
+	vector<Vector3> nif_merged_vertices;
+
+	for(int i = 0;i < nif_geometry_data->GetVertexCount(); i++) {
+		int duplicate = 0;
+
+		for(int j = 0;j < nif_merged_vertices.size(); j++) {
+			if(nif_merged_vertices[j].x == nif_vertices[i].x && nif_merged_vertices[j].y == nif_vertices[i].y && nif_merged_vertices[j].z == nif_vertices[i].z) {
+				duplicate = 1;
+			}
+		}
+
+		if(duplicate == 0) {
+			nif_merged_vertices.push_back(nif_vertices[i]);
+		}
+	}
+
+
+	//if the manually extracted vertices are ok it executes the else branch
+	//else if the number of merged vertices differ from the complexshape vertex count, we use the complexshape vertices
+	if(NumVertices != nif_merged_vertices.size()) {
+		for (unsigned i = 0; i < NumVertices; ++i) {
+			maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
+		}
+	} else {
+		for (unsigned i = 0; i < NumVertices; ++i) {
+			maya_verts[i] = MPoint(nif_merged_vertices[i].x, nif_merged_vertices[i].y, nif_merged_vertices[i].z, 0.0f);
+		}
+	}
+#else 
 	for (unsigned i = 0; i < NumVertices; ++i) {
 		maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
 	}
+#endif
 
 	out << "Getting polygons..." << endl;
 	//Get Polygons
@@ -694,6 +733,10 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	MIntArray maya_poly_counts;
 	MIntArray maya_connects;
 	vector<ComplexFace> niFaces;
+
+	//float max_dif = 0;
+	//int count_dif = 0;
+
 	for (unsigned i = 0; i < niRawFaces.size(); ++i) {
 
 		//Only append valid triangles
@@ -721,13 +764,32 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}
 	niRawFaces.clear();
 
+	//#if _DEBUG
+	//
+	//	cout<<"OBJ dump"<<endl<<endl<<endl<<endl;
+	//	for(int i = 0;i < maya_verts.length(); i++) {
+	//		cout<<"v "<<maya_verts[i].x<<"  "<<maya_verts[i].y<<" "<<maya_verts[i].z<<endl;
+	//	}
+	//
+	//	int j = 0;
+	//
+	//	for(int i = 0;i < maya_poly_counts.length(); i++) {
+	//		cout<<"f ";
+	//		for(int k = j; k < j + maya_poly_counts[i]; k++) {
+	//			cout<<(maya_connects[k] + 1)<<" ";
+	//		}
+	//		cout<<endl;
+	//		j += maya_poly_counts[i];
+	//	}
+	//#endif
+
 	//NumPolygons = triangles.size();
 	NumPolygons = niFaces.size();
 	out << "Num Polygons:  " << NumPolygons << endl;
 
 	//MIntArray maya_connects( connects, NumPolygons * 3 );
 
-	//Create Mesh with empy default UV set at first
+	//Create Mesh with empty default UV set at first
 	MDagPath meshPath;
 	MFnMesh meshFn;
 	
@@ -1120,6 +1182,22 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}			
 
 	out << "ImportMesh() end" << endl;
+
+	//some kind of weird bug in Maya 2012
+	//vertices may have their positions changed when creating a mesh so they have to be repositioned
+	//may be in other Maya versions
+#if MAYA_API_VERSION == 201200
+	MItMeshVertex vert_iter(parent);
+
+	int j = 0;
+
+	while(!vert_iter.isDone()) {
+		vert_iter.setPosition(maya_verts[j]);
+		vert_iter.next();
+		j++;
+	}
+#endif
+
 	return meshPath;
 }
 
@@ -1241,7 +1319,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	MStatus stat;
 	MObject mesh;
 
-	//Find Mesh child of given transform objet
+	//Find Mesh child of given transform object
 	MFnDagNode nodeFn(dagNode);
 
 	cs.SetName( MakeNifName(nodeFn.name()) );
@@ -1896,12 +1974,14 @@ void NifTranslator::ExportDAGNodes() {
 				bool intermediate = false;
 				MObject matching_child;
 
+				MString nn = nodeFn.name();
+
 				//Check to see what kind of node we should create
 				for( int i = 0; i != nodeFn.childCount(); ++i ) {
 
 					//out << "API Type:  " << nodeFn.child(i).apiTypeStr() << endl;
 					// get a handle to the child
-					if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
+					if ( nodeFn.child(i).hasFn(MFn::kMesh)  && isExportedShape(nodeFn.name())) {
 						MFnMesh meshFn( nodeFn.child(i) );
 						//history items don't count
 						if ( !meshFn.isIntermediateObject() ) {
@@ -1954,7 +2034,7 @@ void NifTranslator::ExportDAGNodes() {
 						//NiTriShape
 					} else if ( bounding_box == true ) {
 						//Do nothing
-					} else {
+					} else if (it.item().hasFn(MFn::kJoint) && isExportedJoint(nodeFn.name())) {
 						out << "Creating a NiNode..." << endl;
 						//NiNode
 						NiNodeRef niNode = new NiNode;
@@ -2632,6 +2712,30 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			tex_path_prefix = tokens[1].asChar();
 			out << "Export Texture Path Prefix:  " << tex_path_prefix << endl;
 		}
+
+		if(tokens[0] == "exportedShapes") {
+			if(tokens.length() > 1) {
+				MStringArray exportedShapesTokens; 
+				tokens[1].split(',',exportedShapesTokens);
+				exportedShapes.clear();
+				for(int k = 0;k < exportedShapesTokens.length();k++) {
+					exportedShapes.push_back(exportedShapesTokens[k].asChar());
+				}
+			}
+
+		}
+
+		if(tokens[0] == "exportedJoints") {
+			if(tokens.length() > 1) {
+				MStringArray exportedJointsTokens;
+				tokens[1].split(',',exportedJointsTokens);
+				exportedJoints.clear();
+				for(int k = 0;k < exportedJointsTokens.length();k++) {
+					exportedJoints.push_back(exportedJointsTokens[k].asChar());
+				}
+			}
+
+		}
 	}
 }
 
@@ -3254,4 +3358,24 @@ void NifTranslator::ImportMaterialsAndTextures( NiAVObjectRef & root ) {
 	for ( size_t i = 0; i < mtCollection.GetNumMaterials(); ++i ) {
 		importedMaterials[i] = ImportMaterial( mtCollection.GetMaterial(i) );
 	}
+}
+
+bool NifTranslator::isExportedShape( const MString& name )
+{
+	for(int i = 0;i < exportedShapes.size(); i++) {
+		if(name.asChar() == exportedShapes[i])
+			return true;
+	}
+
+	return false;
+}
+
+bool NifTranslator::isExportedJoint( const MString& name )
+{
+	for(int i = 0;i < exportedJoints.size(); i++) {
+		if(name.asChar() == exportedJoints[i])
+			return true;
+	}
+
+	return false;
 }
