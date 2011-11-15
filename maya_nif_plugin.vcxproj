@@ -629,10 +629,40 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="nif_plugin.cpp" />
+    <ClCompile Include="NifAnimationExporter.cpp" />
+    <ClCompile Include="NifAnimationImporter.cpp" />
+    <ClCompile Include="NifDefaultImporterFixture.cpp" />
+    <ClCompile Include="NifMaterialImporter.cpp" />
+    <ClCompile Include="NifMeshExporter.cpp" />
+    <ClCompile Include="NifMeshImporter.cpp" />
+    <ClCompile Include="NifNodeExporter.cpp" />
+    <ClCompile Include="NifNodeImporter.cpp" />
+    <ClCompile Include="NifMaterialExporter.cpp" />
+    <ClCompile Include="NifTranslatorData.cpp" />
+    <ClCompile Include="NifTranslatorFixtureItem.cpp" />
+    <ClCompile Include="NifTranslatorOptions.cpp" />
+    <ClCompile Include="NifTranslator.cpp" />
+    <ClCompile Include="NifTranslatorUtils.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="nif_plugin.h" />
+    <ClInclude Include="NifAnimationExporter.h" />
+    <ClInclude Include="NifAnimationImporter.h" />
+    <ClInclude Include="NifDefaultImporterFixture.h" />
+    <ClInclude Include="NifTranslatorFixtureItem.h" />
+    <ClInclude Include="NifImporterFixture.h" />
+    <ClInclude Include="NifMaterialImporter.h" />
+    <ClInclude Include="NifMeshExporter.h" />
+    <ClInclude Include="NifMeshImporter.h" />
+    <ClInclude Include="NifNodeExporter.h" />
+    <ClInclude Include="NifNodeImporter.h" />
+    <ClInclude Include="NifMaterialExporter.h" />
+    <ClInclude Include="NifTranslatorData.h" />
+    <ClInclude Include="NifTranslatorOptions.h" />
+    <ClInclude Include="NifTranslator.h" />
+    <ClInclude Include="NifTranslatorUtils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="nifTranslatorOpts.mel" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

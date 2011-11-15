@@ -1,10 +1,7 @@
-#include "nif_plugin.h"
+#include "NifTranslator.h"
 
 //#define _DEBUG
 ofstream out;
-
-const char PLUGIN_VERSION [] = "0.6.1";	
-const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 //--Globals--//
 string texture_path; // Path to textures gotten from option string
@@ -12,24 +9,25 @@ unsigned int export_version = VER_4_0_0_2; //Version of NIF file to export
 unsigned int export_user_version = 0; //Game-specific user version of NIF file to export
 bool import_bind_pose = false; //Determines whether or not the bind pose should be searched for
 
+vector<string> export_shapes;
+vector<string> export_joints;
 bool import_normals= false; //Determines whether normals are imported
 bool import_no_ambient = false; //Determines whether ambient color is imported
 bool export_white_ambient = false; //Determines whether ambient color is automatically set to white if a texture is present
 bool import_comb_skel = false; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
 string joint_match = ""; //String to match in the name of nodes as another way to cause themm to import as IK joints
 bool use_name_mangling = false;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
-bool export_tri_strips = false;  //Determiens whether to export NiTriShape objects or NiTriStrip objects
+bool export_tri_strips = false;  //Determines whether to export NiTriShape objects or NiTriStrip objects
 int export_part_bones = 0; //Determines the maximum number of bones per skin partition.
 bool export_tan_space = false; //Determines whether Oblivion tangent space data is generated for meshes on export
 bool export_mor_rename = false; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
-enum TexPathMode {
-	PATH_MODE_AUTO, //Uses search paths to strip intelligently
-	PATH_MODE_FULL, //Uses full path
-	PATH_MODE_NAME, //Uses only file name
-	PATH_MODE_PREFIX //Uses user-defined prefix
-};
+
 TexPathMode tex_path_mode = PATH_MODE_AUTO;  //Determines the way textures paths are exported
 string tex_path_prefix; //Optional prefix to add to texture paths.
+
+
+
+
 //--Function Definitions--//
 
 //--NifTranslator::identifyFile--//
@@ -39,22 +37,25 @@ string tex_path_prefix; //Optional prefix to add to texture paths.
 // Code adapted from animImportExport example that comes with Maya 6.5
 
 MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fileName, const char* buffer, short size) const {
-	//out << "Checking File Type..." << endl;
-	const char *name = fileName.name().asChar();
-	int nameLength = (int)strlen(name);
+	////out << "Checking File Type..." << endl;
+	//const char *name = fileName.name().asChar();
+	//int nameLength = (int)strlen(name);
 
-	if ( name[nameLength-4] != '.' ) {
+	//if ( name[nameLength-4] != '.' ) {
+	//	return kNotMyFileType;
+	//}
+	//if ( name[nameLength-3] != 'n' && name[nameLength-3] != 'N' ) {
+	//	return kNotMyFileType;
+	//}
+	//if ( name[nameLength-2] != 'i' && name[nameLength-2] != 'I' ) {
+	//	return kNotMyFileType;
+	//}
+	//if ( name[nameLength-1] != 'f' && name[nameLength-1] != 'F' ) {
+	//	return kNotMyFileType;
+	//}
+	MString fName = fileName.name();
+	if(fName.toUpperCase() != "NIF" && fName.toUpperCase() != "KF")
 		return kNotMyFileType;
-	}
-	if ( name[nameLength-3] != 'n' && name[nameLength-3] != 'N' ) {
-		return kNotMyFileType;
-	}
-	if ( name[nameLength-2] != 'i' && name[nameLength-2] != 'I' ) {
-		return kNotMyFileType;
-	}
-	if ( name[nameLength-1] != 'f' && name[nameLength-1] != 'F' ) {
-		return kNotMyFileType;
-	}
 
 	return kIsMyFileType;
 }
@@ -65,9 +66,9 @@ MPxFileTranslator::MFileKind NifTranslator::identifyFile (const MFileObject& fil
 
 // Code adapted from lepTranslator example that comes with Maya 6.5
 MStatus initializePlugin( MObject obj ) {
-	#ifdef _DEBUG
+#ifdef _DEBUG
 	out.open( "C:\\Maya NIF Plug-in Log.txt", ofstream::binary );
-	#endif
+#endif
 
 	//out << "Initializing Plugin..." << endl;
 	MStatus   status;
@@ -75,11 +76,11 @@ MStatus initializePlugin( MObject obj ) {
 
 	// Register the translator with the system
 	status =  plugin.registerFileTranslator( TRANSLATOR_NAME,  //File Translator Name
-										"nifTranslator.rgb", //Icon
-										NifTranslator::creator, //Factory Function
-										"nifTranslatorOpts", //MEL Script for options dialog
-										NULL, //Default Options
-										false ); //Requires MEL support
+		"nifTranslator.rgb", //Icon
+		NifTranslator::creator, //Factory Function
+		"nifTranslatorOpts", //MEL Script for options dialog
+		NULL, //Default Options
+		false ); //Requires MEL support
 	if (!status) {
 		status.perror("registerFileTranslator");
 		return status;
@@ -167,148 +168,161 @@ void NifTranslator::AdjustSkeleton( NiAVObjectRef & root ) {
 
 //This routine is called by Maya when it is necessary to load a file of a type supported by this translator.
 //Responsible for reading the contents of the given file, and creating Maya objects via API or MEL calls to reflect the data in the file.
-MStatus NifTranslator::reader (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
-	out << "Begining Read..." << endl;
-	try {
-		//Get user preferences
-		ParseOptionString( optionsString );
+MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
+	//out << "Begining Read..." << endl;
+	//try {
+	//	//Get user preferences
+	//	ParseOptionString( optionsString );
 
-		//Clear arrays
-		importedNodes.clear();
-		importedTextures.clear();
-		importedMaterials.clear();
-		mtCollection.Clear();
-		importedMeshes.clear();
+	//	//Clear arrays
+	//	importedNodes.clear();
+	//	importedTextures.clear();
+	//	importedMaterials.clear();
+	//	mtCollection.Clear();
+	//	importedMeshes.clear();
 
-		//Save file
-		importFile = file;
+	//	//Save file
+	//	importFile = file;
 
-		out << "Reading NIF File..." << endl;
-		//Read NIF file
-		NiObjectRef root = ReadNifTree( file.fullName().asChar() );
-		
-		out << "Importing Nodes..." << endl;
-		//Import Nodes, starting at each child of the root
-		NiNodeRef root_node = DynamicCast<NiNode>(root);
-		if ( root_node != NULL ) {
-			//Root is a NiNode and may have children
+	//	out << "Reading NIF File..." << endl;
+	//	//Read NIF file
+	//	NiObjectRef root = ReadNifTree( file.fullName().asChar() );
 
-			//Check if the user wants us to try to find the bind pose
-			if ( import_bind_pose ) {
-				SendNifTreeToBindPos( root_node );
-			}
+	//	out << "Importing Nodes..." << endl;
+	//	//Import Nodes, starting at each child of the root
+	//	NiNodeRef root_node = DynamicCast<NiNode>(root);
+	//	if ( root_node != NULL ) {
+	//		//Root is a NiNode and may have children
 
-			//Check if the user wants us to try to combine new skins with
-			//an existing skeleton
-			if ( import_comb_skel ) {
-				//Enumerate existing nodes by name
-				existingNodes.clear();
-				MItDag dagIt( MItDag::kDepthFirst);
+	//		//Check if the user wants us to try to find the bind pose
+	//		if ( import_bind_pose ) {
+	//			SendNifTreeToBindPos( root_node );
+	//		}
 
-				for ( ; !dagIt.isDone(); dagIt.next() ) {
-					MFnTransform transFn( dagIt.item() );
-					out << "Adding " << transFn.name().asChar() << " to list of existing nodes" << endl;
-					MDagPath nodePath;
-					dagIt.getPath( nodePath );
-					existingNodes[ transFn.name().asChar() ] = nodePath;
-				}
+	//		//Check if the user wants us to try to combine new skins with
+	//		//an existing skeleton
+	//		if ( import_comb_skel ) {
+	//			//Enumerate existing nodes by name
+	//			existingNodes.clear();
+	//			MItDag dagIt( MItDag::kDepthFirst);
 
-				//Adjust NiNodes in the original file that match names
-				//in the maya scene to have the same transforms before
-				//importing the new mesh over the top of the old one
-				NiAVObjectRef rootAV = DynamicCast<NiAVObject>(root);
-				if ( rootAV != NULL ) {
-					AdjustSkeleton( rootAV );
-				}
-			}
+	//			for ( ; !dagIt.isDone(); dagIt.next() ) {
+	//				MFnTransform transFn( dagIt.item() );
+	//				out << "Adding " << transFn.name().asChar() << " to list of existing nodes" << endl;
+	//				MDagPath nodePath;
+	//				dagIt.getPath( nodePath );
+	//				existingNodes[ transFn.name().asChar() ] = nodePath;
+	//			}
 
-			//Check if the root node has a non-identity transform
-			if ( root_node->GetLocalTransform() == Matrix44::IDENTITY ) {
-				//Root has no transform, so treat it as the scene root
-				vector<NiAVObjectRef> root_children = root_node->GetChildren();
-				
-				for ( unsigned int i = 0; i < root_children.size(); ++i ) {
-					ImportNodes( root_children[i], importedNodes );
-				}
-			} else {
-				//Root has a transform, so it's probably part of the scene
-				ImportNodes( StaticCast<NiAVObject>(root_node), importedNodes );
-			}
-		} else {
-			NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
-			if ( rootAVObj != NULL ) {
-				//Root is importable, but has no children
-				ImportNodes( rootAVObj, importedNodes );
-			} else {
-				//Root cannot be imported
-				MGlobal::displayError( "The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported." );
-				return MStatus::kFailure;
-			}
-		}
+	//			//Adjust NiNodes in the original file that match names
+	//			//in the maya scene to have the same transforms before
+	//			//importing the new mesh over the top of the old one
+	//			NiAVObjectRef rootAV = DynamicCast<NiAVObject>(root);
+	//			if ( rootAV != NULL ) {
+	//				AdjustSkeleton( rootAV );
+	//			}
+	//		}
 
-		//--Import Materials--//
-		out << "Importing Materials..." << endl;
-		
-		NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
-		if ( rootAVObj != NULL ) {
-			//Root is importable
-			ImportMaterialsAndTextures( rootAVObj );
-		}
-		
-		
-		//--Import Meshes--//
-		out << "Importing Meshes..." << endl;
+	//		//Check if the root node has a non-identity transform
+	//		if ( root_node->GetLocalTransform() == Matrix44::IDENTITY ) {
+	//			//Root has no transform, so treat it as the scene root
+	//			vector<NiAVObjectRef> root_children = root_node->GetChildren();
 
-		//Iterate through all meshes that were imported.
-		//This had to be deffered because all bones must exist
-		//when attaching skin
-		for ( unsigned i = 0; i < importedMeshes.size(); ++i ) {
-			out << "Importing mesh..." << endl;
-			//Import Mesh
-			MDagPath meshPath = ImportMesh( importedMeshes[i].first, importedMeshes[i].second);
-		}
-		out << "Done importing meshes." << endl;
+	//			for ( unsigned int i = 0; i < root_children.size(); ++i ) {
+	//				ImportNodes( root_children[i], importedNodes );
+	//			}
+	//		} else {
+	//			//Root has a transform, so it's probably part of the scene
+	//			ImportNodes( StaticCast<NiAVObject>(root_node), importedNodes );
+	//		}
+	//	} else {
+	//		NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
+	//		if ( rootAVObj != NULL ) {
+	//			//Root is importable, but has no children
+	//			ImportNodes( rootAVObj, importedNodes );
+	//		} else {
+	//			//Root cannot be imported
+	//			MGlobal::displayError( "The root of this NIF file is not derived from the NiAVObject class.  It cannot be imported." );
+	//			return MStatus::kFailure;
+	//		}
+	//	}
 
-		//--Import Animation--//
-		out << "Importing Animation keyframes..." << endl;
+	//	//--Import Materials--//
+	//	out << "Importing Materials..." << endl;
 
-		//Iterate through all imported nodes, looking for any with animation keys
+	//	NiAVObjectRef rootAVObj = DynamicCast<NiAVObject>(root);
+	//	if ( rootAVObj != NULL ) {
+	//		//Root is importable
+	//		ImportMaterialsAndTextures( rootAVObj );
+	//	}
 
-		for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
-			//Check to see if this node has any animation controllers
-			if ( it->first->IsAnimated() ) {
-				ImportControllers( it->first, it->second );
-			}
-		}
 
-		out << "Deselecting anything that was selected by MEL commands" << endl;
-		MGlobal::clearSelectionList();
+	//	//--Import Meshes--//
+	//	out << "Importing Meshes..." << endl;
 
-		//Clear temporary data
-		out << "Clearing temporary data" << endl;
-		existingNodes.clear();
-		importedNodes.clear();
-		importedMaterials.clear();
-		importedTextures.clear();
-		importedMeshes.clear();
-		importFile.setFullName("");
-		sceneRoot = NULL;
-		meshes.clear();
-		nodes.clear(); 
-		meshClusters.clear();
-		shaders.clear();
-	}
-	catch( exception & e ) {
-		MGlobal::displayError( e.what() );
-		return MStatus::kFailure;
-	}
-	catch( ... ) {
-		MGlobal::displayError( "Error:  Unknown Exception." );
-		return MStatus::kFailure;
-	}
+	//	//Iterate through all meshes that were imported.
+	//	//This had to be deffered because all bones must exist
+	//	//when attaching skin
+	//	for ( unsigned i = 0; i < importedMeshes.size(); ++i ) {
+	//		out << "Importing mesh..." << endl;
+	//		//Import Mesh
+	//		MDagPath meshPath = ImportMesh( importedMeshes[i].first, importedMeshes[i].second);
+	//	}
+	//	out << "Done importing meshes." << endl;
 
+	//	//--Import Animation--//
+	//	out << "Importing Animation keyframes..." << endl;
+
+	//	//Iterate through all imported nodes, looking for any with animation keys
+
+	//	for ( map<NiAVObjectRef,MDagPath>::iterator it = importedNodes.begin(); it != importedNodes.end(); ++it ) {
+	//		//Check to see if this node has any animation controllers
+	//		if ( it->first->IsAnimated() ) {
+	//			ImportControllers( it->first, it->second );
+	//		}
+	//	}
+
+	//	out << "Deselecting anything that was selected by MEL commands" << endl;
+	//	MGlobal::clearSelectionList();
+
+	//	//Clear temporary data
+	//	out << "Clearing temporary data" << endl;
+	//	existingNodes.clear();
+	//	importedNodes.clear();
+	//	importedMaterials.clear();
+	//	importedTextures.clear();
+	//	importedMeshes.clear();
+	//	importFile.setFullName("");
+	//	sceneRoot = NULL;
+	//	meshes.clear();
+	//	nodes.clear(); 
+	//	meshClusters.clear();
+	//	shaders.clear();
+	//}
+	//catch( exception & e ) {
+	//	MGlobal::displayError( e.what() );
+	//	return MStatus::kFailure;
+	//}
+	//catch( ... ) {
+	//	MGlobal::displayError( "Error:  Unknown Exception." );
+	//	return MStatus::kFailure;
+	//}
 	
-	
+	NifTranslatorData translator_data;
+	NifTranslatorOptions translator_options;
+	NifTranslatorUtils translator_utils(translator_data,translator_options);
+
+	translator_options.ParseOptionsString(optionsString);
+
+	NifNodeImporter node_importer(translator_options,translator_data,translator_utils);
+	NifMeshImporter mesh_importer(translator_options,translator_data,translator_utils);
+	NifMaterialImporter material_importer(translator_options,translator_data,translator_utils);
+	NifAnimationImporter animation_importer(translator_options,translator_data,translator_utils);
+
+	NifDefaultImporterFixture importer_fixture(translator_data,translator_options,translator_utils,node_importer,mesh_importer,material_importer, animation_importer);
+
+	importer_fixture.ReadNodes(file);
+
 	out << "Finished Read" << endl;
 
 #ifndef _DEBUG
@@ -447,7 +461,7 @@ void NifTranslator::ImportControllers( NiAVObjectRef niAVObj, MDagPath & path ) 
 						}
 					}
 
-					
+
 					//Try taking advantage of the fact that:
 					//Rotate(x,y,z) = Rotate(pi + x, pi - y, pi +z)
 					double rot_diff = ( (abs(mRot[0] - mPrevRot[0]) + abs(mRot[1] - mPrevRot[1]) + abs(mRot[2] - mPrevRot[2]) ) / 3.0 );
@@ -465,7 +479,7 @@ void NifTranslator::ImportControllers( NiAVObjectRef niAVObj, MDagPath & path ) 
 					rotZValues.append( mRot[2] );
 				}
 
-				
+
 				rotXFn.addKeys( &rotTimes, &rotXValues );
 				rotYFn.addKeys( &rotTimes, &rotYValues );
 				rotZFn.addKeys( &rotTimes, &rotZValues );
@@ -591,7 +605,7 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 	if ( niAVObj->HasBoundingBox() ) {
 		//Get bounding box info
 		BoundingBox bb = niAVObj->GetBoundingBox();		
-		
+
 		//Create a transform node to move the bounding box around
 		MFnTransform tranFn;
 		tranFn.create( obj );
@@ -617,7 +631,7 @@ void NifTranslator::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDag
 		dagFn.findPlug("sizeX").setValue( bb.radius.x );
 		dagFn.findPlug("sizeY").setValue( bb.radius.y );
 		dagFn.findPlug("sizeZ").setValue( bb.radius.z );
-		
+
 	}
 
 	//Check to see if this is a mesh
@@ -662,7 +676,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				}
 			}
 		}
-		
+
 	}
 
 	if ( visible == false ) {
@@ -679,12 +693,49 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	vector<WeightedVertex> nif_verts = cs.GetVertices();
 	unsigned NumVertices = unsigned(nif_verts.size());
 	out << "Num Vertices:  " << NumVertices << endl;
-	
+
 	MPointArray maya_verts(NumVertices);
 
+#if _DEBUG
+	//we manually extract the vertices from the mesh 
+	//all the vertices that have the exact position are ignored 
+	//in a way they are merged
+	NiTriBasedGeomRef nif_geometry = DynamicCast<NiTriBasedGeom>(root);
+	NiGeometryDataRef nif_geometry_data = nif_geometry->GetData();
+	vector<Vector3> nif_vertices = nif_geometry_data->GetVertices();
+	vector<Vector3> nif_merged_vertices;
+
+	for(int i = 0;i < nif_geometry_data->GetVertexCount(); i++) {
+		int duplicate = 0;
+
+		for(int j = 0;j < nif_merged_vertices.size(); j++) {
+			if(nif_merged_vertices[j].x == nif_vertices[i].x && nif_merged_vertices[j].y == nif_vertices[i].y && nif_merged_vertices[j].z == nif_vertices[i].z) {
+				duplicate = 1;
+			}
+		}
+
+		if(duplicate == 0) {
+			nif_merged_vertices.push_back(nif_vertices[i]);
+		}
+	}
+
+
+	//if the manually extracted vertices are ok it executes the else branch
+	//else if the number of merged vertices differ from the complexshape vertex count, we use the complexshape vertices
+	if(NumVertices != nif_merged_vertices.size()) {
+		for (unsigned i = 0; i < NumVertices; ++i) {
+			maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
+		}
+	} else {
+		for (unsigned i = 0; i < NumVertices; ++i) {
+			maya_verts[i] = MPoint(nif_merged_vertices[i].x, nif_merged_vertices[i].y, nif_merged_vertices[i].z, 0.0f);
+		}
+	}
+#else 
 	for (unsigned i = 0; i < NumVertices; ++i) {
 		maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
 	}
+#endif
 
 	out << "Getting polygons..." << endl;
 	//Get Polygons
@@ -694,6 +745,10 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	MIntArray maya_poly_counts;
 	MIntArray maya_connects;
 	vector<ComplexFace> niFaces;
+
+	//float max_dif = 0;
+	//int count_dif = 0;
+
 	for (unsigned i = 0; i < niRawFaces.size(); ++i) {
 
 		//Only append valid triangles
@@ -707,7 +762,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		unsigned p0 = f.points[0].vertexIndex;
 		unsigned p1 = f.points[1].vertexIndex;
 		unsigned p2 = f.points[2].vertexIndex;
-		
+
 		if ( p0 == p1 || p0 == p2 || p1 == p2 ) {
 			//Invalid triangle
 			continue;
@@ -721,23 +776,44 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}
 	niRawFaces.clear();
 
+	//#if _DEBUG
+	//
+	//	cout<<"OBJ dump"<<endl<<endl<<endl<<endl;
+	//	for(int i = 0;i < maya_verts.length(); i++) {
+	//		cout<<"v "<<maya_verts[i].x<<"  "<<maya_verts[i].y<<" "<<maya_verts[i].z<<endl;
+	//	}
+	//
+	//	int j = 0;
+	//
+	//	for(int i = 0;i < maya_poly_counts.length(); i++) {
+	//		cout<<"f ";
+	//		for(int k = j; k < j + maya_poly_counts[i]; k++) {
+	//			cout<<(maya_connects[k] + 1)<<" ";
+	//		}
+	//		cout<<endl;
+	//		j += maya_poly_counts[i];
+	//	}
+	//#endif
+
 	//NumPolygons = triangles.size();
 	NumPolygons = niFaces.size();
 	out << "Num Polygons:  " << NumPolygons << endl;
 
 	//MIntArray maya_connects( connects, NumPolygons * 3 );
 
-	//Create Mesh with empy default UV set at first
+	//Create Mesh with empty default UV set at first
 	MDagPath meshPath;
 	MFnMesh meshFn;
-	
+
 	MStatus stat;
+
 	meshFn.create( NumVertices, maya_poly_counts.length(), maya_verts, maya_poly_counts, maya_connects, parent, &stat );
+
 	if ( stat != MS::kSuccess ) {
 		out << stat.errorString().asChar() << endl;
 		throw runtime_error("Failed to create mesh.");
 	}
-	
+
 	meshFn.getPath( meshPath );
 
 	out << "Importing vertex colors..." << endl;
@@ -748,15 +824,15 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		MIntArray face_list;
 		MIntArray vert_list;
 		MColorArray maya_colors;
-		
+
 		for ( unsigned f = 0; f < niFaces.size(); ++f ) {
 			//Make sure all of the points in this face have color
 			if (
 				niFaces[f].points[0].colorIndex == CS_NO_INDEX ||
 				niFaces[f].points[1].colorIndex == CS_NO_INDEX ||
 				niFaces[f].points[2].colorIndex == CS_NO_INDEX
-			) { 
-				continue; 
+				) { 
+					continue; 
 			}
 
 			face_list.append(f);
@@ -791,30 +867,30 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 	for ( unsigned i = 0; i < niUVSets.size(); ++i ) {
 		switch( niUVSets[i].texType ) {
-			case BASE_MAP:
-				uv_set_list[i] = MString("map1");
-				break;
-			case DARK_MAP:
-				uv_set_list[i] = MString("dark");
-				break;
-			case DETAIL_MAP:
-				uv_set_list[i] = MString("detail");
-				break;
-			case GLOSS_MAP:
-				uv_set_list[i] = MString("gloss");
-				break;
-			case GLOW_MAP:
-				uv_set_list[i] = MString("glow");
-				break;
-			case BUMP_MAP:
-				uv_set_list[i] = MString("bump");
-				break;
-			case DECAL_0_MAP:
-				uv_set_list[i] = MString("decal0");
-				break;
-			case DECAL_1_MAP:
-				uv_set_list[i] = MString("decal1");
-				break;
+		case BASE_MAP:
+			uv_set_list[i] = MString("map1");
+			break;
+		case DARK_MAP:
+			uv_set_list[i] = MString("dark");
+			break;
+		case DETAIL_MAP:
+			uv_set_list[i] = MString("detail");
+			break;
+		case GLOSS_MAP:
+			uv_set_list[i] = MString("gloss");
+			break;
+		case GLOW_MAP:
+			uv_set_list[i] = MString("glow");
+			break;
+		case BUMP_MAP:
+			uv_set_list[i] = MString("bump");
+			break;
+		case DECAL_0_MAP:
+			uv_set_list[i] = MString("decal0");
+			break;
+		case DECAL_1_MAP:
+			uv_set_list[i] = MString("decal1");
+			break;
 		}
 	}
 
@@ -853,7 +929,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 			//for ( unsigned j = 0; j < uv_set.size(); ++j ) {
 			//	out << "U:  " << u_arr[j] << "  V:  " << v_arr[j]<< endl;
 			//}
-			
+
 			//Assign the UVs to the object
 			MString uv_set_name("map1");
 			if ( i < int(uv_set_list.size()) ) {
@@ -869,7 +945,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				//Clear out the current UV set
 				//meshFn.clearUVs( &uv_set_name );
 			}
-	
+
 			out << "Set UVs...  u_arr:  " << u_arr.length() << " v_arr:  " << v_arr.length() << " uv_set_name " << uv_set_name.asChar() << endl;
 			MStatus stat = meshFn.setUVs( u_arr, v_arr, &uv_set_name );
 			if ( stat != MS::kSuccess ) {
@@ -886,9 +962,9 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 					niFaces[f].points[0].vertexIndex == niFaces[f].points[1].vertexIndex ||
 					niFaces[f].points[0].vertexIndex == niFaces[f].points[2].vertexIndex ||
 					niFaces[f].points[1].vertexIndex == niFaces[f].points[2].vertexIndex
-				) {
-					//Invalid triangle
-					continue;
+					) {
+						//Invalid triangle
+						continue;
 				}
 
 				//Make sure all of the points in this face have color
@@ -934,7 +1010,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				maya_connects.append(tcIndices[0]);
 				maya_connects.append(tcIndices[1]);
 				maya_connects.append(tcIndices[2]);
-				
+
 			}
 
 			//unsigned sum = 0;
@@ -970,8 +1046,8 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 					niFaces[f].points[0].normalIndex == CS_NO_INDEX ||
 					niFaces[f].points[1].normalIndex == CS_NO_INDEX ||
 					niFaces[f].points[2].normalIndex == CS_NO_INDEX
-				) { 
-					continue; 
+					) { 
+						continue; 
 				}
 
 				face_list.append(f);
@@ -1036,7 +1112,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	if ( bone_nodes.size() != 0 ) {
 		//Build up the MEL command string
 		string cmd = "skinCluster -tsb ";
-		
+
 		//out << "Add list of bones to the command" << endl;
 		//Add list of bones to the command
 		for (unsigned int i = 0; i < bone_nodes.size(); ++i) {
@@ -1083,7 +1159,7 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				nif_weights[i][j] = 0.0f;
 			} 
 		}
-			
+
 
 		//out << "Put data in proper slots in the 2D array" << endl;
 		//Put data in proper slots in the 2D array
@@ -1120,6 +1196,22 @@ MDagPath NifTranslator::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}			
 
 	out << "ImportMesh() end" << endl;
+
+	//some kind of weird bug in Maya 2012
+	//vertices may have their positions changed when creating a mesh so they have to be repositioned
+	//may be in other Maya versions
+#if MAYA_API_VERSION == 201200
+	MItMeshVertex vert_iter(parent);
+
+	int j = 0;
+
+	while(!vert_iter.isDone()) {
+		vert_iter.setPosition(maya_verts[j]);
+		vert_iter.next();
+		j++;
+	}
+#endif
+
 	return meshPath;
 }
 
@@ -1146,7 +1238,7 @@ void ApplyAllSkinOffsets( NiAVObjectRef & root ) {
 //Responsible for traversing all objects in the current Maya scene, and writing a representation to the given
 //file in the supported format.
 MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
-	
+
 	try {
 		//Get user preferences
 		ParseOptionString( optionsString );
@@ -1162,7 +1254,7 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		//Export file textures and get back a map of DAG path to Nif block
 		ExportFileTextures();
 
-		
+
 		out << "Exporting shaders..." << endl;
 		shaders.clear();
 		//Export shaders
@@ -1241,10 +1333,11 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	MStatus stat;
 	MObject mesh;
 
-	//Find Mesh child of given transform objet
+	//Find Mesh child of given transform object
 	MFnDagNode nodeFn(dagNode);
 
 	cs.SetName( MakeNifName(nodeFn.name()) );
+
 
 	for( int i = 0; i != nodeFn.childCount(); ++i ) {
 		// get a handle to the child
@@ -1264,7 +1357,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		out << stat.errorString().asChar() << endl;
 		throw runtime_error("Failed to create visibleMeshFn.");
 	}
-	
+
 	out << visibleMeshFn.name().asChar() << ") {" << endl;
 	MFnMesh meshFn;
 	MObject dataObj;
@@ -1380,7 +1473,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		out << stat.errorString().asChar() << endl;
 		throw runtime_error("Failed to get normals");
 	}
-	
+
 	out << "Prepare NIF normal vector" << endl;
 	vector<Vector3> nif_nmls( nmls.length() );
 	for( int i=0; i != nmls.length(); ++i ) {
@@ -1481,13 +1574,13 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	out << "Get the connected shaders" << endl;
 	// get the shaders used by the i'th mesh instance
 	// Assume this is not instanced for now
-	// TODO support instanceing properly
+	// TODO support instancing properly
 	stat = visibleMeshFn.getConnectedShaders(0,Shaders,FaceIndices);
 
 	if ( stat != MS::kSuccess ) {
 		out << stat.errorString().asChar() << endl;
 		throw runtime_error("Failed to get connected shader list.");
-		
+
 	}
 
 	vector<ComplexFace> nif_faces;
@@ -1510,7 +1603,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 			//Shader isn't actually used, so continue to the next one.
 			continue;
 		}
-		
+
 		out << "Found attached shader:  ";
 		//Attach all properties previously associated with this shader to
 		//this NiTriShape
@@ -1533,7 +1626,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 		propGroups.push_back( niProps );
 	}
 	cs.SetPropGroups( propGroups );
-	
+
 	out << "Export vertex and normal data" << endl;
 	// attach an iterator to the mesh
 	MItMeshPolygon itPoly(mesh, &stat);
@@ -1558,7 +1651,7 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 
 		//Assume all faces use material 0 for now
 		cf.propGroupIndex = 0;
-		
+
 		for( int i = 0; i < poly_vert_count; ++i ) {
 			ComplexPoint cp;
 
@@ -1574,11 +1667,11 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 				cp.colorIndex = color_index;
 			}
 
-//#if MAYA_API_VERSION > 700
-//			int color_index;
-//			itPoly.getColorIndex(i, color_index );
-//			
-//#endif
+			//#if MAYA_API_VERSION > 700
+			//			int color_index;
+			//			itPoly.getColorIndex(i, color_index );
+			//			
+			//#endif
 
 			//Get the UV set names used by this particular vertex
 			MStringArray vertUvSetNames;
@@ -1629,85 +1722,85 @@ void NifTranslator::ExportMesh( MObject dagNode ) {
 	if ( meshClusters.find( visibleMeshFn.fullPathName().asChar() ) != meshClusters.end() ) {
 		const vector<MObject> & clusters = meshClusters[ visibleMeshFn.fullPathName().asChar() ];
 		//for ( vector<MObject>::const_iterator cluster = clusters.begin(); cluster != clusters.end(); ++cluster ) {
-			//TODO:  Support shapes with more than one skin cluster affecting them
-			if ( clusters.size() > 1 ) {
-				throw runtime_error("Objects with multiple skin clusters affecting them are not currently supported.  Try deleting the history and re-binding them.");
+		//TODO:  Support shapes with more than one skin cluster affecting them
+		if ( clusters.size() > 1 ) {
+			throw runtime_error("Objects with multiple skin clusters affecting them are not currently supported.  Try deleting the history and re-binding them.");
+		}
+
+		vector<MObject>::const_iterator cluster = clusters.begin();
+		if ( cluster->isNull() != true ) {	
+			MFnSkinCluster clusterFn(*cluster);
+
+
+			out << "Processing skin..." << endl;
+			//Get path to visible mesh
+			MDagPath meshPath;
+			visibleMeshFn.getPath( meshPath );
+
+			out << "Getting a list of all verticies in this mesh" << endl;
+			//Get a list of all verticies in this mesh
+			MFnSingleIndexedComponent compFn;
+			MObject vertices = compFn.create( MFn::kMeshVertComponent );
+			MItGeometry gIt(meshPath);
+			MIntArray vertex_indices( gIt.count() );
+			for ( int vert_index = 0; vert_index < gIt.count(); ++vert_index ) {
+				vertex_indices[vert_index] = vert_index;
+			}
+			compFn.addElements(vertex_indices);
+
+			out << "Getting Influences" << endl;
+			//Get influences
+			MDagPathArray myBones;
+			clusterFn.influenceObjects( myBones, &stat );
+
+			out << "Creating a list of NiNodeRefs of influences." << endl;
+			//Create list of NiNodeRefs of influences
+			vector<NiNodeRef> niBones( myBones.length() );
+			for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
+				if ( nodes.find( myBones[bone_index].fullPathName().asChar() ) == nodes.end() ) {
+					//There is a problem; one of the joints was not exported.  Abort.
+					throw runtime_error("One of the joints necessary to export a bound skin was not exported.");
+				}
+				niBones[bone_index] = nodes[ myBones[bone_index].fullPathName().asChar() ];
 			}
 
-			vector<MObject>::const_iterator cluster = clusters.begin();
-			if ( cluster->isNull() != true ) {	
-				MFnSkinCluster clusterFn(*cluster);
-			
+			out << "Getting weights from Maya" << endl;
+			//Get weights from Maya
+			MDoubleArray myWeights;
+			unsigned int bone_count = myBones.length();
+			stat = clusterFn.getWeights( meshPath, vertices, myWeights, bone_count );
+			if ( stat != MS::kSuccess ) {
+				out << stat.errorString().asChar() << endl;
+				throw runtime_error("Failed to get vertex weights.");
+			}
 
-				out << "Processing skin..." << endl;
-				//Get path to visible mesh
-				MDagPath meshPath;
-				visibleMeshFn.getPath( meshPath );
+			out << "Setting skin influence list in ComplexShape" << endl;
+			//Set skin information in ComplexShape
+			cs.SetSkinInfluences( niBones );
 
-				out << "Getting a list of all verticies in this mesh" << endl;
-				//Get a list of all verticies in this mesh
-				MFnSingleIndexedComponent compFn;
-				MObject vertices = compFn.create( MFn::kMeshVertComponent );
-				MItGeometry gIt(meshPath);
-				MIntArray vertex_indices( gIt.count() );
-				for ( int vert_index = 0; vert_index < gIt.count(); ++vert_index ) {
-					vertex_indices[vert_index] = vert_index;
-				}
-				compFn.addElements(vertex_indices);
+			out << "Adding weights to ComplexShape vertices" << endl;
+			//out << "Number of weights:  " << myWeights.length() << endl;
+			//out << "Number of bones:  " << myBones.length() << endl;
+			//out << "Number of Maya vertices:  " << gIt.count() << endl;
+			//out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
+			unsigned int weight_index = 0;
+			SkinInfluence sk;
+			for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
+				for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
+					//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
+					// Only bother with weights that are significant
+					if ( myWeights[weight_index] > 0.0f ) {
+						sk.influenceIndex = bone_index;
+						sk.weight = float(myWeights[weight_index]);
 
-				out << "Getting Influences" << endl;
-				//Get influences
-				MDagPathArray myBones;
-				clusterFn.influenceObjects( myBones, &stat );
-				
-				out << "Creating a list of NiNodeRefs of influences." << endl;
-				//Create list of NiNodeRefs of influences
-				vector<NiNodeRef> niBones( myBones.length() );
-				for ( unsigned int bone_index = 0; bone_index < niBones.size(); ++bone_index ) {
-					if ( nodes.find( myBones[bone_index].fullPathName().asChar() ) == nodes.end() ) {
-						//There is a problem; one of the joints was not exported.  Abort.
-						throw runtime_error("One of the joints necessary to export a bound skin was not exported.");
+						nif_vts[vert_index].weights.push_back(sk);
 					}
-					niBones[bone_index] = nodes[ myBones[bone_index].fullPathName().asChar() ];
-				}
-
-				out << "Getting weights from Maya" << endl;
-				//Get weights from Maya
-				MDoubleArray myWeights;
-				unsigned int bone_count = myBones.length();
-				stat = clusterFn.getWeights( meshPath, vertices, myWeights, bone_count );
-				if ( stat != MS::kSuccess ) {
-					out << stat.errorString().asChar() << endl;
-					throw runtime_error("Failed to get vertex weights.");
-				}
-
-				out << "Setting skin influence list in ComplexShape" << endl;
-				//Set skin information in ComplexShape
-				cs.SetSkinInfluences( niBones );
-				
-				out << "Adding weights to ComplexShape vertices" << endl;
-				//out << "Number of weights:  " << myWeights.length() << endl;
-				//out << "Number of bones:  " << myBones.length() << endl;
-				//out << "Number of Maya vertices:  " << gIt.count() << endl;
-				//out << "Number of NIF vertices:  " << int(nif_vts.size()) << endl;
-				unsigned int weight_index = 0;
-				SkinInfluence sk;
-				for ( unsigned int vert_index = 0; vert_index < nif_vts.size(); ++vert_index ) {
-					for ( unsigned int bone_index = 0; bone_index < myBones.length(); ++bone_index ) {
-						//out << "vert_index:  " << vert_index << "  bone_index:  " << bone_index << "  weight_index:  " << weight_index << endl;	
-						// Only bother with weights that are significant
-						if ( myWeights[weight_index] > 0.0f ) {
-							sk.influenceIndex = bone_index;
-							sk.weight = float(myWeights[weight_index]);
-							
-							nif_vts[vert_index].weights.push_back(sk);
-						}
-						++weight_index;
-					}
+					++weight_index;
 				}
 			}
-	//}
-}
+		}
+		//}
+	}
 
 	out << "Setting vertex info" << endl;
 	//Set vertex info now that any skins have been processed
@@ -1864,6 +1957,37 @@ void NifTranslator::ExportDAGNodes() {
 		// we access it via the function set.
 		MFnDagNode nodeFn(it.item());
 
+		/*MPlugArray animPlugs;
+		MObjectArray animCurves;
+
+		bool hasAnim = MAnimUtil::findAnimatedPlugs(it.item(),animPlugs);
+
+		if(hasAnim == true) {
+			MAnimUtil::findAnimatedPlugs(it.item(),animPlugs);
+
+			for(int  x = 0;x < animPlugs.length(); x++) {
+				MPlug pl = animPlugs[x];
+				MString nn = pl.name();
+				const char * ccc = nn.asChar();
+
+				animCurves.clear();
+				MAnimUtil::findAnimation(pl,animCurves);
+				int count = animCurves.length();
+				for(int y = 0;y < animCurves.length(); y++) {
+					MFnAnimCurve fnCurve(animCurves[y]);
+					for(int z = 0;z < fnCurve.numKeys();z++) {
+						double cc = fnCurve.value(z);
+						double cc2 = cc;
+					}
+				}
+			}
+		}*/
+
+		
+
+		const char* name = nodeFn.name().asChar();
+		
+
 		out << "Object name is:  " << nodeFn.name().asChar() << endl;
 
 		//Skip over Maya's default objects by name
@@ -1876,8 +2000,8 @@ void NifTranslator::ExportDAGNodes() {
 			nodeFn.name() == "top" ||
 			nodeFn.name() == "front" ||
 			nodeFn.name() == "side"
-		) {
-			continue;
+			) {
+				continue;
 		}
 
 		// only want non-history items
@@ -1896,12 +2020,14 @@ void NifTranslator::ExportDAGNodes() {
 				bool intermediate = false;
 				MObject matching_child;
 
+				MString nn = nodeFn.name();
+
 				//Check to see what kind of node we should create
 				for( int i = 0; i != nodeFn.childCount(); ++i ) {
 
 					//out << "API Type:  " << nodeFn.child(i).apiTypeStr() << endl;
 					// get a handle to the child
-					if ( nodeFn.child(i).hasFn(MFn::kMesh) ) {
+					if ( nodeFn.child(i).hasFn(MFn::kMesh)  && isExportedShape(nodeFn.name())) {
 						MFnMesh meshFn( nodeFn.child(i) );
 						//history items don't count
 						if ( !meshFn.isIntermediateObject() ) {
@@ -1922,11 +2048,11 @@ void NifTranslator::ExportDAGNodes() {
 						BoundingBox bb;
 
 						Matrix44 niMat= MatrixM2N( nodeFn.transformationMatrix() );
-		
+
 						bb.translation = niMat.GetTranslation();
 						bb.rotation = niMat.GetRotation();
 						bb.unknownInt = 1;
-						
+
 						//Get size of box
 						MFnDagNode dagFn( nodeFn.child(i) );
 						dagFn.findPlug("sizeX").getValue( bb.radius.x );
@@ -1947,19 +2073,19 @@ void NifTranslator::ExportDAGNodes() {
 				}
 
 				if ( !intermediate ) {
-	
+
 					if ( tri_shape == true ) {
 						out << "Adding Mesh to list to be exported later..." << endl;
 						meshes.push_back( it.item() );
 						//NiTriShape
 					} else if ( bounding_box == true ) {
 						//Do nothing
-					} else {
+					} else if (it.item().hasFn(MFn::kJoint) && isExportedJoint(nodeFn.name())) {
 						out << "Creating a NiNode..." << endl;
 						//NiNode
 						NiNodeRef niNode = new NiNode;
 						ExportAV( StaticCast<NiAVObject>(niNode), it.item() );
-						
+
 						out << "Associating NiNode with node DagPath..." << endl;
 						//Associate NIF object with node DagPath
 						string path = nodeFn.fullPathName().asChar();
@@ -1977,31 +2103,31 @@ void NifTranslator::ExportDAGNodes() {
 	out << "Loop complete" << endl;
 
 
-						////Is this a joint and therefore has bind pose info?
-					//if ( it.item().hasFn(MFn::kJoint) ) {
-					//}
-				/*}*/
-		//}
+	////Is this a joint and therefore has bind pose info?
+	//if ( it.item().hasFn(MFn::kJoint) ) {
+	//}
+	/*}*/
+	//}
 
-		//// get the name of the node
-		//MString name = meshFn.name();
+	//// get the name of the node
+	//MString name = meshFn.name();
 
-		//// write the node type found
-		//out << "node: " << name.asChar() << endl;
+	//// write the node type found
+	//out << "node: " << name.asChar() << endl;
 
-		//// write the info about the children
-		//out <<"num_kids " << meshFn.childCount() << endl;
+	//// write the info about the children
+	//out <<"num_kids " << meshFn.childCount() << endl;
 
-		//for(int i=0;i<meshFn.childCount();++i) {
-//			// get the MObject for the i'th child
-		//MObject child = meshFn.child(i);
+	//for(int i=0;i<meshFn.childCount();++i) {
+	//			// get the MObject for the i'th child
+	//MObject child = meshFn.child(i);
 
-		//// attach a function set to it
-		//MFnDagNode fnChild(child);
+	//// attach a function set to it
+	//MFnDagNode fnChild(child);
 
-		//// write the child name
-		//out << "\t" << fnChild.name().asChar();
-		//out << endl;
+	//// write the child name
+	//out << "\t" << fnChild.name().asChar();
+	//out << endl;
 
 
 	out << "}" << endl;
@@ -2118,7 +2244,7 @@ void NifTranslator::GetColor( MFnDependencyNode& fn, MString name, MColor & colo
 	// see if any file textures are present
 	for( int i = 0; i != plugs.length(); ++i ) {
 
-  		// if file texture found
+		// if file texture found
 		if( plugs[i].node().apiType() == MFn::kFileTexture ) {
 			out << "File texture found" << endl;
 			texture = plugs[i].node();
@@ -2130,7 +2256,7 @@ void NifTranslator::GetColor( MFnDependencyNode& fn, MString name, MColor & colo
 
 	out << "Special processing for base color?" << endl;
 	if( name == "color" && color.r < 0.01 && color.g < 0.01 && color.b < 0.01) {
-  		color.r = color.g = color.b = 0.6f;
+		color.r = color.g = color.b = 0.6f;
 	}
 
 	// output the name, color and texture ID
@@ -2210,7 +2336,7 @@ void NifTranslator::ExportShaders() {
 					// see if any file textures are present
 					for( int i = 0; i != plugs.length(); ++i ) {
 
-  						// if file texture found
+						// if file texture found
 						if( plugs[i].node().apiType() == MFn::kFileTexture ) {
 							out << "File texture found" << endl;
 							glos_tex = plugs[i].node();
@@ -2257,7 +2383,7 @@ void NifTranslator::ExportShaders() {
 		MaterialWrapper mw = mtCollection.GetMaterial( mat_index );
 
 		NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
-		
+
 		if ( use_alpha ) {
 			NiAlphaPropertyRef niAlphaProp = mw.GetTranslucencyInfo();
 			niAlphaProp->SetFlags(237);
@@ -2267,7 +2393,7 @@ void NifTranslator::ExportShaders() {
 			NiSpecularPropertyRef niSpecProp = mw.GetSpecularInfo();
 			niSpecProp->SetSpecularState(true);
 		}
-		
+
 		//Set Name
 		niMatProp->SetName( mat_name );
 
@@ -2285,7 +2411,7 @@ void NifTranslator::ExportShaders() {
 				MFnDependencyNode depFn(diff_tex);
 				string texname = depFn.name().asChar();
 				out << "Base texture found:  " << texname << endl;
-				
+
 				if ( textures.find( texname ) != textures.end() ) {
 					mw.SetTextureIndex( BASE_MAP, textures[texname] );
 				}
@@ -2322,7 +2448,7 @@ void NifTranslator::ExportShaders() {
 				MFnDependencyNode depFn(emis_tex);
 				string texname = depFn.name().asChar();
 				out << "Glow texture found:  " << texname << endl;
-				
+
 				if ( textures.find( texname ) != textures.end() ) {
 					mw.SetTextureIndex( GLOW_MAP, textures[texname] );
 				}
@@ -2398,7 +2524,7 @@ void NifTranslator::ExportFileTextures() {
 		// get the filename from the attribute
 		MString filename;
 		ftn.getValue(filename);
-		
+
 		//Get image size
 		float x, y;
 		osx.getValue(x);
@@ -2439,38 +2565,38 @@ void NifTranslator::ExportFileTextures() {
 		MStringArray paths;
 		MString(texture_path.c_str()).split( '|', paths );
 		switch( tex_path_mode ) {
-			case PATH_MODE_AUTO:
-				for ( unsigned p = 0; p < paths.length(); ++p ) {
-					unsigned len = paths[p].length();
-					if ( len >= fileName.size() ) {
-						continue;
-					}
-					if ( fileName.substr( 0, len ) == paths[p].asChar() ) {
-						//Found a matching path, cut matching part out
-						fileName = fileName.substr( len + 1 );
-						break;
-					}
+		case PATH_MODE_AUTO:
+			for ( unsigned p = 0; p < paths.length(); ++p ) {
+				unsigned len = paths[p].length();
+				if ( len >= fileName.size() ) {
+					continue;
 				}
-				break;
-			case PATH_MODE_PREFIX:
-			case PATH_MODE_NAME:
-				index = fileName.rfind( "/" );
-				if ( index != string::npos ) { 
-					//We don't want the slash itself
-					if ( index + 1 < fileName.size() ) {
-						fileName = fileName.substr( index + 1 );
-					}
-				}
-				if ( tex_path_mode == PATH_MODE_NAME ) {
+				if ( fileName.substr( 0, len ) == paths[p].asChar() ) {
+					//Found a matching path, cut matching part out
+					fileName = fileName.substr( len + 1 );
 					break;
 				}
-				//Now we're doing the prefix case
-				fileName = tex_path_prefix + fileName;
+			}
+			break;
+		case PATH_MODE_PREFIX:
+		case PATH_MODE_NAME:
+			index = fileName.rfind( "/" );
+			if ( index != string::npos ) { 
+				//We don't want the slash itself
+				if ( index + 1 < fileName.size() ) {
+					fileName = fileName.substr( index + 1 );
+				}
+			}
+			if ( tex_path_mode == PATH_MODE_NAME ) {
 				break;
-				
+			}
+			//Now we're doing the prefix case
+			fileName = tex_path_prefix + fileName;
+			break;
+
 			//Do nothing for full path since the full path is already
 			//set in file name
-			case PATH_MODE_FULL: break;
+		case PATH_MODE_FULL: break;
 		}
 
 		//Now make all slashes back slashes since some games require this
@@ -2515,7 +2641,7 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			}
 
 			out << "Texture Path:  " << texture_path << endl;
-			
+
 		}
 		if ( tokens[0] == "exportVersion" ) {
 			export_version = ParseVersionString( tokens[1].asChar() );
@@ -2632,6 +2758,30 @@ void NifTranslator::ParseOptionString( const MString & optionsString ) {
 			tex_path_prefix = tokens[1].asChar();
 			out << "Export Texture Path Prefix:  " << tex_path_prefix << endl;
 		}
+
+		if(tokens[0] == "exportedShapes") {
+			if(tokens.length() > 1) {
+				MStringArray exportedShapesTokens; 
+				tokens[1].split(',',exportedShapesTokens);
+				export_shapes.clear();
+				for(int k = 0;k < exportedShapesTokens.length();k++) {
+					export_shapes.push_back(exportedShapesTokens[k].asChar());
+				}
+			}
+
+		}
+
+		if(tokens[0] == "exportedJoints") {
+			if(tokens.length() > 1) {
+				MStringArray exportedJointsTokens;
+				tokens[1].split(',',exportedJointsTokens);
+				export_joints.clear();
+				for(int k = 0;k < exportedJointsTokens.length();k++) {
+					export_joints.push_back(exportedJointsTokens[k].asChar());
+				}
+			}
+
+		}
 	}
 }
 
@@ -2698,7 +2848,7 @@ MObject NifTranslator::MakeJoint( MObject & jointObj ) {
 	out << "Matching joint object must be changed to an IK joint." << endl;
 	//The object is not a joint, so make it into one.
 	MFnTransform transFn(jointObj);
-	
+
 	//Temporary data
 	MTransformationMatrix transMat;
 	MObjectArray children;
@@ -2736,9 +2886,9 @@ MObject NifTranslator::MakeJoint( MObject & jointObj ) {
 	//Set transform
 	stat = jointFn.set( transMat );
 	if ( stat != MS::kSuccess ) {
-			out << stat.errorString().asChar() << endl;
-			throw runtime_error("Failed to set transform.");
-		}
+		out << stat.errorString().asChar() << endl;
+		throw runtime_error("Failed to set transform.");
+	}
 
 	//Set children
 	for ( unsigned int i = 0; i < children.length(); ++i ) {
@@ -2764,7 +2914,7 @@ MObject NifTranslator::MakeJoint( MObject & jointObj ) {
 		}
 	}
 
-			//Destroy original object
+	//Destroy original object
 	MString command = "delete " + transFn.fullPathName();
 	MGlobal::executeCommand( command );
 
@@ -2791,8 +2941,8 @@ MString NifTranslator::MakeMayaName( const string & nifName ) {
 				(nifName[i] >= '0' && nifName[i] <= '9') ||
 				(nifName[i] >= 'A' && nifName[i] <= 'Z') ||
 				(nifName[i] >= 'a' && nifName[i] <= 'z')
-			) {
-				newName << nifName[i];
+				) {
+					newName << nifName[i];
 			} else {
 				newName << "_0x" << setw(2) << hex << int(nifName[i]);
 			}
@@ -2801,8 +2951,8 @@ MString NifTranslator::MakeMayaName( const string & nifName ) {
 				(nifName[i] >= '0' && nifName[i] <= '9') ||
 				(nifName[i] >= 'A' && nifName[i] <= 'Z') ||
 				(nifName[i] >= 'a' && nifName[i] <= 'z')
-			) {
-				newName << nifName[i];
+				) {
+					newName << nifName[i];
 			} else {
 				newName << "_";
 			}
@@ -2839,7 +2989,7 @@ string NifTranslator::MakeNifName( const MString & mayaName ) {
 					continue;
 				}
 			}
-		
+
 			if ( str[i] == '_' ) {
 				newName << " ";
 			} else {
@@ -2894,7 +3044,7 @@ MObject NifTranslator::ImportMaterial( MaterialWrapper & mw ) {
 	color = niMatProp->GetDiffuseColor();
 	phongFn.setColor( MColor(color.r, color.g, color.b) );
 
-	
+
 	//Set Specular color to 0 unless the mesh has a NiSpecularProperty
 	NiSpecularPropertyRef niSpecProp = mw.GetSpecularInfo();
 
@@ -2943,7 +3093,7 @@ MObject NifTranslator::ImportTexture( TextureWrapper & tw ) {
 	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
 
 	//--Search for the texture file--//
-	
+
 	//Replace back slash with forward slash
 	unsigned last_slash = 0;
 	for ( unsigned i = 0; i < file_name.size(); ++i ) {
@@ -2982,7 +3132,7 @@ MObject NifTranslator::ImportTexture( TextureWrapper & tw ) {
 				mFile.setRawPath( paths[i] );
 
 			}
-			
+
 			out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
 			if ( mFile.exists() ) {
 				//File exists at path entry i
@@ -3049,7 +3199,7 @@ MObject NifTranslator::ImportTexture( TextureWrapper & tw ) {
 void NifTranslator::ConnectShader( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list ) {
 	//--Look for Materials--//
 	MObject grpOb;
-	
+
 	out << "Looking for previously imported shaders..." << endl;
 
 	unsigned int mat_index = mtCollection.GetMaterialIndex( properties );
@@ -3080,23 +3230,23 @@ void NifTranslator::ConnectShader( const vector<NiPropertyRef> & properties, MDa
 	MFnSet setFn;
 	setFn.create( sel_list, MFnSet::kRenderableOnly, false );
 	setFn.setName("shadingGroup");
-	
+
 	//--Connect the mesh to the shading group--//
 
 	//Set material to a phong function set
 	MFnPhongShader phongFn;
 	phongFn.setObject( matOb );
-	
+
 	//Break the default connection that is created
 	MPlugArray arr;
 	MPlug surfaceShader = setFn.findPlug("surfaceShader");
 	surfaceShader.connectedTo( arr, true, true );
 	MDGModifier dgModifier;
 	dgModifier.disconnect( arr[0], surfaceShader );
-	
+
 	//Connect outColor to surfaceShader
 	dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
-		
+
 	out << "Looking for previously imported textures..." << endl;
 
 	MaterialWrapper mw = mtCollection.GetMaterial( mat_index );
@@ -3113,27 +3263,27 @@ void NifTranslator::ConnectShader( const vector<NiPropertyRef> & properties, MDa
 
 		//Skip this texture slot if it's an un-supported type.
 		switch(i) {
-			case DARK_MAP:
-				//Temporary until/if Dark Textures are supported
-				MGlobal::displayWarning( "Dark Textures are not yet supported." );
-				continue;
-			case DETAIL_MAP:
-				//Temporary until/if Detail Textures are supported
-				MGlobal::displayWarning( "Detail Textures are not yet supported." );
-				continue;
-			case GLOSS_MAP:
-				//Temporary until/if Detail Textures are supported
-				MGlobal::displayWarning( "Gloss Textures are not yet supported." );
-				continue;
-			case BUMP_MAP:
-				//Temporary until/if Bump Map Textures are supported
-				MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
-				continue;
-			case DECAL_0_MAP:
-			case DECAL_1_MAP:
-				//Temporary until/if Decal Textures are supported
-				MGlobal::displayWarning( "Decal Textures are not yet supported." );
-				continue;
+		case DARK_MAP:
+			//Temporary until/if Dark Textures are supported
+			MGlobal::displayWarning( "Dark Textures are not yet supported." );
+			continue;
+		case DETAIL_MAP:
+			//Temporary until/if Detail Textures are supported
+			MGlobal::displayWarning( "Detail Textures are not yet supported." );
+			continue;
+		case GLOSS_MAP:
+			//Temporary until/if Detail Textures are supported
+			MGlobal::displayWarning( "Gloss Textures are not yet supported." );
+			continue;
+		case BUMP_MAP:
+			//Temporary until/if Bump Map Textures are supported
+			MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
+			continue;
+		case DECAL_0_MAP:
+		case DECAL_1_MAP:
+			//Temporary until/if Decal Textures are supported
+			MGlobal::displayWarning( "Decal Textures are not yet supported." );
+			continue;
 		};
 
 
@@ -3154,25 +3304,25 @@ void NifTranslator::ConnectShader( const vector<NiPropertyRef> & properties, MDa
 			nodeFn.setObject(txOb);
 			MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
 			switch(i) {
-				case BASE_MAP:
-					//Base Texture
-					dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
-					//Check if Alpha needs to be used
-					
-					if ( niAlphaProp != NULL && ( niAlphaProp->GetBlendState() == true || niAlphaProp->GetTestState() == true ) ) {
-						//Alpha is used, connect it
-						dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
-					}
-					break;
-				case GLOW_MAP:
-					//Glow Texture
-					dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
-					nodeFn.findPlug("alphaGain").setValue(0.25);
-					nodeFn.findPlug("defaultColorR").setValue( 0.0 );
-					nodeFn.findPlug("defaultColorG").setValue( 0.0 );
-					nodeFn.findPlug("defaultColorB").setValue( 0.0 );
-					dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
-					break;
+			case BASE_MAP:
+				//Base Texture
+				dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
+				//Check if Alpha needs to be used
+
+				if ( niAlphaProp != NULL && ( niAlphaProp->GetBlendState() == true || niAlphaProp->GetTestState() == true ) ) {
+					//Alpha is used, connect it
+					dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
+				}
+				break;
+			case GLOW_MAP:
+				//Glow Texture
+				dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
+				nodeFn.findPlug("alphaGain").setValue(0.25);
+				nodeFn.findPlug("defaultColorR").setValue( 0.0 );
+				nodeFn.findPlug("defaultColorG").setValue( 0.0 );
+				nodeFn.findPlug("defaultColorB").setValue( 0.0 );
+				dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
+				break;
 			}
 
 			//Check for clamp mode
@@ -3254,4 +3404,24 @@ void NifTranslator::ImportMaterialsAndTextures( NiAVObjectRef & root ) {
 	for ( size_t i = 0; i < mtCollection.GetNumMaterials(); ++i ) {
 		importedMaterials[i] = ImportMaterial( mtCollection.GetMaterial(i) );
 	}
+}
+
+bool NifTranslator::isExportedShape( const MString& name )
+{
+	for(int i = 0;i < export_shapes.size(); i++) {
+		if(name.asChar() == export_shapes[i])
+			return true;
+	}
+
+	return false;
+}
+
+bool NifTranslator::isExportedJoint( const MString& name )
+{
+	for(int i = 0;i < export_joints.size(); i++) {
+		if(name.asChar() == export_joints[i])
+			return true;
+	}
+
+	return false;
 }
