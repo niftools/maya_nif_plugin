@@ -25,6 +25,11 @@
 //		1 if successfull.
 //		0 otherwise.
 //
+
+global string $gNifExportedObjects[];
+global int $gNifExportedObjectsValues[];
+global string $gNifExportedObjectsTypes[];
+
 global proc int nifTranslatorOpts ( string $parent,
 				    string $action,
 				    string $initialSettings,
@@ -49,6 +54,7 @@ global proc int nifTranslatorOpts ( string $parent,
 		"./textures",
 		"C:/Program Files/Firaxis Games/Sid Meier's Civilization 4/Assets/Art/shared"
 	};
+	
 	
 	if ($action == "post") {
 		setParent $parent;
@@ -118,6 +124,80 @@ global proc int nifTranslatorOpts ( string $parent,
 					  text -label "  in their name as joints.";
 				setParent importColumnLayout;
 		setParent $parent;
+		
+		frameLayout -label "Export Outliner" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true overviewFrameLayout;
+			global string $gNifExportedObjects[];
+			global int $gNifExportedObjectsValues[];
+			global string $gNifExportedObjectsTypes[];
+			string $shapes[];
+			string $selectedShapes[];
+			string $tmpshapes[];
+			
+			int $x = 0;
+			$shapes = `ls -type "transform" -type "joint"`;
+			clear($gNifExportedObjects);
+			for($i = 0;$i < size($shapes); $i++) {
+				string $shapeNodes[] = `listRelatives -type "shape" $shapes[$i]`;
+				if(size($shapeNodes) > 0 && hasValidNifName($shapes[$i]) == 1) {
+					$gNifExportedObjects[$x] = $shapes[$i];
+					$gNifExportedObjectsTypes[$x] = "shape";
+					$x++;
+				}
+				
+				if(`objectType -isType "joint" $shapes[$i]` == 1) {
+					$gNifExportedObjects[$x] = $shapes[$i];
+					$gNifExportedObjectsTypes[$x] = "joint";
+					$x++;
+				}		
+			}		
+			
+			clear($gNifExportedObjectsValues);		
+			for($i = 0;$i < size($gNifExportedObjects); $i++) {
+				$gNifExportedObjectsValues[$i] = 0;
+			}		
+			
+			
+			treeView -height 300 -width 250 -numberOfButtons 1 -abr false overviewTreeView;
+			treeView -edit -pressCommand 1 "ChangeSelectionExportOverviewTreeView" overviewTreeView;
+			treeView -edit -addItem "Shapes" "" -hideButtons overviewTreeView;
+			treeView -edit -addItem "Joints" "" -hideButtons overviewTreeView;
+			for($i = 0;$i < size($gNifExportedObjects); $i++) {
+				if($gNifExportedObjectsTypes[$i] == "shape") {
+					treeView -edit -addItem $gNifExportedObjects[$i] "Shapes" overviewTreeView;
+				}
+				
+				if($gNifExportedObjectsTypes[$i] == "joint") {
+					treeView -edit -addItem $gNifExportedObjects[$i] "Joints" overviewTreeView;
+				}
+				
+				treeView -edit -buttonStyle $gNifExportedObjects[$i] 1 "pushButton" overviewTreeView;
+			}
+			
+			$selectedShapes = `ls -selection -type "transform" -type "joint"`;
+			for($i = 0;$i < size($selectedShapes); $i++) {
+				if(size(`listRelatives -type "shape" $selectedShapes[$i]`) > 0) {
+					treeView -edit -buttonTextIcon $selectedShapes[$i] 1 "E" overviewTreeView;
+					for($j = 0;$j < size($gNifExportedObjects); $j++) {
+						if ($gNifExportedObjects[$j] == $selectedShapes[$i]) {
+							$gNifExportedObjectsValues[$j] = 1;
+							break;
+						}
+					}
+				}
+				
+				if(`objectType -isType "joint" $selectedShapes[$i]` == 1) {
+					treeView -edit -buttonTextIcon $selectedShapes[$i] 1 "E" overviewTreeView;
+					for($j = 0;$j < size($gNifExportedObjects); $j++) {
+						if ($gNifExportedObjects[$j] == $selectedShapes[$i]) {
+							$gNifExportedObjectsValues[$j] = 1;
+							break;
+						}
+					}
+				}
+			}	
+			AdjustSelectedJoints();
+		setParent $parent;
+		
 		frameLayout -label "Export" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout exportColumnLayout;
 			rowLayout -numberOfColumns 2
@@ -323,6 +403,36 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "exportVersion=" + $defaultVersion + ";";
 		}
 		
+		global string $gNifExportedObjects[];
+		global int $gNifExportedObjectsValues[];
+		global string $gNifExportedObjectsTypes[];
+		string $exportedShapes = "exportedShapes=";
+		int $first = 1;
+		for($i = 0;$i < size($gNifExportedObjects);$i++) {
+			if($gNifExportedObjectsTypes[$i] == "shape" && $gNifExportedObjectsValues[$i] == 1) {
+				if($first == 1) {
+					$exportedShapes = $exportedShapes + $gNifExportedObjects[$i];
+					$first = 0;
+				} else {
+					$exportedShapes = $exportedShapes + "," + $gNifExportedObjects[$i];
+				}
+			}
+		}
+		$currentOptions = $currentOptions + $exportedShapes + ";";
+		string $exportedJoints = "exportedJoints=";
+		$first = 1;
+		for($i = 0;$i < size($gNifExportedObjects);$i++) {
+			if($gNifExportedObjectsTypes[$i] == "joint" && $gNifExportedObjectsValues[$i] == 1) {
+				if($first == 1) {
+					$exportedJoints = $exportedJoints + $gNifExportedObjects[$i];
+					$first = 0;
+				} else {
+					$exportedJoints = $exportedJoints + "," + $gNifExportedObjects[$i];
+				}
+			}
+		}
+		$currentOptions = $currentOptions + $exportedJoints + ";";
+		
 		string $userVersion = `textField -query -text expUserVersionTx`;
 		if ($version != "") {
 			$currentOptions = $currentOptions + "exportUserVersion=" + $userVersion + ";";
@@ -414,6 +524,98 @@ global proc DeletePath() {
 	if ( size($selectedItem) != 0 ) {
 		textScrollList -edit -removeIndexedItem  $selectedItem[0] nifPathList;
 	}
+}
+
+global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+	
+	for($i = 0;$i < size($gNifExportedObjects); $i++) {
+		if($treeItem == $gNifExportedObjects[$i]) {
+			if($gNifExportedObjectsValues[$i] == 1) {
+				$gNifExportedObjectsValues[$i] = 0;
+				treeView -edit -buttonTextIcon $treeItem 1 "" overviewTreeView;		
+			} else if($gNifExportedObjectsValues[$i] == 0) {
+				$gNifExportedObjectsValues[$i] = 1;
+				treeView -edit -buttonTextIcon $treeItem 1 "E" overviewTreeView;
+			}
+			
+			if($gNifExportedObjectsTypes[$i] == "joint") {
+				AdjustSelectedShapes();
+			} else {
+				AdjustSelectedJoints();
+			}
+			break;
+		}
+	}
+}
+
+global proc AdjustSelectedJoints() {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+	
+	for($i = 0;$i < size($gNifExportedObjects); $i++) {
+		if($gNifExportedObjectsTypes[$i] == "shape" && $gNifExportedObjectsValues[$i] == 1) {
+			string $skin = findRelatedSkinCluster($gNifExportedObjects[$i]);
+			string $influences[] = `skinCluster -query -influence $skin`;
+			
+			int $invalid = 0;
+			
+			for($j = 0;$j < size($influences);$j++) {
+				for($k = 0;$k < size($gNifExportedObjects); $k++) {
+					if($gNifExportedObjects[$k] == $influences[$j] &&  $gNifExportedObjectsValues[$k] == 0 && $gNifExportedObjectsTypes[$k] == "joint") {
+						$gNifExportedObjectsValues[$k] = 1;
+						treeView -edit -buttonTextIcon $gNifExportedObjects[$k] 1 "E" overviewTreeView;
+						$invalid++;
+					}
+				}
+			}
+			
+			if($invalid > 0) {
+				warning("Some shapes had weights that depended on bones not selected for export \n");
+			}
+		}
+	}
+}
+
+global proc AdjustSelectedShapes() {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+	
+	for($i = 0;$i < size($gNifExportedObjects); $i++) {
+		if($gNifExportedObjectsTypes[$i] == "joint") {
+			int $invalid = 0;
+			
+			for($j = 0;$j < size($gNifExportedObjects); $j++) {
+				if( $gNifExportedObjectsTypes[$j] == "shape") {
+					string $skin = findRelatedSkinCluster($gNifExportedObjects[$j]);
+					string $influences[] = `skinCluster -query -influence $skin`;
+					
+					for($k = 0;$k < size($influences); $k++) {
+						if($influences[$k] == $gNifExportedObjects[$i] && $gNifExportedObjectsValues[$i] == 0) {
+							$gNifExportedObjectsValues[$j] = 0;
+							treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "" overviewTreeView;
+							$invalid++;
+						}
+					}
+				}
+			}
+			
+			if($invalid > 0) {
+				warning("Some shapes had weights that depended on bones not selected for export \n");
+			}
+		}
+	}
+}
+
+global proc int hasValidNifName(string $name) {
+	if($name == "front" || $name == "side" || $name == "top" || $name == "persp" ) return 0;
+	if($name == "Manipulator1" || $name == "ViewCompass" || $name == "groundPlane_transform") return 0;
+	
+	return 1;
 }
 
 // This procedure is called when the 'Open' button of the dialog is clicked.

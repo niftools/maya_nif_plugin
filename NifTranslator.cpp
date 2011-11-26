@@ -11,6 +11,7 @@ bool import_bind_pose = false; //Determines whether or not the bind pose should 
 
 vector<string> export_shapes;
 vector<string> export_joints;
+
 bool import_normals= false; //Determines whether normals are imported
 bool import_no_ambient = false; //Determines whether ambient color is imported
 bool export_white_ambient = false; //Determines whether ambient color is automatically set to white if a texture is present
@@ -308,22 +309,23 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	//	return MStatus::kFailure;
 	//}
 	
-	NifTranslatorData translator_data;
-	NifTranslatorOptions translator_options;
-	NifTranslatorUtils translator_utils(translator_data,translator_options);
+	NifTranslatorDataRef translator_data(new NifTranslatorData());
+	NifTranslatorOptionsRef translator_options(new NifTranslatorOptions());
+	NifTranslatorUtilsRef translator_utils(new NifTranslatorUtils(translator_data,translator_options));
 
-	translator_options.ParseOptionsString(optionsString);
+	translator_options->ParseOptionsString(optionsString);
 
-	NifNodeImporter node_importer(translator_options,translator_data,translator_utils);
-	NifMeshImporter mesh_importer(translator_options,translator_data,translator_utils);
-	NifMaterialImporter material_importer(translator_options,translator_data,translator_utils);
-	NifAnimationImporter animation_importer(translator_options,translator_data,translator_utils);
+	NifNodeImporterRef node_importer(new NifNodeImporter(translator_options,translator_data,translator_utils));
+	NifMeshImporterRef mesh_importer(new NifMeshImporter(translator_options,translator_data,translator_utils));
+	NifMaterialImporterRef material_importer(new NifMaterialImporter(translator_options,translator_data,translator_utils));
+	NifAnimationImporterRef animation_importer(new NifAnimationImporter(translator_options,translator_data,translator_utils));
 
-	NifDefaultImporterFixture importer_fixture(translator_data,translator_options,translator_utils,node_importer,mesh_importer,material_importer, animation_importer);
+	NifDefaultImportingFixture importer_fixture(translator_data,translator_options,translator_utils,node_importer,mesh_importer,material_importer, animation_importer);
 
 	importer_fixture.ReadNodes(file);
 
 	out << "Finished Read" << endl;
+
 
 #ifndef _DEBUG
 	//Clear the stringstream so it doesn't waste a bunch of RAM
@@ -1239,92 +1241,107 @@ void ApplyAllSkinOffsets( NiAVObjectRef & root ) {
 //file in the supported format.
 MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsString, MPxFileTranslator::FileAccessMode mode) {
 
-	try {
-		//Get user preferences
-		ParseOptionString( optionsString );
+//	try {
+//		//Get user preferences
+//		ParseOptionString( optionsString );
+//
+//		out << "Creating root node...";
+//		//Create new root node
+//		sceneRoot = new NiNode;
+//		sceneRoot->SetName( "Scene Root" );
+//		out << sceneRoot << endl;
+//
+//		out << "Exporting file textures..." << endl;
+//		textures.clear();
+//		//Export file textures and get back a map of DAG path to Nif block
+//		ExportFileTextures();
+//
+//
+//		out << "Exporting shaders..." << endl;
+//		shaders.clear();
+//		//Export shaders
+//		ExportShaders();
+//
+//
+//		out << "Clearing Nodes" << endl;
+//		nodes.clear();
+//		out << "Clearing Meshes" << endl;
+//		meshes.clear();
+//		//Export nodes
+//
+//		out << "Exporting nodes..." << endl;
+//		ExportDAGNodes();
+//
+//		out << "Enumerating skin clusters..." << endl;
+//		meshClusters.clear();
+//		EnumerateSkinClusters();
+//
+//		out << "Exporting meshes..." << endl;
+//		for ( list<MObject>::iterator mesh = meshes.begin(); mesh != meshes.end(); ++mesh ) {
+//			ExportMesh( *mesh );
+//		}
+//
+//		out << "Applying Skin offsets..." << endl;
+//		ApplyAllSkinOffsets( StaticCast<NiAVObject>(sceneRoot) );
+//
+//
+//
+//		//--Write finished NIF file--//
+//
+//		out << "Writing Finished NIF file..." << endl;
+//		NifInfo nif_info(export_version, export_user_version);
+//		nif_info.endian = ENDIAN_LITTLE; //Intel endian format
+//		nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
+//		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
+//
+//		out << "Export Complete." << endl;
+//
+//		//Clear temporary data
+//		out << "Clearing temporary data" << endl;
+//		existingNodes.clear();
+//		importedNodes.clear();
+//		importedMaterials.clear();
+//		importedTextures.clear();
+//		importedMeshes.clear();
+//		importFile.setFullName("");
+//		sceneRoot = NULL;
+//		meshes.clear();
+//		nodes.clear(); 
+//		meshClusters.clear();
+//		shaders.clear();
+//	}
+//	catch( exception & e ) {
+//		stringstream out;
+//		out << "Error:  " << e.what() << endl;
+//		MGlobal::displayError( out.str().c_str() );
+//		return MStatus::kFailure;
+//	}
+//	catch( ... ) {
+//		MGlobal::displayError( "Error:  Unknown Exception." );
+//		return MStatus::kFailure;
+//	}
+//
+//#ifndef _DEBUG
+//	//Clear the stringstream so it doesn't waste a bunch of RAM
+//	out.clear();
+//#endif
+//
+//	return MS::kSuccess;
 
-		out << "Creating root node...";
-		//Create new root node
-		sceneRoot = new NiNode;
-		sceneRoot->SetName( "Scene Root" );
-		out << sceneRoot << endl;
+	NifTranslatorOptionsRef translatorOptions(new NifTranslatorOptions());
+	NifTranslatorDataRef translatorData(new NifTranslatorData());
+	NifTranslatorUtilsRef translatorUtils(new NifTranslatorUtils(translatorData, translatorOptions));
 
-		out << "Exporting file textures..." << endl;
-		textures.clear();
-		//Export file textures and get back a map of DAG path to Nif block
-		ExportFileTextures();
+	translatorOptions->ParseOptionsString(optionsString);
 
+	NifNodeExporterRef nodeExporter(new NifNodeExporter(translatorOptions, translatorData, translatorUtils));
+	NifMeshExporterRef meshExporter(new NifMeshExporter(nodeExporter, translatorOptions,translatorData,translatorUtils));
+	NifMaterialExporterRef materialExporter(new NifMaterialExporter(translatorOptions,translatorData,translatorUtils));
+	NifAnimationExporterRef animationExporter(new NifAnimationExporter(translatorOptions, translatorData, translatorUtils));
 
-		out << "Exporting shaders..." << endl;
-		shaders.clear();
-		//Export shaders
-		ExportShaders();
+	NifDefaultExportingFixture exportingFixture(translatorData, translatorOptions, translatorUtils, nodeExporter, meshExporter, materialExporter, animationExporter);
 
-
-		out << "Clearing Nodes" << endl;
-		nodes.clear();
-		out << "Clearing Meshes" << endl;
-		meshes.clear();
-		//Export nodes
-
-		out << "Exporting nodes..." << endl;
-		ExportDAGNodes();
-
-		out << "Enumerating skin clusters..." << endl;
-		meshClusters.clear();
-		EnumerateSkinClusters();
-
-		out << "Exporting meshes..." << endl;
-		for ( list<MObject>::iterator mesh = meshes.begin(); mesh != meshes.end(); ++mesh ) {
-			ExportMesh( *mesh );
-		}
-
-		out << "Applying Skin offsets..." << endl;
-		ApplyAllSkinOffsets( StaticCast<NiAVObject>(sceneRoot) );
-
-
-
-		//--Write finished NIF file--//
-
-		out << "Writing Finished NIF file..." << endl;
-		NifInfo nif_info(export_version, export_user_version);
-		nif_info.endian = ENDIAN_LITTLE; //Intel endian format
-		nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
-		WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(sceneRoot), nif_info );
-
-		out << "Export Complete." << endl;
-
-		//Clear temporary data
-		out << "Clearing temporary data" << endl;
-		existingNodes.clear();
-		importedNodes.clear();
-		importedMaterials.clear();
-		importedTextures.clear();
-		importedMeshes.clear();
-		importFile.setFullName("");
-		sceneRoot = NULL;
-		meshes.clear();
-		nodes.clear(); 
-		meshClusters.clear();
-		shaders.clear();
-	}
-	catch( exception & e ) {
-		stringstream out;
-		out << "Error:  " << e.what() << endl;
-		MGlobal::displayError( out.str().c_str() );
-		return MStatus::kFailure;
-	}
-	catch( ... ) {
-		MGlobal::displayError( "Error:  Unknown Exception." );
-		return MStatus::kFailure;
-	}
-
-#ifndef _DEBUG
-	//Clear the stringstream so it doesn't waste a bunch of RAM
-	out.clear();
-#endif
-
-	return MS::kSuccess;
+	return exportingFixture.WriteNodes(file);
 }
 
 void NifTranslator::ExportMesh( MObject dagNode ) {

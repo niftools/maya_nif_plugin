@@ -118,14 +118,19 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 
-#include "NifTranslatorOptions.h"
-#include "NifTranslatorData.h"
-#include "NifTranslatorUtils.h"
-#include "NifNodeImporter.h"
-#include "NifMeshImporter.h"
-#include "NifMaterialImporter.h"
-#include "NifAnimationImporter.h"
-#include "NifDefaultImporterFixture.h"
+#include "include/Common/NifTranslatorOptions.h"
+#include "include/Common/NifTranslatorData.h"
+#include "include/Common/NifTranslatorUtils.h"
+#include "include/Importers/NifNodeImporter.h"
+#include "include/Importers/NifMeshImporter.h"
+#include "include/Importers/NifMaterialImporter.h"
+#include "include/Importers/NifAnimationImporter.h"
+#include "include/Importers/NifDefaultImportingFixture.h"
+#include "include/Exporters/NifNodeExporter.h"
+#include "include/Exporters/NifMeshExporter.h"
+#include "include/Exporters/NifMaterialExporter.h"
+#include "include/Exporters/NifAnimationExporter.h"
+#include "include/Exporters/NifDefaultExportingFixture.h"
 
 using namespace Niflib;
 using namespace std;
