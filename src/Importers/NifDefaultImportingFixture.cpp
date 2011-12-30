@@ -135,12 +135,12 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 
 		//Iterate through all imported nodes, looking for any with animation keys
 
-		for ( map<NiAVObjectRef,MDagPath>::iterator it = this->translatorData->importedNodes.begin(); it != this->translatorData->importedNodes.end(); ++it ) {
-			//Check to see if this node has any animation controllers
-			if ( it->first->IsAnimated() ) {
-				this->animationImporter->ImportControllers( it->first, it->second );
-			}
-		}
+		//for ( map<NiAVObjectRef,MDagPath>::iterator it = this->translatorData->importedNodes.begin(); it != this->translatorData->importedNodes.end(); ++it ) {
+		//	//Check to see if this node has any animation controllers
+		//	if ( it->first->IsAnimated() ) {
+		//		this->animationImporter->ImportControllers( it->first, it->second );
+		//	}
+		//}
 
 		//out << "Deselecting anything that was selected by MEL commands" << endl;
 		MGlobal::clearSelectionList();

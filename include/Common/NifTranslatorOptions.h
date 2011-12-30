@@ -106,6 +106,9 @@ public:
 	TexPathMode tex_path_mode;  //Determines the way textures paths are exported
 	string tex_path_prefix; //Optional prefix to add to texture paths.
 
+	int spline_animation_npoints; //the amounts of points for spline animation curves per time unit
+	int spline_animation_degree; //the degree of the polynom for the spline animation curves
+
 
 	//can't work with virtual functions like this, it's not safe to call reset from the base con
 	NifTranslatorOptions();

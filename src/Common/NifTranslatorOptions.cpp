@@ -17,6 +17,9 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->export_tan_space = false;
 	this->export_mor_rename = false;
 	this->tex_path_mode = PATH_MODE_AUTO;
+
+	this->spline_animation_npoints = 4;
+	this->spline_animation_degree = 4;
 }
 
 
@@ -36,6 +39,9 @@ void NifTranslatorOptions::Reset()
 	this->export_tan_space = false;
 	this->export_mor_rename = false;
 	this->tex_path_mode = PATH_MODE_AUTO;
+
+	this->spline_animation_npoints = 4;
+	this->spline_animation_degree = 4;
 }
 
 NifTranslatorOptions::~NifTranslatorOptions() {

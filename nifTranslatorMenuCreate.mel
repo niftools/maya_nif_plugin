@@ -1,0 +1,23 @@
+global string $nifToolsMenu;
+
+global proc nifTranslatorMenuCreate() {
+	global string $nifToolsMenu;
+	global string $gMainWindow;
+    setParent $gMainWindow;
+
+    $nifToolsMenu = `menu -label "NifTools" -allowOptionBoxes false`;
+
+		menuItem -label "Animation" -subMenu true animationMenu;
+			menuItem -label "Set default bone priority";
+			menuItem -label "Set animation curve to NiTransformInterpolator";
+			menuItem -label "Set animation curve to NiBSplineCompInterpolator";
+		setParent -menu $nifToolsMenu;
+
+		menuItem -label "Texture" -subMenu true textureMenu;
+			menuItem -label "Set texturing mode to Apply Modular";
+			menuItem -label "Set texturing mode to Apply Highlight";
+			menuItem -label "Set texturing mode to Apply Highlight2";
+		setParent -menu $nifToolsMenu;
+
+	setParent $gMainWindow;
+}

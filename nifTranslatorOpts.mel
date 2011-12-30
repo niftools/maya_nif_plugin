@@ -533,7 +533,9 @@ global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) 
 	
 	for($i = 0;$i < size($gNifExportedObjects); $i++) {
 		if($treeItem == $gNifExportedObjects[$i]) {
+			int $unselected = 0;
 			if($gNifExportedObjectsValues[$i] == 1) {
+				$unselected = 1;
 				$gNifExportedObjectsValues[$i] = 0;
 				treeView -edit -buttonTextIcon $treeItem 1 "" overviewTreeView;		
 			} else if($gNifExportedObjectsValues[$i] == 0) {
@@ -542,6 +544,11 @@ global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) 
 			}
 			
 			if($gNifExportedObjectsTypes[$i] == "joint") {
+				if($unselected == 1) {
+					UnselectChildJoints($gNifExportedObjects[$i]);
+				} else {
+					SelectParentJoints($gNifExportedObjects[$i]);
+				}
 				AdjustSelectedShapes();
 			} else {
 				AdjustSelectedJoints();
@@ -568,6 +575,7 @@ global proc AdjustSelectedJoints() {
 					if($gNifExportedObjects[$k] == $influences[$j] &&  $gNifExportedObjectsValues[$k] == 0 && $gNifExportedObjectsTypes[$k] == "joint") {
 						$gNifExportedObjectsValues[$k] = 1;
 						treeView -edit -buttonTextIcon $gNifExportedObjects[$k] 1 "E" overviewTreeView;
+						SelectParentJoints($gNifExportedObjectsValues[$k]);
 						$invalid++;
 					}
 				}
@@ -606,6 +614,42 @@ global proc AdjustSelectedShapes() {
 			
 			if($invalid > 0) {
 				warning("Some shapes had weights that depended on bones not selected for export \n");
+			}
+		}
+	}
+}
+
+global proc UnselectChildJoints(string $joint) {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+
+	string $children[] = `listRelatives -children -type "joint" $joint`;
+
+	for($i = 0;$i < size($children); $i++) {
+		for($j = 0;$j < size($gNifExportedObjects); $j++) {
+			if($gNifExportedObjects[$j] == $children[$i] && $gNifExportedObjectsTypes[$j] == "joint") {
+				$gNifExportedObjectsValues[$j] = 0;
+				treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "" overviewTreeView;	
+				UnselectChildJoints($gNifExportedObjects[$j]);
+			}
+		}
+	}
+}
+
+global proc SelectParentJoints(string $joint) {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+
+	string $parent[] = `listRelatives -parent -type "joint" $joint`;
+
+	for($i = 0; $i < size($parent); $i++) {
+		for($j = 0;$j < size($gNifExportedObjects); $j++) {
+			if($gNifExportedObjects[$j] == $parent[$i] && $gNifExportedObjectsTypes[$j] == "joint") {
+				$gNifExportedObjectsValues[$j] = 1;
+				treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "E" overviewTreeView;	
+				SelectParentJoints($gNifExportedObjects[$j]);
 			}
 		}
 	}

@@ -1,0 +1,7 @@
+global string $nifToolsMenu;
+
+global proc nifTranslatorMenuRemove() {
+	global string $nifToolsMenu;
+	
+	deleteUI -menu $nifToolsMenu;
+}
