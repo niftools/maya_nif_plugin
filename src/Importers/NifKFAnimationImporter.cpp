@@ -10,21 +10,8 @@ NifKFAnimationImporter::NifKFAnimationImporter( NifTranslatorOptionsRef translat
 }
 
 
-void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MString targetObject ) {
-	MItDag iterator(MItDag::kDepthFirst);
-	MObject object;
-
-	for(;!iterator.isDone();iterator.next()) {
-		MFnDagNode node(iterator.item());
-
-		string nodeName = node.name().asChar();
-		string targetName = targetObject.asChar();
-
-		if(node.name() == targetObject && iterator.item().hasFn(MFn::kTransform)) {
-			object = iterator.item();
-			break;
-		}
-	}
+void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MString& targetObject ) {
+	MObject object = this->GetObjectByName(targetObject);
 
 	if(object.isNull()) {
 		return;
@@ -37,6 +24,15 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 	vector<Key<float>> rotationXKeys;
 	vector<Key<float>> rotationYKeys;
 	vector<Key<float>> rotationZKeys;
+	
+	MFnTransform transformNode(object);
+	MPlug plug = transformNode.findPlug("interpolatorType");
+	MString node_name = transformNode.name();
+	MString mel_command = "addAttr -dataType \"string\" -shortName \"interpolatorType\" ";
+
+	if(plug.isNull()) {	
+		MGlobal::executeCommand(mel_command + node_name);
+	}
 
 	if(interpolator->GetType().IsSameType(NiTransformInterpolator::TYPE)) {
 		NiTransformInterpolatorRef transformInterpolator = DynamicCast<NiTransformInterpolator>(interpolator);
@@ -55,6 +51,9 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 			translationKeys = transformData->GetTranslateKeys();
 			scaleKeys = transformData->GetScaleKeys();
 		}
+
+		mel_command = "setAttr -type \"string\" ";
+		MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiTransformInterpolator\"");
 	}
 
 	if(interpolator->GetType().IsSameType(NiBSplineCompTransformInterpolator::TYPE)) {
@@ -71,10 +70,21 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 			if(splineInterpolator->GetScaleBias() != FLT_MAX && splineInterpolator->GetScaleMultiplier() != FLT_MAX) {
 				scaleKeys = splineInterpolator->SampleScaleKeys(spline_interpolator_bdata->GetNumControlPoints(), this->translatorOptions->spline_animation_degree);
 			}
-		}	
+
+			mel_command = "setAttr -type \"string\" ";
+			MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiBSplineCompTransformInterpolator\"");
+		}
 	}
 
-	MFnTransform transformNode(object);
+	if(interpolator->GetType().IsSameType(NiPoint3Interpolator::TYPE)) {
+		NiPoint3InterpolatorRef point3Interpolator = DynamicCast<NiPoint3Interpolator>(interpolator);
+		NiPosDataRef posData = point3Interpolator->GetData();
+
+		translationKeys = posData->GetKeys();
+
+		mel_command = "setAttr -type \"string\" ";
+		MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiPoint3Interpolator\"");
+	}
 
 	if(translationKeys.size() > 0) {
 		MFnAnimCurve translationX;
@@ -96,6 +106,7 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 			translationY.addKey(time, positionY);
 			translationZ.addKey(time, positionZ);
 		}
+
 	} else {
 
 	}
@@ -118,6 +129,7 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 			scaleY.addKey(time, scale);
 			scaleZ.addKey(time, scale);
 		}
+
 	} else {
 
 	}
@@ -259,6 +271,25 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 	
 }
 
+
+MObject NifKFAnimationImporter::GetObjectByName( MString& name ) {
+	MItDag iterator(MItDag::kDepthFirst);
+	MObject object;
+
+	for(;!iterator.isDone();iterator.next()) {
+		MFnDagNode node(iterator.item());
+
+		string nodeName = node.name().asChar();
+		string targetName = name.asChar();
+
+		if(node.name() == name && iterator.item().hasFn(MFn::kTransform)) {
+			object = iterator.item();
+			break;
+		}
+	}
+
+	return object;
+}
 
 string NifKFAnimationImporter::asString( bool verbose /*= false */ ) const {
 	stringstream out;

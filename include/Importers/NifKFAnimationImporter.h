@@ -85,7 +85,9 @@
 #include <obj/NiBSplineCompTransformInterpolator.h>
 #include <obj/NiTransformData.h>
 #include <obj/NiBSplineData.h>
-#include "obj/NiBSplineBasisData.h"
+#include <obj/NiBSplineBasisData.h>
+#include <obj/NiPoint3Interpolator.h>
+#include <obj/NiPosData.h>
 
 #include "Common\NifTranslatorRefObject.h"
 #include "Common\NifTranslatorOptions.h"
@@ -108,7 +110,9 @@ public:
 
 	NifKFAnimationImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorsUtils);
 
-	virtual void ImportAnimation(NiInterpolatorRef interpolator,MString targetObject);
+	virtual void ImportAnimation(NiInterpolatorRef interpolator,MString& targetObject);
+
+	virtual MObject GetObjectByName(MString& name);
 
 	virtual string asString( bool verbose = false ) const;
 

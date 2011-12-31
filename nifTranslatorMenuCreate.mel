@@ -5,12 +5,15 @@ global proc nifTranslatorMenuCreate() {
 	global string $gMainWindow;
     setParent $gMainWindow;
 
-    $nifToolsMenu = `menu -label "NifTools" -allowOptionBoxes false`;
+    $nifToolsMenu = `menu -label "NifTools" -allowOptionBoxes false -tearOff true`;
 
 		menuItem -label "Animation" -subMenu true animationMenu;
-			menuItem -label "Set default bone priority";
-			menuItem -label "Set animation curve to NiTransformInterpolator";
-			menuItem -label "Set animation curve to NiBSplineCompInterpolator";
+			menuItem -label "Set animation priority" -command "nifTranslatorSetAnimationPriority";
+			menuItem -label "Set export index" -command "nifTranslatorSetExportIndex";
+			menuItem -label "Interpolator type" -subMenu true;
+			menuItem -label "Set to NiTransformInterpolator" -command "nifTranslatorSetInterpolatorToNiTransformInterpolator";
+			menuItem -label "Set to NiBSplineCompInterpolator" -command "nifTranslatorSetInterpolatorToNiBSplineCompInterpolator";
+			menuItem -label "Set to NiPoint3Interpolator" -command "nifTranslatorSetInterpolatorToNiPoint3Interpolator";
 		setParent -menu $nifToolsMenu;
 
 		menuItem -label "Texture" -subMenu true textureMenu;
@@ -20,4 +23,85 @@ global proc nifTranslatorMenuCreate() {
 		setParent -menu $nifToolsMenu;
 
 	setParent $gMainWindow;
+}
+
+global proc nifTranslatorSetInterpolatorToNiTransformInterpolator() {
+	nifTranslatorSetInterpolator("NiTransformInterpolator");
+}
+
+global proc nifTranslatorSetInterpolatorToNiBSplineCompInterpolator() {
+	nifTranslatorSetInterpolator("NiBSplineCompInterpolator");
+}
+
+global proc nifTranslatorSetInterpolatorToNiPoint3Interpolator() {
+	nifTranslatorSetInterpolator("NiPoint3Interpolator");
+}
+
+global proc nifTranslatorSetInterpolator(string $type) {
+	string $selection[] = `ls -selection -type "joint" -type "shape"`;
+	int $i,$j;
+
+	for($i = 0;$i < size($selection); $i++) {
+		int $hasAttr = 0;
+		string $attributes[] = `listAttr -shortNames $selection[$i]`;
+
+		for($j = 0;$j < size($attributes); $j++) {
+			if($attributes[$j] == "interpolatorType") {
+				$hasAttr = 1;
+				eval("setAttr -type \"string\" " + $selection[$i] + "\." + $attributes[$j] + " " + $type);
+				break; 
+			}
+		}
+
+		if($hasAttr == 0) { 
+			eval("addAttr -dataType \"string\" -shortName \"interpolatorType\" " + $selection[$i]);
+			eval("setAttr -type \"string\" " + $selection[$i] + "\.interpolatorType" + " " + $type);
+		}
+	}
+}
+
+global proc nifTranslatorSetAnimationPriority() {
+	string $selection[] = `ls -selection -type "joint" -type "shape"`;
+	int $i,$j;
+
+	for($i = 0;$i < size($selection); $i++) {
+		int $hasAttr = 0;
+		string $attributes[] = `listAttr -shortNames $selection[$i]`;
+
+		for($j = 0;$j < size($attributes); $j++) {
+			if($attributes[$j] == "animationPriority") {
+				$hasAttr = 1;
+				eval("setAttr " + $selection[$i] + "\." + $attributes[$j] + " " + 30);
+				break; 
+			}
+		}
+
+		if($hasAttr == 0) { 
+			eval("addAttr -at byte -shortName \"animationPriority\" " + $selection[$i]);
+			eval("setAttr " + $selection[$i] + "\.animationPriority" + " " + 30);
+		}
+	}
+}
+
+global proc nifTranslatorSetExportIndex() {
+	string $selection[] = `ls -selection -type "joint" -type "shape"`;
+	int $i,$j;
+
+	for($i = 0;$i < size($selection); $i++) {
+		int $hasAttr = 0;
+		string $attributes[] = `listAttr -shortNames $selection[$i]`;
+
+		for($j = 0;$j < size($attributes); $j++) {
+			if($attributes[$j] == "exportIndex") {
+				$hasAttr = 1;
+				eval("setAttr " + $selection[$i] + "\." + $attributes[$j] + " " + 0);
+				break; 
+			}
+		}
+
+		if($hasAttr == 0) { 
+			eval("addAttr -at long -shortName \"exportIndex\" " + $selection[$i]);
+			eval("setAttr " + $selection[$i] + "\.exportIndex" + " " + 0);
+		}
+	}
 }

@@ -97,9 +97,11 @@ class NifAnimationImporter : public NifTranslatorFixtureItem {
 public:
 
 	NifAnimationImporter();
+
 	NifAnimationImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 	virtual void ImportControllers( NiAVObjectRef niAVObj, MDagPath & path );
+
 	virtual ~NifAnimationImporter();
 
 	virtual string asString( bool verbose = false ) const;
