@@ -281,7 +281,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			transform_data->SetTranslateKeys(translationKeys);
 		}
 
-		if(!scaleX.object().isNull() || scaleY.object().isNull() || scaleY.object().isNull()) {
+		if(!scaleX.object().isNull() || !scaleY.object().isNull() || !scaleY.object().isNull()) {
 			vector<Key<float>> scaleKeys;
 
 			double ss[3];
@@ -297,7 +297,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			MTime time_min(100000.0, MTime::kSeconds);
 			int choice = -1;
 
-			while(scale_index_x <  translateX.numKeys() || scale_index_y < translateY.numKeys() || scale_index_z < translateZ.numKeys()) {
+			while(scale_index_x <  scaleX.numKeys() || scale_index_y < scaleY.numKeys() || scale_index_z < scaleZ.numKeys()) {
 				time_min.setValue(100000.0);
 
 				float x = default_x;
