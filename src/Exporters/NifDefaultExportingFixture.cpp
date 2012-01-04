@@ -83,10 +83,10 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 		return MStatus::kFailure;
 	}
 
-	#ifndef _DEBUG
-	//Clear the stringstream so it doesn't waste a bunch of RAM
-	out.clear();
-	#endif
+	//#ifndef _DEBUG
+	////Clear the stringstream so it doesn't waste a bunch of RAM
+	//out.clear();
+	//#endif
 
 	return MS::kSuccess;
 }

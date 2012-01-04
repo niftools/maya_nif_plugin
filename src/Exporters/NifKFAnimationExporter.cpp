@@ -1,0 +1,669 @@
+#include "include/Exporters/NifKFAnimationExporter.h"
+
+NifKFAnimationExporter::NifKFAnimationExporter() {
+
+}
+
+NifKFAnimationExporter::NifKFAnimationExporter( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) 
+	: NifTranslatorFixtureItem(translatorOptions, translatorData, translatorUtils) {
+}
+
+
+void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller_sequence, MObject object ) {
+	string interpolator_type = "NiTransformInterpolator";
+
+	MFnTransform node(object);
+	MPlug plug = node.findPlug("interpolatorType");
+
+	if(!plug.isNull()) {
+		interpolator_type = plug.asString().asChar();
+	}
+
+	NiInterpolatorRef interpolator;
+
+	MPlugArray animated_plugs;
+	MAnimUtil::findAnimatedPlugs(object, animated_plugs);
+
+	MPlug translationX_plug;
+	MPlug translationY_plug;
+	MPlug translationZ_plug;
+
+	MPlug scaleX_plug;
+	MPlug scaleY_plug;
+	MPlug scaleZ_plug;
+
+	MPlug rotationX_plug;
+	MPlug rotationY_plug;
+	MPlug rotationZ_plug;
+
+	for(int i = 0; i < animated_plugs.length(); i++) {
+
+		string name = animated_plugs[i].partialName().asChar();
+		string name2 = animated_plugs[i].name().asChar();
+
+		if(animated_plugs[i].partialName() == "tx") {
+			translationX_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "ty") {
+			translationY_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "tz") {
+			translationZ_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "sx") {
+			scaleX_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "sy") {
+			scaleY_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "sz") {
+			scaleZ_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "rx") {
+			rotationX_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "ry") {
+			rotationY_plug = animated_plugs[i];
+			continue;
+		}
+		if(animated_plugs[i].partialName() == "rz") {
+			rotationZ_plug = animated_plugs[i];
+			continue;
+		}
+	}
+
+	MObjectArray animation_array;
+
+	MFnAnimCurve translateX;
+	MFnAnimCurve translateY;
+	MFnAnimCurve translateZ;
+	MFnAnimCurve scaleX;
+	MFnAnimCurve scaleY;
+	MFnAnimCurve scaleZ;
+	MFnAnimCurve rotateX;
+	MFnAnimCurve rotateY;
+	MFnAnimCurve rotateZ;
+
+	if(!translationX_plug.isNull()) {
+		MAnimUtil::findAnimation(translationX_plug, animation_array);
+		translateX.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!translationY_plug.isNull()) {
+		MAnimUtil::findAnimation(translationY_plug, animation_array);
+		translateY.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!translationZ_plug.isNull()) {
+		MAnimUtil::findAnimation(translationZ_plug, animation_array);
+		translateZ.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!scaleX_plug.isNull()) {
+		MAnimUtil::findAnimation(scaleX_plug, animation_array);
+		scaleX.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!scaleY_plug.isNull()) {
+		MAnimUtil::findAnimation(scaleY_plug, animation_array);
+		scaleY.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!scaleZ_plug.isNull()) {
+		MAnimUtil::findAnimation(scaleZ_plug, animation_array);
+		scaleZ.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!rotationX_plug.isNull()) {
+		MAnimUtil::findAnimation(rotationX_plug, animation_array);
+		rotateX.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!rotationY_plug.isNull()) {
+		MAnimUtil::findAnimation(rotationY_plug, animation_array);
+		rotateY.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+	if(!rotationZ_plug.isNull()) {
+		MAnimUtil::findAnimation(rotationZ_plug, animation_array);
+		rotateZ.setObject(animation_array[0]);
+		animation_array.clear();
+	}
+
+	if(interpolator_type == "NiTransformInterpolator") {
+		NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
+		NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+
+		MStatus stat;
+		MTransformationMatrix rest_position = node.transformation();
+		MVector rest_translation = rest_position.getTranslation(MSpace::kPostTransform);
+		double rest_scale[3];
+		rest_position.getScale(rest_scale, MSpace::kPostTransform);
+		double rest_q_x;
+		double rest_q_y;
+		double rest_q_z;
+		double rest_q_w;
+		rest_position.getRotationQuaternion(rest_q_x, rest_q_y, rest_q_z, rest_q_w, MSpace::kPostTransform);
+
+		transform_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
+		transform_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
+		transform_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
+
+		transform_interpolator->SetData(transform_data);
+		
+		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
+			vector<Key<Vector3>> translationKeys;
+
+			float default_x = node.transformation().translation(MSpace::kPostTransform).x;
+			float default_y = node.transformation().translation(MSpace::kPostTransform).y;
+			float default_z = node.transformation().translation(MSpace::kPostTransform).z;
+
+			int translate_index_x = 0;
+			int translate_index_y = 0;
+			int translate_index_z = 0;
+			MTime time_min(100000.0, MTime::kSeconds);
+			int choice = -1;
+
+			while(translate_index_x <  translateX.numKeys() || translate_index_y < translateY.numKeys() || translate_index_z < translateZ.numKeys()) {
+				time_min.setValue(100000.0);
+
+				float x = default_x;
+				float y = default_y;
+				float z = default_z;
+
+				if(!translateX.object().isNull() && time_min > translateX.time(translate_index_x)) {
+					time_min = translateX.time(translate_index_x);
+					choice = 0;
+				}
+				if(!translateY.object().isNull() && time_min > translateY.time(translate_index_y)) {
+					time_min = translateY.time(translate_index_y);
+					choice = 1;
+				}
+				if(!translateZ.object().isNull() && time_min > translateZ.time(translate_index_z)) {
+					time_min = translateZ.time(translate_index_z);
+					choice = 2;
+				}
+
+				if(choice == 0) {
+					x = translateX.value(translate_index_x);
+					translate_index_x++;
+
+					if(!translateY.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - translateY.time(translate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+							y = translateY.value(translate_index_y);
+							translate_index_y++;
+						} else {
+							y = translateY.evaluate(time_min);
+						}
+					}
+
+					if(!translateZ.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - translateZ.time(translate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+							z = translateZ.value(translate_index_z);
+							translate_index_z++;
+						} else {
+							z = translateZ.evaluate(time_min);
+						}
+					}
+				}
+
+				if(choice == 1) {
+					y = translateY.value(translate_index_y);
+					translate_index_y++;
+
+					if(!translateX.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - translateX.time(translate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+							x = translateX.value(translate_index_x);
+							translate_index_x++;
+						} else {
+							x = translateX.evaluate(time_min);
+						}
+					}
+
+					if(!translateZ.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - translateZ.time(translate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+							z = translateZ.value(translate_index_z);
+							translate_index_z++;
+						} else {
+							z = translateZ.evaluate(time_min);
+						}
+					}
+				}
+
+				if(choice == 2) {
+					z = translateZ.value(translate_index_z);
+					translate_index_z++;
+
+					if(!translateX.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - translateX.time(translate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+							x = translateX.value(translate_index_x);
+							translate_index_x++;
+						} else {
+							x = translateX.evaluate(time_min);
+						}
+					}
+
+					if(!translateY.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - translateY.time(translate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+							y = translateY.value(translate_index_y);
+							translate_index_y++;
+						} else {
+							y = translateY.evaluate(time_min);
+						}
+					}
+				}
+
+				Key<Vector3> translation_key;
+				translation_key.time = time_min.asUnits(MTime::kSeconds);
+				translation_key.data.x = x;
+				translation_key.data.y = y;
+				translation_key.data.z = z;
+
+				if(translation_key.time < controller_sequence->GetStartTime()) {
+					controller_sequence->SetStartTime(translation_key.time);
+				}
+
+				if(translation_key.time > controller_sequence->GetStartTime()) {
+					controller_sequence->SetStopTime(translation_key.time);
+				}
+
+				translationKeys.push_back(translation_key);
+			}
+
+			transform_data->SetTranslateType(KeyType::LINEAR_KEY);
+			transform_data->SetTranslateKeys(translationKeys);
+		}
+
+		if(!scaleX.object().isNull() || scaleY.object().isNull() || scaleY.object().isNull()) {
+			vector<Key<float>> scaleKeys;
+
+			double ss[3];
+			node.transformation().getScale(ss, MSpace::kPostTransform);
+
+			float default_x = ss[0];
+			float default_y = ss[1];
+			float default_z = ss[2];
+
+			int scale_index_x = 0;
+			int scale_index_y = 0;
+			int scale_index_z = 0;
+			MTime time_min(100000.0, MTime::kSeconds);
+			int choice = -1;
+
+			while(scale_index_x <  translateX.numKeys() || scale_index_y < translateY.numKeys() || scale_index_z < translateZ.numKeys()) {
+				time_min.setValue(100000.0);
+
+				float x = default_x;
+				float y = default_y;
+				float z = default_z;
+
+				if(!scaleX.object().isNull() && time_min > scaleX.time(scale_index_x)) {
+					time_min = scaleX.time(scale_index_x);
+					choice = 0;
+				}
+				if(!scaleY.object().isNull() && time_min > scaleY.time(scale_index_y)) {
+					time_min = scaleY.time(scale_index_y);
+					choice = 1;
+				}
+				if(!scaleZ.object().isNull() && time_min > scaleZ.time(scale_index_z)) {
+					time_min = scaleZ.time(scale_index_z);
+					choice = 2;
+				}
+
+				if(choice == 0) {
+					x = scaleX.value(scale_index_x);
+					scale_index_x++;
+
+					if(!scaleY.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - scaleY.time(scale_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+							y = scaleY.value(scale_index_y);
+							scale_index_y++;
+						} else {
+							y = scaleY.evaluate(time_min);
+						}
+					}
+
+					if(!scaleZ.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - scaleZ.time(scale_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+							z = scaleZ.value(scale_index_z);
+							scale_index_z++;
+						} else {
+							z = scaleZ.evaluate(time_min);
+						}
+					}
+				}
+
+				if(choice == 1) {
+					y = scaleY.value(scale_index_y);
+					scale_index_y++;
+
+					if(!scaleX.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - scaleX.time(scale_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+							x = scaleX.value(scale_index_x);
+							scale_index_x++;
+						} else {
+							x = scaleX.evaluate(time_min);
+						}
+					}
+
+					if(!scaleZ.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - scaleZ.time(scale_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+							z = scaleZ.value(scale_index_z);
+							scale_index_z++;
+						} else {
+							z = scaleZ.evaluate(time_min);
+						}
+					}
+				}
+
+				if(choice == 2) {
+					z = scaleZ.value(scale_index_z);
+					scale_index_z++;
+
+					if(!scaleX.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - scaleX.time(scale_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+							x = scaleX.value(scale_index_x);
+							scale_index_x++;
+						} else {
+							x = scaleX.evaluate(time_min);
+						}
+					}
+
+					if(!scaleY.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - scaleY.time(scale_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+							y = scaleY.value(scale_index_y);
+							scale_index_y++;
+						} else {
+							y = scaleY.evaluate(time_min);
+						}
+					}
+				}
+
+				Key<float> scale_key;
+				scale_key.time = time_min.asUnits(MTime::kSeconds);
+				scale_key.data = pow(x * y * z, 1.0f / 3.0f);
+
+				if(scale_key.time < controller_sequence->GetStartTime()) {
+					controller_sequence->SetStartTime(scale_key.time);
+				}
+
+				if(scale_key.time > controller_sequence->GetStartTime()) {
+					controller_sequence->SetStopTime(scale_key.time);
+				}
+
+				scaleKeys.push_back(scale_key);
+			}
+
+			transform_data->SetScaleType(KeyType::LINEAR_KEY);
+			transform_data->SetScaleKeys(scaleKeys);
+		}
+
+		if(!rotateX.object().isNull() || !rotateY.object().isNull() || !rotateZ.object().isNull()) {
+			vector<Key<Vector3>> rotationKeys;
+
+			double rr[3];
+
+			MTransformationMatrix::RotationOrder ord;
+
+			node.transformation().getRotation(rr, ord, MSpace::kPostTransform);
+
+			float default_x;
+			float default_y;
+			float default_z;
+
+			switch(ord) {
+			case MTransformationMatrix::RotationOrder::kXYZ:
+				default_x = rr[0];
+				default_y = rr[1];
+				default_z = rr[2];
+				break;
+			case MTransformationMatrix::RotationOrder::kXZY:
+				default_x = rr[0];
+				default_y = rr[2];
+				default_z = rr[1];
+				break;
+			case MTransformationMatrix::RotationOrder::kYXZ:
+				default_x = rr[1];
+				default_y = rr[0];
+				default_z = rr[2];
+				break;
+			case MTransformationMatrix::RotationOrder::kYZX:
+				default_x = rr[2];
+				default_y = rr[0];
+				default_z = rr[1];
+				break;
+			case MTransformationMatrix::RotationOrder::kZXY:
+				default_x = rr[1];
+				default_y = rr[2];
+				default_z = rr[0];
+				break;
+			case MTransformationMatrix::RotationOrder::kZYX:
+				default_x = rr[2];
+				default_y = rr[1];
+				default_z = rr[0];
+				break;
+			}
+
+			int choice = -1;
+			int rotate_index_x = 0;
+			int rotate_index_y = 0;
+			int rotate_index_z = 0;
+
+			MTime time_min(100000.0, MTime::kSeconds);
+
+			while(rotate_index_x <  rotateX.numKeys() || rotate_index_y < rotateY.numKeys() || rotate_index_z < rotateZ.numKeys()) {
+				time_min.setValue(100000.0);
+
+				float x = default_x;
+				float y = default_y;
+				float z = default_z;
+
+				if(!rotateX.object().isNull() && time_min > rotateX.time(rotate_index_x)) {
+					time_min = rotateX.time(rotate_index_x);
+					choice = 0;
+				}
+				if(!rotateY.object().isNull() && time_min > rotateY.time(rotate_index_y)) {
+					time_min = rotateY.time(rotate_index_y);
+					choice = 1;
+				}
+				if(!rotateZ.object().isNull() && time_min > rotateZ.time(rotate_index_z)) {
+					time_min = rotateZ.time(rotate_index_z);
+					choice = 2;
+				}
+
+				if(choice == 0) {
+					x = rotateX.value(rotate_index_x);
+					rotate_index_x++;
+
+					if(!rotateY.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - rotateY.time(rotate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+							y = rotateY.value(rotate_index_y);
+							rotate_index_y++;
+						} else {
+							y = rotateY.evaluate(time_min);
+						}
+					}
+					if(!rotateZ.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - rotateZ.time(rotate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+							z = rotateZ.value(rotate_index_z);
+							rotate_index_z++;
+						} else {
+							z = rotateZ.evaluate(time_min);
+						}
+					}
+				}
+
+				if(choice == 1) {
+					y = rotateY.value(rotate_index_y);
+					rotate_index_y++;
+
+					if(!rotateX.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - rotateX.time(rotate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+							x = rotateX.value(rotate_index_x);
+							rotate_index_x++;
+						} else {
+							x = rotateX.evaluate(time_min);
+						}
+					}
+					if(!rotateZ.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - rotateZ.time(rotate_index_z).asUnits(MTime::kSeconds)) < 0.00001) {
+							z = rotateZ.value(rotate_index_z);
+							rotate_index_z++;
+						} else {
+							z = rotateZ.evaluate(time_min);
+						}
+					}
+				}
+
+				if(choice == 2) {
+					z = rotateZ.value(rotate_index_z);
+					rotate_index_z++;
+
+					if(!rotateX.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - rotateX.time(rotate_index_x).asUnits(MTime::kSeconds)) < 0.00001) {
+							x = rotateX.value(rotate_index_x);
+							rotate_index_x++;
+						} else {
+							x = rotateX.evaluate(time_min);
+						}
+					}
+					if(!rotateY.object().isNull()) {
+						if(abs(time_min.asUnits(MTime::kSeconds) - rotateY.time(rotate_index_y).asUnits(MTime::kSeconds)) < 0.00001) {
+							y = rotateY.value(rotate_index_y);
+							rotate_index_y++;
+						} else {
+							y = rotateY.evaluate(time_min);
+						}
+					}
+				}
+
+				Key<Vector3> rotation_key;
+				rotation_key.time = time_min.asUnits(MTime::kSeconds);
+				rotation_key.data.x = x;
+				rotation_key.data.y = y;
+				rotation_key.data.z = z;
+
+				if(rotation_key.time < controller_sequence->GetStartTime()) {
+					controller_sequence->SetStartTime(rotation_key.time);
+				}
+				if(rotation_key.time > controller_sequence->GetStartTime()) {
+					controller_sequence->SetStopTime(rotation_key.time);
+				}
+
+				rotationKeys.push_back(rotation_key);
+			}
+
+			MString rotation_type = "XYZ";
+			MPlug rotation_plug = node.findPlug("rotationType");
+			string node_name = node.name().asChar(); 
+
+			if(!rotation_plug.isNull()) {
+				rotation_type = rotation_plug.asString();
+			}
+			
+			if(rotation_type == "XYZ") {
+				transform_data->SetRotateType(KeyType::XYZ_ROTATION_KEY);
+
+				transform_data->SetXRotateType(KeyType::LINEAR_KEY);
+				transform_data->SetYRotateType(KeyType::LINEAR_KEY);
+				transform_data->SetZRotateType(KeyType::LINEAR_KEY);
+				
+				vector<Key<float>> rotationXKeys;
+				vector<Key<float>> rotationYKeys;
+				vector<Key<float>> rotationZKeys;
+
+				for(int i = 0; i < rotationKeys.size(); i++) {
+					Key<float> rotateX_key;
+					Key<float> rotateY_key;
+					Key<float> rotateZ_key;
+
+					rotateX_key.time = rotationKeys[i].time;
+					rotateY_key.time = rotationKeys[i].time;
+					rotateZ_key.time = rotationKeys[i].time;
+
+					rotateX_key.data = rotationKeys[i].data.x;
+					rotateY_key.data = rotationKeys[i].data.y;
+					rotateZ_key.data = rotationKeys[i].data.z;
+
+					rotationXKeys.push_back(rotateX_key);
+					rotationYKeys.push_back(rotateY_key);
+					rotationZKeys.push_back(rotateZ_key);
+				} 
+
+				transform_data->SetXRotateKeys(rotationXKeys);
+				transform_data->SetYRotateKeys(rotationYKeys);
+				transform_data->SetZRotateKeys(rotationZKeys);
+			} else {
+				transform_data->SetRotateType(KeyType::LINEAR_KEY);
+
+				vector<Key<Quaternion>> rotateQuaternionKeys;
+
+				for(int i = 0; i < rotationKeys.size(); i++) {
+					Key<Quaternion> rotate_key;
+
+					MEulerRotation m_euler_rotation(rotationKeys[i].data.x, rotationKeys[i].data.y, rotationKeys[i].data.z);
+					MQuaternion m_quaternion = m_euler_rotation.asQuaternion();
+
+					rotate_key.data.x = m_quaternion.x;
+					rotate_key.data.y = m_quaternion.y;
+					rotate_key.data.z = m_quaternion.z;
+					rotate_key.data.w = m_quaternion.w;
+
+					rotate_key.time = rotationKeys[i].time;
+
+					rotateQuaternionKeys.push_back(rotate_key);
+				}
+
+				transform_data->SetQuatRotateKeys(rotateQuaternionKeys);
+			}
+		}
+
+		interpolator = DynamicCast<NiInterpolator>(transform_interpolator);
+
+	} else  if(interpolator_type == "NiBSplineCompInterpolator") {
+
+	} else if(interpolator_type == "NiPoint3Interpolator") {
+
+	}
+
+	if(interpolator != NULL) {
+		Niflib::byte priority = 255;
+		MPlug plug_priority = node.findPlug("animationPriority");
+
+		if(!plug_priority.isNull()) {
+			priority = plug_priority.asInt();
+		}
+
+		NiTransformControllerRef transform_controller = DynamicCast<NiTransformController>(NiTransformController::Create());
+		NiObjectNETRef target = DynamicCast<NiObjectNET>(NiObjectNET::Create());
+
+		target->SetName(this->translatorUtils->MakeNifName(node.name()));
+		transform_controller->SetInterpolator(interpolator);
+		target->AddController(transform_controller);
+
+		controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority);
+	}
+}
+
+
+string NifKFAnimationExporter::asString( bool verbose /*= false */ ) const {
+	stringstream out;
+
+	out<<NifTranslatorFixtureItem::asString(verbose)<<endl;
+	out<<"NifKFAnimationExporter"<<endl;
+
+	return out.str();
+}
+
+const Type& NifKFAnimationExporter::getType() const {
+	return TYPE;
+}
+
+const Type NifKFAnimationExporter::TYPE("NifKFAnimationExporter", &NifTranslatorFixtureItem::TYPE);

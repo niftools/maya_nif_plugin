@@ -1,5 +1,5 @@
-#ifndef _NIFTRANSLATORDATA_H
-#define _NIFTRANSLATORDATA_H
+#ifndef _NIFKFANIMATIONEXPORTER_H
+#define _NIFKFANIMATIONEXPORTER_H
 
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
@@ -78,59 +78,36 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
+#include <obj/NiControllerSequence.h>
+#include <obj/NiStringPalette.h>
+#include <gen/ControllerLink.h>
+#include <obj/NiTransformInterpolator.h>
+#include <obj/NiTransformData.h>
+#include "obj/NiTransformController.h"
 #include <Ref.h>
 
-#include "NifTranslatorRefObject.h"
-#include "NifTranslatorDataWrapper.h"
+#include "include/Common/NifTranslatorFixtureItem.h"
 
 using namespace Niflib;
 using namespace std;
 
-class NifTranslatorData;
+class NifKFAnimationExporter;
 
-typedef Ref<NifTranslatorData> NifTranslatorDataRef;
+typedef Ref<NifKFAnimationExporter> NifKFAnimationExporterRef;
 
-class NifTranslatorData : public NifTranslatorRefObject {
+class NifKFAnimationExporter : public NifTranslatorFixtureItem {
+
 public:
 
-	//Map to hold existing nodes that were found for connecting skins to
-	//skeletons on import
-	map<string, MDagPath> existingNodes;
-	//maps to hold information about what has already been imported
-	map< NiAVObjectRef, MDagPath > importedNodes;
-	map< unsigned int, MObject > importedMaterials;
+	NifKFAnimationExporter();
 
-	MatTexCollection mtCollection;
+	NifKFAnimationExporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
-	map< unsigned int, MObject > importedTextures;
-	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
-	MFileObject importFile; //The file currently being imported
-
-	map<string, unsigned int> textures;
-	NiNodeRef sceneRoot;
-
-	list< MObject > meshes;
-	//A map to hold associations between DAG paths and NIF object
-	map<string, NiNodeRef> nodes; 
-
-	map< string, vector<MObject> > meshClusters;
-
-	map< string, vector<NiPropertyRef> > shaders;
-
-	vector<MObject> animatedObjects;
-
-	map<string,NifTranslatorDataWrapperRef> customData;
-
-	NifTranslatorData();
-	NifTranslatorData(const NifTranslatorData& copy);
-
-	virtual ~NifTranslatorData();
-
-	virtual void Reset();
+	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object);
 
 	virtual string asString( bool verbose = false ) const;
 
-	virtual const Type& GetType() const;
+	virtual const Type& getType() const;
 
 	const static Type TYPE;
 };
