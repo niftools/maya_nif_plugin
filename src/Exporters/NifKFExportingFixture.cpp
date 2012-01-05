@@ -19,10 +19,29 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 		if(node.isIntermediateObject()) {
 			continue;
 		}
-		if(MAnimUtil::isAnimated(iterator.currentItem())) {
-			this->translatorData->animatedObjects.push_back(iterator.currentItem());
-			MFnDependencyNode node(iterator.currentItem());
+
+		if ( 
+			node.name().substring(0, 13) == "UniversalManip" ||
+			node.name() == "groundPlane_transform" ||
+			node.name() == "ViewCompass" ||
+			node.name() == "Manipulator1" ||
+			node.name() == "persp" ||
+			node.name() == "top" ||
+			node.name() == "front" ||
+			node.name() == "side"
+			) {
+			continue;
 		}
+
+		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
+			continue;
+		}
+
+		if(!MAnimUtil::isAnimated(iterator.currentItem())) {
+			continue;
+		}
+
+		this->translatorData->animatedObjects.push_back(iterator.currentItem());
 	}
 
 	NiControllerSequenceRef controllerSequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
