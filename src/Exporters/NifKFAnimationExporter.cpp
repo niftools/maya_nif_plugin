@@ -195,7 +195,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			rest_plug = node.findPlug("rotateRestZ");
 			rest_q_z = rest_plug.asDouble();
 
-			MEulerRotation euler_qq(rest_q_x, rest_q_y, rest_q_z);
+			MEulerRotation euler_qq((rest_q_x / 180) * PI, (rest_q_y / 180) * PI, (rest_q_z / 180) * PI);
 			MQuaternion qq = euler_qq.asQuaternion();
 			Quaternion qqq(qq.w, qq.x, qq.y, qq.z);
 

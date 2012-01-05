@@ -137,11 +137,11 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 			MGlobal::executeCommand(mel_command + node_name);
 		}
 		plug = transformNode.findPlug("rotateRestX");
-		plug.setDouble(rotate_x);
+		plug.setDouble((rotate_x / PI) * 180.0);
 		plug = transformNode.findPlug("rotateRestY");
-		plug.setDouble(rotate_y);
+		plug.setDouble((rotate_y / PI) * 180.0);
 		plug = transformNode.findPlug("rotateRestZ");
-		plug.setDouble(rotate_z);
+		plug.setDouble((rotate_z / PI) * 180.0);
 	}
 
 	int export_order = 0;
