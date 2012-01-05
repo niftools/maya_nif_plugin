@@ -24,7 +24,126 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 
 	vector<ControllerLink> controllerLinks = controllerSequence->GetControllerData();
 
-	int targetType = -1;
+
+	for(int i = 0; i < controllerLinks.size(); i++) {
+		MObject object;
+		string target = "";
+
+		if(controllerLinks[i].targetName.size() > 0) {
+			target = controllerLinks[i].targetName;
+		} else if (controllerLinks[i].nodeName.size() > 0) {
+			target = controllerLinks[i].nodeName;
+		} else {
+			string pallete_string = controllerLinks[i].stringPalette->GetPaletteString();
+			int offset = controllerLinks[i].nodeNameOffset;
+
+			while(pallete_string[offset] != 0 && offset < pallete_string.length()) {
+				target.append(1,pallete_string[offset]);
+				offset++;
+			}
+		}	
+
+		MString target_object = this->translatorUtils->MakeMayaName(target);
+		object = this->animationImporter->GetObjectByName(target_object);
+
+		if(object.isNull()) {
+			continue;
+		}
+
+		MFnTransform transformNode(object);
+
+		MPlug plug;
+		MString mel_command;
+		MString node_name = transformNode.name();
+
+		double translation_x;
+		double translation_y;
+		double translation_z;
+
+		double scale_x;
+		double scale_y;
+		double scale_z;
+
+		double rotate_x;
+		double rotate_y;
+		double rotate_z;
+
+		plug = transformNode.findPlug("translateX");
+		translation_x = plug.asDouble();
+		plug = transformNode.findPlug("translateY");
+		translation_y = plug.asDouble();
+		plug = transformNode.findPlug("translateZ");
+		translation_z = plug.asDouble();
+
+		plug = transformNode.findPlug("scaleX");
+		scale_x = plug.asDouble();
+		plug = transformNode.findPlug("scaleY");
+		scale_y = plug.asDouble();
+		plug = transformNode.findPlug("scaleZ");
+		scale_z = plug.asDouble();
+
+		plug = transformNode.findPlug("rotateX");
+		rotate_x = plug.asDouble();
+		plug = transformNode.findPlug("rotateY");
+		rotate_y = plug.asDouble();
+		plug = transformNode.findPlug("rotateZ");
+		rotate_z = plug.asDouble();
+
+		plug = transformNode.findPlug("translateRest");
+		if(plug.isNull()) {
+			mel_command = "addAttr -attributeType double3 -shortName \"translateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"translateRestX\" -attributeType double -parent \"translateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"translateRestY\" -attributeType double -parent \"translateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"translateRestZ\" -attributeType double -parent \"translateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+		}
+		plug = transformNode.findPlug("translateRestX");
+		plug.setDouble(translation_x);
+		plug = transformNode.findPlug("translateRestY");
+		plug.setDouble(translation_y);
+		plug = transformNode.findPlug("translateRestZ");
+		plug.setDouble(translation_z);
+
+		plug = transformNode.findPlug("scaleRest");
+		if(plug.isNull()) {
+			mel_command = "addAttr -attributeType double3 -shortName \"scaleRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"scaleRestX\" -attributeType double -parent \"scaleRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"scaleRestY\" -attributeType double -parent \"scaleRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"scaleRestZ\" -attributeType double -parent \"scaleRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+		}
+		plug = transformNode.findPlug("scaleRestX");
+		plug.setDouble(scale_x);
+		plug = transformNode.findPlug("scaleRestY");
+		plug.setDouble(scale_y);
+		plug = transformNode.findPlug("scaleRestZ");
+		plug.setDouble(scale_z);
+
+		plug = transformNode.findPlug("rotateRest");
+		if(plug.isNull()) {
+			mel_command = "addAttr -attributeType double3 -shortName \"rotateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"rotateRestX\" -attributeType double -parent \"rotateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"rotateRestY\" -attributeType double -parent \"rotateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+			mel_command = "addAttr -shortName \"rotateRestZ\" -attributeType double -parent \"rotateRest\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+		}
+		plug = transformNode.findPlug("rotateRestX");
+		plug.setDouble(rotate_x);
+		plug = transformNode.findPlug("rotateRestY");
+		plug.setDouble(rotate_y);
+		plug = transformNode.findPlug("rotateRestZ");
+		plug.setDouble(rotate_z);
+	}
+
 	int export_order = 0;
 
 	for(int i = 0;i < controllerLinks.size(); i++) {
@@ -34,10 +153,8 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 
 		if(controllerLinks[i].targetName.size() > 0) {
 			target = controllerLinks[i].targetName;
-			targetType = 1;
 		} else if (controllerLinks[i].nodeName.size() > 0) {
 			target = controllerLinks[i].nodeName;
-			targetType = 2;
 		} else {
 			string pallete_string = controllerLinks[i].stringPalette->GetPaletteString();
 			int offset = controllerLinks[i].nodeNameOffset;
@@ -46,7 +163,6 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 				target.append(1,pallete_string[offset]);
 				offset++;
 			}
-			targetType = 3;
 		}	
 
 		MString target_object = this->translatorUtils->MakeMayaName(target);

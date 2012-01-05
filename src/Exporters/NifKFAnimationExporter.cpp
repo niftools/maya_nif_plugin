@@ -157,6 +157,50 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		transform_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
 
 		transform_interpolator->SetData(transform_data);
+
+		MPlug rest_plug;
+
+		string name = node.name().asChar();
+
+		rest_plug = node.findPlug("translateRest");
+		if(!rest_plug.isNull()) {
+			rest_plug = node.findPlug("translateRestX");
+			rest_q_x = rest_plug.asDouble();
+			rest_plug = node.findPlug("translateRestY");
+			rest_q_y = rest_plug.asDouble();
+			rest_plug = node.findPlug("translateRestZ");
+			rest_q_z = rest_plug.asDouble();
+
+			transform_interpolator->SetTranslation(Vector3(rest_q_x, rest_q_y, rest_q_z));
+		}
+		
+		rest_plug = node.findPlug("scaleRest");
+		if(!rest_plug.isNull()) {
+			rest_plug = node.findPlug("scaleRestX");
+			rest_q_x = rest_plug.asDouble();
+			rest_plug = node.findPlug("scaleRestY");
+			rest_q_y = rest_plug.asDouble();
+			rest_plug = node.findPlug("scaleRestZ");
+			rest_q_z = rest_plug.asDouble();
+
+			transform_interpolator->SetScale(pow(rest_q_x * rest_q_y * rest_q_z, 1.0 / 3.0));
+		}
+
+		rest_plug = node.findPlug("rotateRest");
+		if(!rest_plug.isNull()) {
+			rest_plug = node.findPlug("rotateRestX");
+			rest_q_x = rest_plug.asDouble();
+			rest_plug = node.findPlug("rotateRestY");
+			rest_q_y = rest_plug.asDouble();
+			rest_plug = node.findPlug("rotateRestZ");
+			rest_q_z = rest_plug.asDouble();
+
+			MEulerRotation euler_qq(rest_q_x, rest_q_y, rest_q_z);
+			MQuaternion qq = euler_qq.asQuaternion();
+			Quaternion qqq(qq.w, qq.x, qq.y, qq.z);
+
+			transform_interpolator->SetRotation(qqq);
+		}
 		
 		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
 			vector<Key<Vector3>> translationKeys;

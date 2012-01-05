@@ -15,6 +15,10 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	MItDag iterator(MItDag::kDepthFirst);
 
 	for(; !iterator.isDone(); iterator.next()) {
+		MFnDagNode node(iterator.currentItem());
+		if(node.isIntermediateObject()) {
+			continue;
+		}
 		if(MAnimUtil::isAnimated(iterator.currentItem())) {
 			this->translatorData->animatedObjects.push_back(iterator.currentItem());
 			MFnDependencyNode node(iterator.currentItem());
@@ -61,6 +65,10 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 
 	for(int i = 0; i < objectsWithoutExportIndexes.size(); i++) {
 		this->translatorData->animatedObjects.push_back(objectsWithoutExportIndexes.at(i).object());
+	}
+
+	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
+		
 	}
 
 	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {

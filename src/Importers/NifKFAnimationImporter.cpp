@@ -17,8 +17,6 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 		return;
 	}
 
-	
-
 	vector<Key<Vector3>> translationKeys;
 	vector<Key<float>> scaleKeys;
 	vector<Key<Quaternion>> rotationQuaternionKeys;
@@ -35,102 +33,6 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 	if(plug.isNull()) {	
 		MGlobal::executeCommand(mel_command + node_name);
 	}
-
-	MVector translation = transformNode.getTranslation(MSpace::kPostTransform);
-	double rotate_x;
-	double rotate_y;
-	double rotate_z;
-	MTransformationMatrix::RotationOrder ord;
-	double rr[3];
-	transformNode.getRotation(rr, ord, MSpace::kPostTransform);
-	switch(ord) {
-	case MTransformationMatrix::RotationOrder::kXYZ:
-		rotate_x = rr[0];
-		rotate_y = rr[1];
-		rotate_z = rr[2];
-		break;
-	case MTransformationMatrix::RotationOrder::kXZY:
-		rotate_x = rr[0];
-		rotate_y = rr[2];
-		rotate_z = rr[1];
-		break;
-	case MTransformationMatrix::RotationOrder::kYXZ:
-		rotate_x = rr[1];
-		rotate_y = rr[0];
-		rotate_z = rr[2];
-		break;
-	case MTransformationMatrix::RotationOrder::kYZX:
-		rotate_x = rr[2];
-		rotate_y = rr[0];
-		rotate_z = rr[1];
-		break;
-	case MTransformationMatrix::RotationOrder::kZXY:
-		rotate_x = rr[1];
-		rotate_y = rr[2];
-		rotate_z = rr[0];
-		break;
-	case MTransformationMatrix::RotationOrder::kZYX:
-		rotate_x = rr[2];
-		rotate_y = rr[1];
-		rotate_z = rr[0];
-		break;
-	}
-	double ss[3];
-	transformNode.transformation().getScale(ss, MSpace::kPostTransform);
-
-	plug = transformNode.findPlug("translateRest");
-	if(plug.isNull()) {
-		mel_command = "addAttr -attributeType double3 -shortName \"translateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"translateRestX\" -attributeType double -parent \"translateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"translateRestY\" -attributeType double -parent \"translateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"translateRestZ\" -attributeType double -parent \"translateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-	}
-	plug = transformNode.findPlug("translateRestX");
-	plug.setDouble(translation.x);
-	plug = transformNode.findPlug("translateRestY");
-	plug.setDouble(translation.y);
-	plug = transformNode.findPlug("translateRestZ");
-	plug.setDouble(translation.z);
-
-	plug = transformNode.findPlug("scaleRest");
-	if(plug.isNull()) {
-		mel_command = "addAttr -attributeType double3 -shortName \"scaleRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"scaleRestX\" -attributeType double -parent \"scaleRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"scaleRestY\" -attributeType double -parent \"scaleRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"scaleRestZ\" -attributeType double -parent \"scaleRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-	}
-	plug = transformNode.findPlug("scaleRestX");
-	plug.setDouble(ss[0]);
-	plug = transformNode.findPlug("scaleRestY");
-	plug.setDouble(ss[1]);
-	plug = transformNode.findPlug("scaleRestZ");
-	plug.setDouble(ss[2]);
-
-	plug = transformNode.findPlug("rotateRest");
-	if(plug.isNull()) {
-		mel_command = "addAttr -attributeType double3 -shortName \"rotateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"rotateRestX\" -attributeType double -parent \"rotateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"rotateRestY\" -attributeType double -parent \"rotateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-		mel_command = "addAttr -shortName \"rotateRestZ\" -attributeType double -parent \"rotateRest\" ";
-		MGlobal::executeCommand(mel_command + node_name);
-	}
-	plug = transformNode.findPlug("rotateRestX");
-	plug.setDouble(rotate_x);
-	plug = transformNode.findPlug("rotateRestY");
-	plug.setDouble(rotate_y);
-	plug = transformNode.findPlug("rotateRestZ");
-	plug.setDouble(rotate_z);
 
 	if(interpolator->GetType().IsSameType(NiTransformInterpolator::TYPE)) {
 		NiTransformInterpolatorRef transformInterpolator = DynamicCast<NiTransformInterpolator>(interpolator);
