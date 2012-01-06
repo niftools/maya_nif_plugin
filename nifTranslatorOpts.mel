@@ -29,6 +29,7 @@
 global string $gNifExportedObjects[];
 global int $gNifExportedObjectsValues[];
 global string $gNifExportedObjectsTypes[];
+global string $gNifExportType;
 
 global proc int nifTranslatorOpts ( string $parent,
 				    string $action,
@@ -200,10 +201,19 @@ global proc int nifTranslatorOpts ( string $parent,
 			setParent exportFrameLayout;
 
 			columnLayout exportColumnLayout;
+			global string $gNifExportType;
+			text -label "Export from the scene:" -font boldLabelFont -align "left";
+			radioCollection;
+				radioButton -label "Selected geometry only" -select -onCommand "nifTranslatorSetToExportGeometry";
+				radioButton -label "All geometry only" -onCommand "nifTranslatorSetToExportAllGeometry";
+				radioButton -label "Selected animation only" -onCommand "nifTranslatorSetToExportAnimation";
+				radioButton -label "All animation only" -onCommand "nifTranslatorSetToExportAllAnimation";
+			setParent exportFrameLayout;
+
 			rowLayout -numberOfColumns 2
 					  -columnWidth2 120 70
 					  -columnAttach2 "both" "both";
-					  text -label "NIF Version:";
+					  text -label "NIF Version:" -align "left";
 					  textField -editable true
 								-text $defaultVersion
 								-annotation "The NIF file version to export.  Examples - Morrowind: 4.0.0.2  CivIV: 20.0.0.4  Oblivion: 20.0.0.5"
@@ -244,6 +254,20 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -text $defaultBonesPerPart
 						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Morrowind: 0"
 						  expPartBonesTx;
+			setParent exportColumnLayout;
+			rowLayout -numberOfColumns 4
+					  -columnWidth4 80 80 130 80
+					  -columnAttach4 "both" "both" "both" "both";
+					  text -label "Animation name:" -align "left";
+					  textField -editable true
+								-text "Forward"
+								-annotation "The name of the animation"
+								animationNameTx;
+					  text -label "Animation target:" -align "right";
+					  textField -editable true
+								-text "Bip01"
+								-annotation "The target of the animation"
+								animationTargetTx;
 			setParent exportColumnLayout;
 			text -label "Texture Path Adjustment:"
 			     -width 150
@@ -432,6 +456,28 @@ global proc int nifTranslatorOpts ( string $parent,
 			}
 		}
 		$currentOptions = $currentOptions + $exportedJoints + ";";
+	
+		global string $gNifExportType;
+		$currentOptions = $currentOptions + "exportType=" + $gNifExportType + ";";
+
+		print "Export type la export  ";
+		print $gNifExportType;
+
+		string $animationName = "";
+		$animationName = `textField -query -text animationNameTx`;
+		if($animationName == "") {
+			$currentOptions = $currentOptions + "animationName=Forward;";
+		} else {
+			$currentOptions = $currentOptions + "animationName=" + $animationName + ";";
+		}
+
+		string $animationTarget = "";
+		$animationTarget = `textField -query -text animationTargetTx`;
+		if($animationTarget == "") {
+			$currentOptions = $currentOptions + "animationTarget=Bip01;";
+		} else {
+			$currentOptions = $currentOptions + "animationTarget=" + $animationTarget + ";";
+		}
 		
 		string $userVersion = `textField -query -text expUserVersionTx`;
 		if ($version != "") {
@@ -653,6 +699,27 @@ global proc SelectParentJoints(string $joint) {
 			}
 		}
 	}
+}
+
+global proc nifTranslatorSetToExportGeometry() {
+	global string $gNifExportType;
+
+	$gNifExportType = "geometry";
+}
+global proc nifTranslatorSetToExportAllGeometry() {
+	global string $gNifExportType;
+
+	$gNifExportType = "allgeometry";
+}
+global proc nifTranslatorSetToExportAnimation() {
+	global string $gNifExportType;
+
+	$gNifExportType = "animation";
+}
+global proc nifTranslatorSetToExportAllAnimation() {
+	global string $gNifExportType;
+
+	$gNifExportType = "allanimation";
 }
 
 global proc int hasValidNifName(string $name) {

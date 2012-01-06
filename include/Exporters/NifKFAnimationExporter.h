@@ -84,6 +84,9 @@
 #include <obj/NiTransformInterpolator.h>
 #include <obj/NiTransformData.h>
 #include "obj/NiTransformController.h"
+#include "obj/NiBSplineCompTransformInterpolator.h"
+#include "obj/NiBSplineBasisData.h"
+#include "obj/NiBSplineData.h"
 #include <Ref.h>
 
 #include "include/Common/NifTranslatorFixtureItem.h"

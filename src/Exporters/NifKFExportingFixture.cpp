@@ -48,6 +48,9 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	controllerSequence->SetStartTime(0);
 	controllerSequence->SetStopTime(0);
 
+	controllerSequence->SetName(this->translatorOptions->animation_name);
+	controllerSequence->SetTargetName(this->translatorOptions->animation_target);
+
 	vector<MFnDependencyNode> objectsWithExportIndexes;
 	vector<MFnDependencyNode> objectsWithoutExportIndexes;
 

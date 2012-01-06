@@ -671,7 +671,11 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 		interpolator = DynamicCast<NiInterpolator>(transform_interpolator);
 
-	} else  if(interpolator_type == "NiBSplineCompInterpolator") {
+	} else  if(interpolator_type == "NiBSplineCompTransformInterpolator") {
+		NiBSplineCompTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineCompTransformInterpolator>(NiBSplineCompTransformInterpolator::Create());
+		NiBSplineBasisDataRef spline_basis_data = DynamicCast<NiBSplineBasisData>(NiBSplineBasisData::Create());
+		NiBSplineDataRef spline_data = DynamicCast<NiBSplineData>(NiBSplineData::Create());
+		spline_interpolator->SetBasisData(spline_basis_data);
 
 	} else if(interpolator_type == "NiPoint3Interpolator") {
 

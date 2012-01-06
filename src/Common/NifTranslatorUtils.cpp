@@ -364,6 +364,9 @@ const Type& NifTranslatorUtils::GetType() const {
 
 bool NifTranslatorUtils::isExportedShape( const MString& name )
 {
+	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
+		return true;
+	}
 	for(int i = 0;i < this->translatorOptions->export_shapes.size(); i++) {
 		if(name.asChar() == this->translatorOptions->export_shapes[i])
 			return true;
@@ -374,6 +377,9 @@ bool NifTranslatorUtils::isExportedShape( const MString& name )
 
 bool NifTranslatorUtils::isExportedJoint( const MString& name )
 {
+	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
+		return true;
+	}
 	for(int i = 0;i < this->translatorOptions->export_joints.size(); i++) {
 		if(name.asChar() == this->translatorOptions->export_joints[i])
 			return true;

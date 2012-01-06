@@ -106,8 +106,14 @@ public:
 	TexPathMode tex_path_mode;  //Determines the way textures paths are exported
 	string tex_path_prefix; //Optional prefix to add to texture paths.
 
+	//this tells the exporter what to export from the scene: geometry or animation
+	string exportType;
+
 	int spline_animation_npoints; //the amounts of points for spline animation curves per time unit
 	int spline_animation_degree; //the degree of the polynom for the spline animation curves
+
+	string animation_target; // the name of the target of the kf file or controller sequence
+	string animation_name; //the name of the animation stored in the kf file or the controlelr sequence
 
 
 	//can't work with virtual functions like this, it's not safe to call reset from the base con

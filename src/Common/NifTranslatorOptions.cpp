@@ -189,6 +189,22 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			//out << "Export Texture Path Prefix:  " << tex_path_prefix << endl;
 		}
 
+		if(tokens[0] == "exportType") {
+			this->exportType = tokens[1].asChar();
+		}
+
+		if(tokens[0] == "animationName") {
+			if(tokens.length() > 1) {
+				this->animation_name = tokens[1].asChar();
+			}
+		}
+
+		if(tokens[0] == "animationTarget") {
+			if(tokens.length() > 1) {
+				this->animation_target = tokens[1].asChar();
+			}
+		}
+
 		if(tokens[0] == "exportedShapes") {
 			if(tokens.length() > 1) {
 				MStringArray exportedShapesTokens; 
@@ -198,9 +214,8 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 					this->export_shapes.push_back(exportedShapesTokens[k].asChar());
 				}
 			}
-
 		}
-
+		
 		if(tokens[0] == "exportedJoints") {
 			if(tokens.length() > 1) {
 				MStringArray exportedJointsTokens;
@@ -210,7 +225,6 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 					this->export_joints.push_back(exportedJointsTokens[k].asChar());
 				}
 			}
-
 		}
 	}
 }
