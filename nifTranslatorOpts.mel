@@ -45,6 +45,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultPath = "C:/Program Files/Bethesda Softworks/Morrowind/Data Files/Textures";
 	string $defaultVersion = "4.0.0.2";
 	string $defaultUserVersion = "0";
+	string $defaultUserVersion2 = "0";
 	string $defaultBonesPerPart = "0";
 	string $defaultJointMatch = "Bip";
 	string $defaultPathPrefix = "textures/";
@@ -219,14 +220,20 @@ global proc int nifTranslatorOpts ( string $parent,
 								-annotation "The NIF file version to export.  Examples - Morrowind: 4.0.0.2  CivIV: 20.0.0.4  Oblivion: 20.0.0.5"
 								nifVersion;
 			setParent exportColumnLayout;
-			rowLayout -numberOfColumns 2
-					  -columnWidth2 120 70
-					  -columnAttach2 "both" "both";
+					  
+			rowLayout -numberOfColumns 4
+					  -columnWidth4 120 40 145 40
+					  -columnAttach4 "both" "both" "both" "both";
 					  text -label "Game Specific Version:";
 					  textField -editable true
 								-text $defaultUserVersion
 								-annotation "Optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
 								expUserVersionTx;
+					  text -label "Game Specific Version2:" -align "right";
+					  textField -editable true
+								-text $defaultUserVersion2
+								-annotation "Another optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
+								expUserVersion2Tx;
 			setParent exportColumnLayout;
 			
 			checkBox -label "Export White Ambient if Texture is Present" 
@@ -426,6 +433,21 @@ global proc int nifTranslatorOpts ( string $parent,
 			//Use Default version
 			$currentOptions = $currentOptions + "exportVersion=" + $defaultVersion + ";";
 		}
+
+		string $userVersion = `textField -query -text expUserVersionTx`;
+		if ($version != "") {
+			$currentOptions = $currentOptions + "exportUserVersion=" + $userVersion + ";";
+		} else {
+			//Use Default user version
+			$currentOptions = $currentOptions + "exportUserVersion=" + $defaultUserVersion + ";";
+		}
+
+		string $userVersion2 = `textField -query -text expUserVersion2Tx`;
+		if ($version != "") {
+			$currentOptions = $currentOptions + "exportUserVersion2=" + $userVersion2 + ";";
+		} else {
+			$currentOptions = $currentOptions + "exportUserVersion2=" + $defaultUserVersion2 + ";";
+		}
 		
 		global string $gNifExportedObjects[];
 		global int $gNifExportedObjectsValues[];
@@ -460,9 +482,6 @@ global proc int nifTranslatorOpts ( string $parent,
 		global string $gNifExportType;
 		$currentOptions = $currentOptions + "exportType=" + $gNifExportType + ";";
 
-		print "Export type la export  ";
-		print $gNifExportType;
-
 		string $animationName = "";
 		$animationName = `textField -query -text animationNameTx`;
 		if($animationName == "") {
@@ -477,14 +496,6 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "animationTarget=Bip01;";
 		} else {
 			$currentOptions = $currentOptions + "animationTarget=" + $animationTarget + ";";
-		}
-		
-		string $userVersion = `textField -query -text expUserVersionTx`;
-		if ($version != "") {
-			$currentOptions = $currentOptions + "exportUserVersion=" + $userVersion + ";";
-		} else {
-			//Use Default user version
-			$currentOptions = $currentOptions + "exportUserVersion=" + $defaultUserVersion + ";";
 		}
 		
 		int $ckVal;

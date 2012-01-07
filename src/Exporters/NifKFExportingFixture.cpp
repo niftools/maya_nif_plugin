@@ -103,7 +103,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	NifInfo nif_info(this->translatorOptions->export_version, this->translatorOptions->export_user_version);
 	nif_info.endian = ENDIAN_LITTLE; //Intel endian format
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
-	nif_info.userVersion2 = this->translatorOptions->export_user_version;
+	nif_info.userVersion2 = this->translatorOptions->export_user_version2;
 
 	Niflib::WriteNifTree(file.fullName().asChar(), controllerSequence, nif_info);
 

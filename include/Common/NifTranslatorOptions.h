@@ -88,6 +88,7 @@ public:
 	string texture_path; // Path to textures gotten from option string
 	unsigned int export_version; //Version of NIF file to export
 	unsigned int export_user_version; //Game-specific user version of NIF file to export
+	unsigned int export_user_version2;
 	bool import_bind_pose; //Determines whether or not the bind pose should be searched for
 
 	vector<string> export_shapes;

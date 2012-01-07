@@ -154,6 +154,10 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			this->export_user_version = atoi( tokens[1].asChar() );
 			//out << "User Version:  " << export_user_version << endl;
 		}
+		if( tokens[0] == "exportUserVersion2") {
+			this->export_user_version2 = atoi( tokens[1].asChar());
+			//out << "User Version2:  " << export_user_version2 << endl;
+		}
 		if ( tokens[0] == "importJointMatch" ) {
 			this->joint_match = tokens[1].asChar();
 			//out << "Import Joint Match:  " << joint_match << endl;
