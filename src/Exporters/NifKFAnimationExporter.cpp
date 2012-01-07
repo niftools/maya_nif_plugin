@@ -139,7 +139,6 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 	if(interpolator_type == "NiTransformInterpolator") {
 		NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
-		NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
 
 		MStatus stat;
 		MTransformationMatrix rest_position = node.transformation();
@@ -155,8 +154,6 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		transform_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
 		transform_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
 		transform_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
-
-		transform_interpolator->SetData(transform_data);
 
 		MPlug rest_plug;
 
@@ -321,8 +318,13 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				translationKeys.push_back(translation_key);
 			}
 
-			transform_data->SetTranslateType(KeyType::LINEAR_KEY);
-			transform_data->SetTranslateKeys(translationKeys);
+			if(transform_interpolator->GetData() == NULL) {
+				NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+				transform_interpolator->SetData(transform_data);
+			}
+
+			transform_interpolator->GetData()->SetTranslateType(KeyType::LINEAR_KEY);
+			transform_interpolator->GetData()->SetTranslateKeys(translationKeys);
 		}
 
 		if(!scaleX.object().isNull() || !scaleY.object().isNull() || !scaleY.object().isNull()) {
@@ -445,8 +447,13 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				scaleKeys.push_back(scale_key);
 			}
 
-			transform_data->SetScaleType(KeyType::LINEAR_KEY);
-			transform_data->SetScaleKeys(scaleKeys);
+			if(transform_interpolator->GetData() == NULL) {
+				NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+				transform_interpolator->SetData(transform_data);
+			}
+
+			transform_interpolator->GetData()->SetScaleType(KeyType::LINEAR_KEY);
+			transform_interpolator->GetData()->SetScaleKeys(scaleKeys);
 		}
 
 		if(!rotateX.object().isNull() || !rotateY.object().isNull() || !rotateZ.object().isNull()) {
@@ -611,6 +618,13 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			if(!rotation_plug.isNull()) {
 				rotation_type = rotation_plug.asString();
 			}
+
+			if(transform_interpolator->GetData() == NULL) {
+				NiTransformDataRef transform_data = DynamicCast<NiTransformData>(NiTransformData::Create());
+				transform_interpolator->SetData(transform_data);
+			}
+
+			NiTransformDataRef transform_data = transform_interpolator->GetData();
 			
 			if(rotation_type == "XYZ") {
 				transform_data->SetRotateType(KeyType::XYZ_ROTATION_KEY);

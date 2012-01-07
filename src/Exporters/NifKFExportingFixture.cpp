@@ -37,7 +37,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 			continue;
 		}
 
-		if(!MAnimUtil::isAnimated(iterator.currentItem())) {
+		if(!(this->translatorOptions->exportType == "allanimation") && (!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()))) {
 			continue;
 		}
 
@@ -47,9 +47,9 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	NiControllerSequenceRef controllerSequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
 	controllerSequence->SetStartTime(0);
 	controllerSequence->SetStopTime(0);
-
 	controllerSequence->SetName(this->translatorOptions->animation_name);
 	controllerSequence->SetTargetName(this->translatorOptions->animation_target);
+	controllerSequence->SetFrequency(1.0);
 
 	vector<MFnDependencyNode> objectsWithExportIndexes;
 	vector<MFnDependencyNode> objectsWithoutExportIndexes;
@@ -103,6 +103,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	NifInfo nif_info(this->translatorOptions->export_version, this->translatorOptions->export_user_version);
 	nif_info.endian = ENDIAN_LITTLE; //Intel endian format
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
+	nif_info.userVersion2 = this->translatorOptions->export_user_version;
 
 	Niflib::WriteNifTree(file.fullName().asChar(), controllerSequence, nif_info);
 

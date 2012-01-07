@@ -256,7 +256,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						  expPartBonesTx;
 			setParent exportColumnLayout;
 			rowLayout -numberOfColumns 4
-					  -columnWidth4 80 80 130 80
+					  -columnWidth4 80 110 110 100
 					  -columnAttach4 "both" "both" "both" "both";
 					  text -label "Animation name:" -align "left";
 					  textField -editable true
