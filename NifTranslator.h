@@ -131,6 +131,10 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "include/Exporters/NifMaterialExporter.h"
 #include "include/Exporters/NifAnimationExporter.h"
 #include "include/Exporters/NifDefaultExportingFixture.h"
+#include "include/Importers/NifKFAnimationImporter.h"
+#include "include/Importers/NifKFImportingFixture.h"
+#include "include/Exporters/NifKFAnimationExporter.h"
+#include "include/Exporters/NifKFExportingFixture.h"
 
 using namespace Niflib;
 using namespace std;

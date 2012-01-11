@@ -25,101 +25,164 @@
     <Filter Include="Source Files\Exporters">
       <UniqueIdentifier>{094ce4fb-d0ce-461c-854c-f0e612eead66}</UniqueIdentifier>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="NifTranslatorOptions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NifTranslator.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NifAnimationImporter.cpp">
-      <Filter>Source Files\Importers</Filter>
-    </ClCompile>
-    <ClCompile Include="NifMaterialImporter.cpp">
-      <Filter>Source Files\Importers</Filter>
-    </ClCompile>
-    <ClCompile Include="NifMeshImporter.cpp">
-      <Filter>Source Files\Importers</Filter>
-    </ClCompile>
-    <ClCompile Include="NifNodeImporter.cpp">
-      <Filter>Source Files\Importers</Filter>
-    </ClCompile>
-    <ClCompile Include="NifNodeExporter.cpp">
-      <Filter>Source Files\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="NifMeshExporter.cpp">
-      <Filter>Source Files\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="NifAnimationExporter.cpp">
-      <Filter>Source Files\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="NifTranslatorData.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NifTranslatorUtils.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="NifMaterialExporter.cpp">
-      <Filter>Source Files\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="NifDefaultImporterFixture.cpp">
-      <Filter>Source Files\Importers</Filter>
-    </ClCompile>
-    <ClCompile Include="NifTranslatorFixtureItem.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="NifTranslatorOptions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NifTranslator.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NifMeshImporter.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
-    <ClInclude Include="NifMaterialImporter.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
-    <ClInclude Include="NifAnimationImporter.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
-    <ClInclude Include="NifNodeImporter.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
-    <ClInclude Include="NifNodeExporter.h">
-      <Filter>Header Files\Exporters</Filter>
-    </ClInclude>
-    <ClInclude Include="NifMeshExporter.h">
-      <Filter>Header Files\Exporters</Filter>
-    </ClInclude>
-    <ClInclude Include="NifAnimationExporter.h">
-      <Filter>Header Files\Exporters</Filter>
-    </ClInclude>
-    <ClInclude Include="NifTranslatorData.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NifTranslatorUtils.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="NifMaterialExporter.h">
-      <Filter>Header Files\Exporters</Filter>
-    </ClInclude>
-    <ClInclude Include="NifDefaultImporterFixture.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
-    <ClInclude Include="NifImporterFixture.h">
-      <Filter>Header Files\Importers</Filter>
-    </ClInclude>
-    <ClInclude Include="NifTranslatorFixtureItem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <Filter Include="Header Files\Common">
+      <UniqueIdentifier>{40052fd2-ac52-49e3-b6ae-43ea5c856473}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Common">
+      <UniqueIdentifier>{4b9d58ab-d151-4ffd-a045-f94da0206c65}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="nifTranslatorOpts.mel">
       <Filter>Miscellaneous Files</Filter>
     </None>
+    <None Include="nifTranslatorMenuCreate.mel">
+      <Filter>Miscellaneous Files</Filter>
+    </None>
+    <None Include="nifTranslatorMenuRemove.mel">
+      <Filter>Miscellaneous Files</Filter>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\Exporters\NifAnimationExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifExportingFixture.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifMaterialExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifMeshExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifNodeExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifAnimationImporter.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifDefaultImportingFixture.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifImportingFixture.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifMaterialImporter.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifMeshImporter.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifNodeImporter.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NifTranslatorData.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NifTranslatorDataWrapper.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NifTranslatorFixtureItem.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NifTranslatorOptions.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NifTranslatorRefObject.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Common\NifTranslatorUtils.h">
+      <Filter>Header Files\Common</Filter>
+    </ClInclude>
+    <ClInclude Include="NifTranslator.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifKFAnimationImporter.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Importers\NifKFImportingFixture.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifKFExportingFixture.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifKFAnimationExporter.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifExportingFixture.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifMaterialExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifMeshExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifNodeExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifAnimationImporter.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifDefaultImportingFixture.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifImportingFixture.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifMaterialImporter.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifMeshImporter.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifNodeImporter.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NifTranslatorData.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NifTranslatorDataWrapper.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NifTranslatorFixtureItem.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NifTranslatorOptions.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NifTranslatorRefObject.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Common\NifTranslatorUtils.cpp">
+      <Filter>Source Files\Common</Filter>
+    </ClCompile>
+    <ClCompile Include="NifTranslator.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifKFAnimationImporter.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifKFImportingFixture.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifKFAnimationExporter.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifKFExportingFixture.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

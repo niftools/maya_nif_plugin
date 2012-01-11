@@ -67,7 +67,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>Maya NIF Plugin</ProjectName>
+    <ProjectName>maya_nif_plugin</ProjectName>
     <ProjectGuid>{DE2F121F-8326-4144-A766-444451895AFA}</ProjectGuid>
     <RootNamespace>Maya NIF Plugin</RootNamespace>
   </PropertyGroup>
@@ -237,15 +237,16 @@
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\NifTranslator\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\NifExporter\niflib\x64\Debug - Static;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\NifExporter\niflib\x64\Debug - Static;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
-    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\NifTranslator\include;D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">PrepareForRun</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">
     <ClCompile>
@@ -321,7 +322,7 @@
     <ClCompile>
       <AdditionalOptions>/Gm /Zi /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>..\Maya2012\include;niflib;niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\Maya2012\include;niflib;niflib\bin;niflib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>_DEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>
@@ -340,6 +341,16 @@
       <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
       <TargetMachine>MachineX64</TargetMachine>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </CustomBuildStep>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|Win32'">
     <ClCompile>
@@ -607,7 +618,7 @@
     <ClCompile>
       <AdditionalOptions> /I "."  /c %(AdditionalOptions)</AdditionalOptions>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Maya2009\include;C:\NifTools\niflib;C:\NifTools\niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>niflib\include;niflib\;..\Maya2012\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <PrecompiledHeaderOutputFile>
@@ -619,7 +630,7 @@
       <AdditionalOptions>/subsystem:windows /incremental:no /export:initializePlugin /export:uninitializePlugin </AdditionalOptions>
       <AdditionalDependencies>niflib_dll.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>..\Maya2012\bin\plug-ins\nifTranslator.mll</OutputFile>
-      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya2009\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>..\Maya2012\lib;niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <ProgramDatabaseFile>Release/Export.pdb</ProgramDatabaseFile>
       <RandomizedBaseAddress>false</RandomizedBaseAddress>
       <DataExecutionPrevention>
@@ -627,42 +638,66 @@
       <ImportLibrary>Release/Export.lib</ImportLibrary>
       <Version>0.5.8 beta</Version>
     </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="NifAnimationExporter.cpp" />
-    <ClCompile Include="NifAnimationImporter.cpp" />
-    <ClCompile Include="NifDefaultImporterFixture.cpp" />
-    <ClCompile Include="NifMaterialImporter.cpp" />
-    <ClCompile Include="NifMeshExporter.cpp" />
-    <ClCompile Include="NifMeshImporter.cpp" />
-    <ClCompile Include="NifNodeExporter.cpp" />
-    <ClCompile Include="NifNodeImporter.cpp" />
-    <ClCompile Include="NifMaterialExporter.cpp" />
-    <ClCompile Include="NifTranslatorData.cpp" />
-    <ClCompile Include="NifTranslatorFixtureItem.cpp" />
-    <ClCompile Include="NifTranslatorOptions.cpp" />
-    <ClCompile Include="NifTranslator.cpp" />
-    <ClCompile Include="NifTranslatorUtils.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="NifAnimationExporter.h" />
-    <ClInclude Include="NifAnimationImporter.h" />
-    <ClInclude Include="NifDefaultImporterFixture.h" />
-    <ClInclude Include="NifTranslatorFixtureItem.h" />
-    <ClInclude Include="NifImporterFixture.h" />
-    <ClInclude Include="NifMaterialImporter.h" />
-    <ClInclude Include="NifMeshExporter.h" />
-    <ClInclude Include="NifMeshImporter.h" />
-    <ClInclude Include="NifNodeExporter.h" />
-    <ClInclude Include="NifNodeImporter.h" />
-    <ClInclude Include="NifMaterialExporter.h" />
-    <ClInclude Include="NifTranslatorData.h" />
-    <ClInclude Include="NifTranslatorOptions.h" />
-    <ClInclude Include="NifTranslator.h" />
-    <ClInclude Include="NifTranslatorUtils.h" />
-  </ItemGroup>
-  <ItemGroup>
+    <None Include="nifTranslatorMenuCreate.mel" />
+    <None Include="nifTranslatorMenuRemove.mel" />
     <None Include="nifTranslatorOpts.mel" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\Common\NifTranslatorData.h" />
+    <ClInclude Include="include\Common\NifTranslatorDataWrapper.h" />
+    <ClInclude Include="include\Common\NifTranslatorFixtureItem.h" />
+    <ClInclude Include="include\Common\NifTranslatorOptions.h" />
+    <ClInclude Include="include\Common\NifTranslatorRefObject.h" />
+    <ClInclude Include="include\Common\NifTranslatorUtils.h" />
+    <ClInclude Include="include\Exporters\NifAnimationExporter.h" />
+    <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h" />
+    <ClInclude Include="include\Exporters\NifExportingFixture.h" />
+    <ClInclude Include="include\Exporters\NifKFAnimationExporter.h" />
+    <ClInclude Include="include\Exporters\NifKFExportingFixture.h" />
+    <ClInclude Include="include\Exporters\NifMaterialExporter.h" />
+    <ClInclude Include="include\Exporters\NifMeshExporter.h" />
+    <ClInclude Include="include\Exporters\NifNodeExporter.h" />
+    <ClInclude Include="include\Importers\NifAnimationImporter.h" />
+    <ClInclude Include="include\Importers\NifDefaultImportingFixture.h" />
+    <ClInclude Include="include\Importers\NifImportingFixture.h" />
+    <ClInclude Include="include\Importers\NifKFAnimationImporter.h" />
+    <ClInclude Include="include\Importers\NifKFImportingFixture.h" />
+    <ClInclude Include="include\Importers\NifMaterialImporter.h" />
+    <ClInclude Include="include\Importers\NifMeshImporter.h" />
+    <ClInclude Include="include\Importers\NifNodeImporter.h" />
+    <ClInclude Include="NifTranslator.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="NifTranslator.cpp" />
+    <ClCompile Include="src\Common\NifTranslatorData.cpp" />
+    <ClCompile Include="src\Common\NifTranslatorDataWrapper.cpp" />
+    <ClCompile Include="src\Common\NifTranslatorFixtureItem.cpp" />
+    <ClCompile Include="src\Common\NifTranslatorOptions.cpp" />
+    <ClCompile Include="src\Common\NifTranslatorRefObject.cpp" />
+    <ClCompile Include="src\Common\NifTranslatorUtils.cpp" />
+    <ClCompile Include="src\Exporters\NifAnimationExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp" />
+    <ClCompile Include="src\Exporters\NifExportingFixture.cpp" />
+    <ClCompile Include="src\Exporters\NifKFAnimationExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifKFExportingFixture.cpp" />
+    <ClCompile Include="src\Exporters\NifMaterialExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifMeshExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifNodeExporter.cpp" />
+    <ClCompile Include="src\Importers\NifAnimationImporter.cpp" />
+    <ClCompile Include="src\Importers\NifDefaultImportingFixture.cpp" />
+    <ClCompile Include="src\Importers\NifImportingFixture.cpp" />
+    <ClCompile Include="src\Importers\NifKFAnimationImporter.cpp" />
+    <ClCompile Include="src\Importers\NifKFImportingFixture.cpp" />
+    <ClCompile Include="src\Importers\NifMaterialImporter.cpp" />
+    <ClCompile Include="src\Importers\NifMeshImporter.cpp" />
+    <ClCompile Include="src\Importers\NifNodeImporter.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -11,6 +11,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
+    <LocalDebuggerCommand>D:\Autodesk\Maya2012\bin\maya.exe</LocalDebuggerCommand>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">
     <LocalDebuggerCommand>D:\Autodesk\Maya2012\bin\maya.exe</LocalDebuggerCommand>
