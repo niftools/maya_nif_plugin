@@ -41,7 +41,7 @@ MString NifTranslatorUtils::MakeMayaName( const string & nifName ) {
 	newName.fill('0');
 
 	for ( unsigned int i = 0; i < nifName.size(); ++i ) {
-		if ( this->translatorOptions->use_name_mangling ) {
+		if ( this->translatorOptions->useNameMangling ) {
 			if ( nifName[i] == ' ' ) {
 				newName << "_";
 			} else if ( 
@@ -76,7 +76,7 @@ void NifTranslatorUtils::ConnectShader( const vector<NiPropertyRef> & properties
 
 	//out << "Looking for previously imported shaders..." << endl;
 
-	unsigned int mat_index = this->translatorData->mtCollection.GetMaterialIndex( properties );
+	unsigned int mat_index = this->translatorData->materialCollection.GetMaterialIndex( properties );
 
 	if ( mat_index == NO_MATERIAL ) {
 		//No material to connect
@@ -123,7 +123,7 @@ void NifTranslatorUtils::ConnectShader( const vector<NiPropertyRef> & properties
 
 	//out << "Looking for previously imported textures..." << endl;
 
-	MaterialWrapper mw = this->translatorData->mtCollection.GetMaterial( mat_index );
+	MaterialWrapper mw = this->translatorData->materialCollection.GetMaterial( mat_index );
 
 	//Cycle through for each type of texture
 	for (int i = 0; i < 8; ++i) {
@@ -367,8 +367,8 @@ bool NifTranslatorUtils::isExportedShape( const MString& name )
 	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
 		return true;
 	}
-	for(int i = 0;i < this->translatorOptions->export_shapes.size(); i++) {
-		if(name.asChar() == this->translatorOptions->export_shapes[i])
+	for(int i = 0;i < this->translatorOptions->exportedShapes.size(); i++) {
+		if(name.asChar() == this->translatorOptions->exportedShapes[i])
 			return true;
 	}
 
@@ -380,8 +380,8 @@ bool NifTranslatorUtils::isExportedJoint( const MString& name )
 	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
 		return true;
 	}
-	for(int i = 0;i < this->translatorOptions->export_joints.size(); i++) {
-		if(name.asChar() == this->translatorOptions->export_joints[i])
+	for(int i = 0;i < this->translatorOptions->exportedJoints.size(); i++) {
+		if(name.asChar() == this->translatorOptions->exportedJoints[i])
 			return true;
 	}
 
@@ -396,7 +396,7 @@ std::string NifTranslatorUtils::MakeNifName( const MString & mayaName )
 
 	string str = mayaName.asChar();
 
-	if ( this->translatorOptions->use_name_mangling ) {
+	if ( this->translatorOptions->useNameMangling ) {
 		for ( unsigned int i = 0; i < str.size(); ++i ) {
 			if ( i + 5 < str.size() ) {
 				string sub = str.substr( i, 3);

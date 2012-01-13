@@ -546,7 +546,7 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 	this->nodeExporter->ExportAV(tempAV, dagNode );
 
 	//out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
-	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->export_part_bones, this->translatorOptions->export_tri_strips, this->translatorOptions->export_tan_space );
+	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, this->translatorOptions->exportAsTriStrips, this->translatorOptions->exportTangentSpace );
 
 	//out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split
@@ -573,7 +573,7 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 			}
 
 			//Search for Morrowind-Specific body part names in materials, if requested
-			if( this->translatorOptions->export_mor_rename ) {
+			if( this->translatorOptions->exportMorrowindRename ) {
 				NiMaterialPropertyRef niMatProp = DynamicCast<NiMaterialProperty>( children[c]->GetPropertyByType(NiMaterialProperty::TYPE) );
 				if ( niMatProp != NULL ) {
 					string mat_name = niMatProp->GetName();

@@ -20,7 +20,7 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 
 			//Check if the user wants us to try to combine new skins with
 			//an existing skeleton
-			if ( this->translatorOptions->import_comb_skel ) {
+			if ( this->translatorOptions->importCombineSkeletons ) {
 				//Enumerate existing nodes by name
 				this->translatorData->existingNodes.clear();
 				MItDag dagIt( MItDag::kDepthFirst);

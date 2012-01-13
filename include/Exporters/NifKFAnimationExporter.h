@@ -108,6 +108,10 @@ public:
 
 	virtual void ExportAnimation(NiControllerSequenceRef controller_sequence, MObject object);
 
+	virtual float GetAnimationStartTime();
+
+	virtual float GetAnimationEndTime();
+
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& getType() const;

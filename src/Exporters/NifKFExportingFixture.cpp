@@ -30,7 +30,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 			node.name() == "front" ||
 			node.name() == "side"
 			) {
-			continue;
+				continue;
 		}
 
 		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
@@ -45,10 +45,10 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	}
 
 	NiControllerSequenceRef controllerSequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
-	controllerSequence->SetStartTime(0);
-	controllerSequence->SetStopTime(0);
-	controllerSequence->SetName(this->translatorOptions->animation_name);
-	controllerSequence->SetTargetName(this->translatorOptions->animation_target);
+	controllerSequence->SetStartTime(this->animationExporter->GetAnimationStartTime());
+	controllerSequence->SetStopTime(this->animationExporter->GetAnimationEndTime());
+	controllerSequence->SetName(this->translatorOptions->animationName);
+	controllerSequence->SetTargetName(this->translatorOptions->animationTarget);
 	controllerSequence->SetFrequency(1.0);
 
 	vector<MFnDependencyNode> objectsWithExportIndexes;
@@ -100,10 +100,10 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	}
 
 	//out << "Writing Finished NIF file..." << endl;
-	NifInfo nif_info(this->translatorOptions->export_version, this->translatorOptions->export_user_version);
+	NifInfo nif_info(this->translatorOptions->exportVersion, this->translatorOptions->exportUserVersion);
 	nif_info.endian = ENDIAN_LITTLE; //Intel endian format
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
-	nif_info.userVersion2 = this->translatorOptions->export_user_version2;
+	nif_info.userVersion2 = this->translatorOptions->exportUserVersion2;
 
 	Niflib::WriteNifTree(file.fullName().asChar(), controllerSequence, nif_info);
 

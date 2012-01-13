@@ -120,8 +120,8 @@ void NifMaterialExporter::ExportShaders()
 		}
 
 		//Create a NIF Material Wrapper and put the collected values into it
-		unsigned int mat_index = this->translatorData->mtCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, this->translatorOptions->export_version );
-		MaterialWrapper mw = this->translatorData->mtCollection.GetMaterial( mat_index );
+		unsigned int mat_index = this->translatorData->materialCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, this->translatorOptions->exportVersion );
+		MaterialWrapper mw = this->translatorData->materialCollection.GetMaterial( mat_index );
 
 		NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
 
@@ -164,7 +164,7 @@ void NifMaterialExporter::ExportShaders()
 
 		if ( ambi_tex.isNull() == true ) {
 			//No Texture.  Check if we should export white ambient
-			if ( diff_tex.isNull() == false && this->translatorOptions->export_white_ambient == true ) {
+			if ( diff_tex.isNull() == false && this->translatorOptions->exportWhiteAmbient == true ) {
 				niMatProp->SetAmbientColor( Color3(1.0f, 1.0f, 1.0f) ); // white
 			} else {
 				niMatProp->SetAmbientColor( Color3( ambient.r, ambient.g, ambient.b ) );
@@ -335,8 +335,8 @@ void NifMaterialExporter::ExportFileTextures()
 		}
 
 		//Create a NIF texture wrapper
-		unsigned int tex_index = this->translatorData->mtCollection.CreateTexture( this->translatorOptions->export_version );
-		TextureWrapper tw = this->translatorData->mtCollection.GetTexture( tex_index );
+		unsigned int tex_index = this->translatorData->materialCollection.CreateTexture( this->translatorOptions->exportVersion );
+		TextureWrapper tw = this->translatorData->materialCollection.GetTexture( tex_index );
 
 		//Get Node Name
 		tw.SetObjectName( this->translatorUtils->MakeNifName( fn.name() ) );
@@ -357,8 +357,8 @@ void NifMaterialExporter::ExportFileTextures()
 		//Figure fixed file name
 		string::size_type index;
 		MStringArray paths;
-		MString(this->translatorOptions->texture_path.c_str()).split( '|', paths );
-		switch( this->translatorOptions->tex_path_mode ) {
+		MString(this->translatorOptions->texturePath.c_str()).split( '|', paths );
+		switch( this->translatorOptions->texturePathMode ) {
 		case PATH_MODE_AUTO:
 			for ( unsigned p = 0; p < paths.length(); ++p ) {
 				unsigned len = paths[p].length();
@@ -381,11 +381,11 @@ void NifMaterialExporter::ExportFileTextures()
 					fileName = fileName.substr( index + 1 );
 				}
 			}
-			if ( this->translatorOptions->tex_path_mode == PATH_MODE_NAME ) {
+			if ( this->translatorOptions->texturePathMode == PATH_MODE_NAME ) {
 				break;
 			}
 			//Now we're doing the prefix case
-			fileName = this->translatorOptions->tex_path_prefix + fileName;
+			fileName = this->translatorOptions->texturePathPrefix + fileName;
 			break;
 
 			//Do nothing for full path since the full path is already

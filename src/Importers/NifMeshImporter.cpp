@@ -373,7 +373,7 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}
 
 	//See if the user wants us to import the normals
-	if ( this->translatorOptions->import_normals ) {
+	if ( this->translatorOptions->importNormals ) {
 		//out << "Getting Normals..." << endl;
 		// Load Normals
 		vector<Vector3> nif_normals = cs.GetNormals();

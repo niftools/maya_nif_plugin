@@ -137,67 +137,61 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		animation_array.clear();
 	}
 
+	MStatus stat;
+	MTransformationMatrix rest_position = node.transformation();
+	MVector rest_translation = rest_position.getTranslation(MSpace::kPostTransform);
+	double rest_scale[3];
+	rest_position.getScale(rest_scale, MSpace::kPostTransform);
+	double rest_q_x;
+	double rest_q_y;
+	double rest_q_z;
+	double rest_q_w;
+	rest_position.getRotationQuaternion(rest_q_x, rest_q_y, rest_q_z, rest_q_w, MSpace::kPostTransform);
+
+	MPlug rest_plug;
+
+	string name = node.name().asChar();
+
+	rest_plug = node.findPlug("translateRest");
+	if(!rest_plug.isNull()) {
+		rest_plug = node.findPlug("translateRestX");
+		rest_q_x = rest_plug.asDouble();
+		rest_plug = node.findPlug("translateRestY");
+		rest_q_y = rest_plug.asDouble();
+		rest_plug = node.findPlug("translateRestZ");
+		rest_q_z = rest_plug.asDouble();
+	}
+
+	rest_plug = node.findPlug("scaleRest");
+	if(!rest_plug.isNull()) {
+		rest_plug = node.findPlug("scaleRestX");
+		rest_q_x = rest_plug.asDouble();
+		rest_plug = node.findPlug("scaleRestY");
+		rest_q_y = rest_plug.asDouble();
+		rest_plug = node.findPlug("scaleRestZ");
+		rest_q_z = rest_plug.asDouble();
+	}
+
+	rest_plug = node.findPlug("rotateRest");
+	if(!rest_plug.isNull()) {
+		rest_plug = node.findPlug("rotateRestX");
+		rest_q_x = rest_plug.asDouble();
+		rest_plug = node.findPlug("rotateRestY");
+		rest_q_y = rest_plug.asDouble();
+		rest_plug = node.findPlug("rotateRestZ");
+		rest_q_z = rest_plug.asDouble();
+
+		MEulerRotation euler_qq((rest_q_x / 180) * PI, (rest_q_y / 180) * PI, (rest_q_z / 180) * PI);
+		MQuaternion qq = euler_qq.asQuaternion();
+		Quaternion qqq(qq.w, qq.x, qq.y, qq.z);
+	}
+
 	if(interpolator_type == "NiTransformInterpolator") {
 		NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
-
-		MStatus stat;
-		MTransformationMatrix rest_position = node.transformation();
-		MVector rest_translation = rest_position.getTranslation(MSpace::kPostTransform);
-		double rest_scale[3];
-		rest_position.getScale(rest_scale, MSpace::kPostTransform);
-		double rest_q_x;
-		double rest_q_y;
-		double rest_q_z;
-		double rest_q_w;
-		rest_position.getRotationQuaternion(rest_q_x, rest_q_y, rest_q_z, rest_q_w, MSpace::kPostTransform);
 
 		transform_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
 		transform_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
 		transform_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
-
-		MPlug rest_plug;
-
-		string name = node.name().asChar();
-
-		rest_plug = node.findPlug("translateRest");
-		if(!rest_plug.isNull()) {
-			rest_plug = node.findPlug("translateRestX");
-			rest_q_x = rest_plug.asDouble();
-			rest_plug = node.findPlug("translateRestY");
-			rest_q_y = rest_plug.asDouble();
-			rest_plug = node.findPlug("translateRestZ");
-			rest_q_z = rest_plug.asDouble();
-
-			transform_interpolator->SetTranslation(Vector3(rest_q_x, rest_q_y, rest_q_z));
-		}
-		
-		rest_plug = node.findPlug("scaleRest");
-		if(!rest_plug.isNull()) {
-			rest_plug = node.findPlug("scaleRestX");
-			rest_q_x = rest_plug.asDouble();
-			rest_plug = node.findPlug("scaleRestY");
-			rest_q_y = rest_plug.asDouble();
-			rest_plug = node.findPlug("scaleRestZ");
-			rest_q_z = rest_plug.asDouble();
-
-			transform_interpolator->SetScale(pow(rest_q_x * rest_q_y * rest_q_z, 1.0 / 3.0));
-		}
-
-		rest_plug = node.findPlug("rotateRest");
-		if(!rest_plug.isNull()) {
-			rest_plug = node.findPlug("rotateRestX");
-			rest_q_x = rest_plug.asDouble();
-			rest_plug = node.findPlug("rotateRestY");
-			rest_q_y = rest_plug.asDouble();
-			rest_plug = node.findPlug("rotateRestZ");
-			rest_q_z = rest_plug.asDouble();
-
-			MEulerRotation euler_qq((rest_q_x / 180) * PI, (rest_q_y / 180) * PI, (rest_q_z / 180) * PI);
-			MQuaternion qq = euler_qq.asQuaternion();
-			Quaternion qqq(qq.w, qq.x, qq.y, qq.z);
-
-			transform_interpolator->SetRotation(qqq);
-		}
 		
 		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
 			vector<Key<Vector3>> translationKeys;
@@ -306,14 +300,6 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				translation_key.data.x = x;
 				translation_key.data.y = y;
 				translation_key.data.z = z;
-
-				if(translation_key.time < controller_sequence->GetStartTime()) {
-					controller_sequence->SetStartTime(translation_key.time);
-				}
-
-				if(translation_key.time > controller_sequence->GetStartTime()) {
-					controller_sequence->SetStopTime(translation_key.time);
-				}
 
 				translationKeys.push_back(translation_key);
 			}
@@ -435,14 +421,6 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				Key<float> scale_key;
 				scale_key.time = time_min.asUnits(MTime::kSeconds);
 				scale_key.data = pow(x * y * z, 1.0f / 3.0f);
-
-				if(scale_key.time < controller_sequence->GetStartTime()) {
-					controller_sequence->SetStartTime(scale_key.time);
-				}
-
-				if(scale_key.time > controller_sequence->GetStartTime()) {
-					controller_sequence->SetStopTime(scale_key.time);
-				}
 
 				scaleKeys.push_back(scale_key);
 			}
@@ -601,13 +579,6 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				rotation_key.data.y = y;
 				rotation_key.data.z = z;
 
-				if(rotation_key.time < controller_sequence->GetStartTime()) {
-					controller_sequence->SetStartTime(rotation_key.time);
-				}
-				if(rotation_key.time > controller_sequence->GetStartTime()) {
-					controller_sequence->SetStopTime(rotation_key.time);
-				}
-
 				rotationKeys.push_back(rotation_key);
 			}
 
@@ -687,9 +658,73 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 	} else  if(interpolator_type == "NiBSplineCompTransformInterpolator") {
 		NiBSplineCompTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineCompTransformInterpolator>(NiBSplineCompTransformInterpolator::Create());
-		NiBSplineBasisDataRef spline_basis_data = DynamicCast<NiBSplineBasisData>(NiBSplineBasisData::Create());
-		NiBSplineDataRef spline_data = DynamicCast<NiBSplineData>(NiBSplineData::Create());
-		spline_interpolator->SetBasisData(spline_basis_data);
+		NiBSplineDataRef spline_data;
+		NiBSplineBasisDataRef spline_basis_data;
+
+		int control_points = this->translatorOptions->sampleKeysCount;
+
+		MFnDependencyNode node(object);
+		MPlug plug = node.findPlug("controlPoints");
+
+		if(!plug.isNull()) {
+			control_points = plug.asInt();
+		}
+
+		if(this->translatorData->splinesData.find(control_points) != this->translatorData->splinesData.end()) {
+			spline_data = this->translatorData->splinesData.at(control_points);
+			spline_basis_data = this->translatorData->splinesBasisData.at(control_points);
+		} else {
+			spline_data = DynamicCast<NiBSplineData>(NiBSplineData::Create());
+			spline_basis_data = DynamicCast<NiBSplineBasisData>(NiBSplineBasisData::Create());
+
+			this->translatorData->splinesData[control_points] = spline_data;
+			this->translatorData->splinesBasisData[control_points] = spline_basis_data;
+		}
+
+		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
+
+			vector<Vector3> translate_keys;
+			float current_time = controller_sequence->GetStartTime();
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			float translation_bias = FLT_MAX;
+			float translation_max = FLT_MIN;
+
+			for(int i = 0; i < control_points; i++) {
+				Vector3 key(rest_translation.x, rest_translation.y, rest_translation.z);
+				double value;
+
+				if(!translateX.object().isNull()) {
+					translateX.evaluate(MTime(current_time, MTime::kSeconds), value);
+					key.x = value;
+				}
+				if(!translateY.object().isNull()) {
+					translateY.evaluate(MTime(current_time, MTime::kSeconds), value);
+					key.y = value;
+				}
+				if(!translateZ.object().isNull()) {
+					translateY.evaluate(MTime(current_time, MTime::kSeconds), value);
+					key.z = value;
+				}
+
+				if(translation_bias > key.x) {
+					translation_bias = key.x;
+				}
+				if(translation_bias > key.y) {
+					translation_bias = key.y;
+				}
+				if(translation_bias > key.z) {
+					translation_bias = key.z;
+				}
+
+				translate_keys.push_back(key);
+				current_time += time_increment;
+			}
+
+
+
+		} else {
+			spline_interpolator->SetTranslationOffset(65536);
+		}
 
 	} else if(interpolator_type == "NiPoint3Interpolator") {
 
@@ -712,6 +747,130 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 		controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority);
 	}
+}
+
+float NifKFAnimationExporter::GetAnimationStartTime() {
+	float start_time = FLT_MAX;
+	MPlugArray animated_plugs;
+	MObjectArray animation_curves;
+
+	MItDag iterator(MItDag::kDepthFirst);
+
+	for(; !iterator.isDone(); iterator.next()) {
+		MFnDagNode node(iterator.currentItem());
+		if(node.isIntermediateObject()) {
+			continue;
+		}
+
+		if ( 
+			node.name().substring(0, 13) == "UniversalManip" ||
+			node.name() == "groundPlane_transform" ||
+			node.name() == "ViewCompass" ||
+			node.name() == "Manipulator1" ||
+			node.name() == "persp" ||
+			node.name() == "top" ||
+			node.name() == "front" ||
+			node.name() == "side"
+			) {
+				continue;
+		}
+
+		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
+			continue;
+		}
+
+		if(!(this->translatorOptions->exportType == "allanimation") && (!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()))) {
+			continue;
+		}
+
+		if(MAnimUtil::isAnimated(iterator.currentItem())) {
+			animated_plugs.clear();
+			MAnimUtil::findAnimatedPlugs(iterator.currentItem(), animated_plugs);
+		}
+
+		for(int i = 0; i < animated_plugs.length(); i++) {
+			MString partial_name = animated_plugs[i].partialName();
+			if(partial_name == "rx" || partial_name == "ry" || partial_name == "rz" ||
+				partial_name == "tx" || partial_name == "ty" || partial_name == "tz" ||
+				partial_name == "sx" || partial_name == "sy" || partial_name == "sz") {
+					MAnimUtil::findAnimation(animated_plugs[i], animation_curves);
+			}
+		}
+	}
+
+	MFnAnimCurve animation_curve;
+	for(int i = 0; i < animation_curves.length(); i++) {
+		animation_curve.setObject(animation_curves[i]);
+		
+		if(animation_curve.numKeys() > 0 && animation_curve.time(0).asUnits(MTime::kSeconds) < start_time) {
+			start_time = animation_curve.time(0).asUnits(MTime::kSeconds);
+		}
+	}
+
+	return start_time;
+}
+
+
+float NifKFAnimationExporter::GetAnimationEndTime() {
+	float end_time = FLT_MIN;
+
+	MPlugArray animated_plugs;
+	MObjectArray animation_curves;
+
+	MItDag iterator(MItDag::kDepthFirst);
+
+	for(; !iterator.isDone(); iterator.next()) {
+		MFnDagNode node(iterator.currentItem());
+		if(node.isIntermediateObject()) {
+			continue;
+		}
+
+		if ( 
+			node.name().substring(0, 13) == "UniversalManip" ||
+			node.name() == "groundPlane_transform" ||
+			node.name() == "ViewCompass" ||
+			node.name() == "Manipulator1" ||
+			node.name() == "persp" ||
+			node.name() == "top" ||
+			node.name() == "front" ||
+			node.name() == "side"
+			) {
+				continue;
+		}
+
+		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
+			continue;
+		}
+
+		if(!(this->translatorOptions->exportType == "allanimation") && (!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()))) {
+			continue;
+		}
+
+		if(MAnimUtil::isAnimated(iterator.currentItem())) {
+			animated_plugs.clear();
+			MAnimUtil::findAnimatedPlugs(iterator.currentItem(), animated_plugs);
+		}
+
+		for(int i = 0; i < animated_plugs.length(); i++) {
+			MString partial_name = animated_plugs[i].partialName();
+			if(partial_name == "rx" || partial_name == "ry" || partial_name == "rz" ||
+				partial_name == "tx" || partial_name == "ty" || partial_name == "tz" ||
+				partial_name == "sx" || partial_name == "sy" || partial_name == "sz") {
+					MAnimUtil::findAnimation(animated_plugs[i], animation_curves);
+			}
+		}
+	}
+
+	MFnAnimCurve animation_curve;
+	for(int i = 0; i < animation_curves.length(); i++) {
+		animation_curve.setObject(animation_curves[i]);
+
+		if(animation_curve.numKeys() > 0 && animation_curve.time(animation_curve.numKeys() - 1).asUnits(MTime::kSeconds) > end_time) {
+			end_time = animation_curve.time(animation_curve.numKeys() - 1).asUnits(MTime::kSeconds);
+		}
+	}
+
+	return end_time;
 }
 
 

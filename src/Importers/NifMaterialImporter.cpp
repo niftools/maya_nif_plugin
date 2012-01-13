@@ -54,7 +54,7 @@ MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
 	if ( found_file == "" ) {
 		//Check if the file exists in any of the given search paths
 		MStringArray paths;
-		MString(this->translatorOptions->texture_path.c_str()).split( '|', paths );
+		MString(this->translatorOptions->texturePath.c_str()).split( '|', paths );
 
 		for ( unsigned i = 0; i < paths.length(); ++i ) {
 			if ( paths[i].substring(0,0) == "." ) {
@@ -132,7 +132,7 @@ MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
 void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 {
 	//Gather all materials and textures from the file
-	this->translatorData->mtCollection.GatherMaterials( root );
+	this->translatorData->materialCollection.GatherMaterials( root );
 
 	//out << mtCollection.GetNumTextures() << " textures and " << mtCollection.GetNumMaterials() << " found." << endl;
 
@@ -141,20 +141,20 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 	if(reserved == true) {
 
 		MProgressWindow::setProgressMin(0);
-		MProgressWindow::setProgressMax(this->translatorData->mtCollection.GetNumTextures() - 1);
+		MProgressWindow::setProgressMax(this->translatorData->materialCollection.GetNumTextures() - 1);
 		MProgressWindow::setTitle("Importing textures");
 		MProgressWindow::startProgress();
 
 		//Cycle through each texture that was found, creating a Maya fileTexture for it
-		for ( size_t i = 0; i < this->translatorData->mtCollection.GetNumTextures(); ++i ) {
-			this->translatorData->importedTextures[i] = this->ImportTexture( this->translatorData->mtCollection.GetTexture(i) );
+		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumTextures(); ++i ) {
+			this->translatorData->importedTextures[i] = this->ImportTexture( this->translatorData->materialCollection.GetTexture(i) );
 			MProgressWindow::advanceProgress(1);
 		}
 
 		MProgressWindow::endProgress();
 	} else {
-		for ( size_t i = 0; i < this->translatorData->mtCollection.GetNumTextures(); ++i ) {
-			this->translatorData->importedTextures[i] = this->ImportTexture( this->translatorData->mtCollection.GetTexture(i) );
+		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumTextures(); ++i ) {
+			this->translatorData->importedTextures[i] = this->ImportTexture( this->translatorData->materialCollection.GetTexture(i) );
 		}
 	}
 
@@ -163,21 +163,21 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 	if(reserved == true) {
 
 		MProgressWindow::setProgressMin(0);
-		MProgressWindow::setProgressMax(this->translatorData->mtCollection.GetNumMaterials() - 1);
+		MProgressWindow::setProgressMax(this->translatorData->materialCollection.GetNumMaterials() - 1);
 		MProgressWindow::setTitle("Importing materials");
 		MProgressWindow::startProgress();
 
 		//Cycle through each material that was found, creating a Maya phong shader for it
-		for ( size_t i = 0; i < this->translatorData->mtCollection.GetNumMaterials(); ++i ) {
-			this->translatorData->importedMaterials[i] = this->ImportMaterial( this->translatorData->mtCollection.GetMaterial(i) );
+		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumMaterials(); ++i ) {
+			this->translatorData->importedMaterials[i] = this->ImportMaterial( this->translatorData->materialCollection.GetMaterial(i) );
 			MProgressWindow::advanceProgress(1);
 		}
 
 		MProgressWindow::endProgress();
 	} else {
 		//Cycle through each material that was found, creating a Maya phong shader for it
-		for ( size_t i = 0; i < this->translatorData->mtCollection.GetNumMaterials(); ++i ) {
-			this->translatorData->importedMaterials[i] = this->ImportMaterial( this->translatorData->mtCollection.GetMaterial(i) );
+		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumMaterials(); ++i ) {
+			this->translatorData->importedMaterials[i] = this->ImportMaterial( this->translatorData->materialCollection.GetMaterial(i) );
 		}
 	}
 
@@ -194,7 +194,7 @@ MObject NifMaterialImporter::ImportMaterial( MaterialWrapper & mw )
 	NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
 
 	//See if the user wants the ambient color imported
-	if ( !this->translatorOptions->import_no_ambient ) {
+	if ( !this->translatorOptions->importNoAmbient ) {
 		color = niMatProp->GetAmbientColor();
 		phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
 	}

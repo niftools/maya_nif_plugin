@@ -53,7 +53,7 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 	//Determine whether this node is an IK joint
 	bool is_joint = false;
 	if ( niNode != NULL) {
-		if ( this->translatorOptions->joint_match != "" && strName.find(this->translatorOptions->joint_match) != string::npos ) {
+		if ( this->translatorOptions->jointMatch != "" && strName.find(this->translatorOptions->jointMatch) != string::npos ) {
 			is_joint = true;
 		} else if ( niNode->IsSkinInfluence() == true ) {
 			is_joint = true;
@@ -62,7 +62,7 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 
 	//Check if the user wants us to try to combine new skins with an
 	//existing skeleton
-	if ( this->translatorOptions->import_comb_skel ) {
+	if ( this->translatorOptions->importCombineSkeletons ) {
 		//Check if joint already exits in scene.  If so, use it.
 		if ( is_joint ) {
 			obj = this->translatorUtils->GetExistingJoint( name.asChar() );

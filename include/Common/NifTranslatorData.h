@@ -100,7 +100,7 @@ public:
 	map< NiAVObjectRef, MDagPath > importedNodes;
 	map< unsigned int, MObject > importedMaterials;
 
-	MatTexCollection mtCollection;
+	MatTexCollection materialCollection;
 
 	map< unsigned int, MObject > importedTextures;
 	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
@@ -117,7 +117,18 @@ public:
 
 	map< string, vector<NiPropertyRef> > shaders;
 
-	vector<MObject> animatedObjects;
+	map<MObject> animatedObjects; //the animated objects to export animation from
+
+	//the spline datas used by the NiBSplineInterpolators
+	//the key represents the amount of control points for all the NiBSplineInterpolators
+	//all the interpolators that share a NiBSplineData must share a NiBSplineBasisData 
+	//that keeps track of the control points
+	map<int, NiBSplineDataRef> splinesData; 
+
+	//all the basis data shared between NiBSplineInterpolators that share the same number of
+	//control points
+	vector<int, NiBSplineBasisDataRef> splinesBasisData;
+
 
 	map<string,NifTranslatorDataWrapperRef> customData;
 

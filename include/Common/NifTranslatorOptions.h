@@ -84,37 +84,36 @@ enum TexPathMode {
 
 class NifTranslatorOptions : public NifTranslatorRefObject {
 public:
-	//--Globals--//
-	string texture_path; // Path to textures gotten from option string
-	unsigned int export_version; //Version of NIF file to export
-	unsigned int export_user_version; //Game-specific user version of NIF file to export
-	unsigned int export_user_version2;
+	
+	string texturePath; // Path to textures gotten from option string
+	unsigned int exportVersion; //Version of NIF file to export
+	unsigned int exportUserVersion; //Game-specific user version of NIF file to export
+	unsigned int exportUserVersion2;
 	bool import_bind_pose; //Determines whether or not the bind pose should be searched for
 
-	vector<string> export_shapes;
-	vector<string> export_joints;
-	bool import_normals; //Determines whether normals are imported
-	bool import_no_ambient; //Determines whether ambient color is imported
-	bool export_white_ambient; //Determines whether ambient color is automatically set to white if a texture is present
-	bool import_comb_skel; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
-	string joint_match; //String to match in the name of nodes as another way to cause themm to import as IK joints
-	bool use_name_mangling;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
-	bool export_tri_strips;  //Determines whether to export NiTriShape objects or NiTriStrip objects
-	int export_part_bones; //Determines the maximum number of bones per skin partition.
-	bool export_tan_space; //Determines whether Oblivion tangent space data is generated for meshes on export
-	bool export_mor_rename; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
+	vector<string> exportedShapes; //contains all the names of the shapes that the users selected to export from the scene
+	vector<string> exportedJoints; //contains all the names of the joints that the users selected to export from the scene
+	bool importNormals; //Determines whether normals are imported
+	bool importNoAmbient; //Determines whether ambient color is imported
+	bool exportWhiteAmbient; //Determines whether ambient color is automatically set to white if a texture is present
+	bool importCombineSkeletons; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
+	string jointMatch; //String to match in the name of nodes as another way to cause them to import as IK joints
+	bool useNameMangling;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
+	bool exportAsTriStrips;  //Determines whether to export NiTriShape objects or NiTriStrip objects
+	int exportBonesPerSkinPartition; //Determines the maximum number of bones per skin partition.
+	bool exportTangentSpace; //Determines whether Oblivion tangent space data is generated for meshes on export
+	bool exportMorrowindRename; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
 	
-	TexPathMode tex_path_mode;  //Determines the way textures paths are exported
-	string tex_path_prefix; //Optional prefix to add to texture paths.
+	TexPathMode texturePathMode;  //Determines the way textures paths are exported
+	string texturePathPrefix; //Optional prefix to add to texture paths.
 
-	//this tells the exporter what to export from the scene: geometry or animation
-	string exportType;
+	
+	string exportType; //this tells the exporter what to export from the scene: geometry or animation
 
-	int spline_animation_npoints; //the amounts of points for spline animation curves per time unit
-	int spline_animation_degree; //the degree of the polynom for the spline animation curves
+	int sampleKeysCount; //the default control points for splines
 
-	string animation_target; // the name of the target of the kf file or controller sequence
-	string animation_name; //the name of the animation stored in the kf file or the controlelr sequence
+	string animationTarget; // the name of the target of the kf file or controller sequence
+	string animationName; //the name of the animation stored in the kf file or the controlelr sequence
 
 
 	//can't work with virtual functions like this, it's not safe to call reset from the base con
