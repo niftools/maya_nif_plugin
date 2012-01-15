@@ -155,21 +155,21 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 	rest_plug = node.findPlug("translateRest");
 	if(!rest_plug.isNull()) {
 		rest_plug = node.findPlug("translateRestX");
-		rest_q_x = rest_plug.asDouble();
+		rest_translation.x = rest_plug.asDouble();
 		rest_plug = node.findPlug("translateRestY");
-		rest_q_y = rest_plug.asDouble();
+		rest_translation.y = rest_plug.asDouble();
 		rest_plug = node.findPlug("translateRestZ");
-		rest_q_z = rest_plug.asDouble();
+		rest_translation.z = rest_plug.asDouble();
 	}
 
 	rest_plug = node.findPlug("scaleRest");
 	if(!rest_plug.isNull()) {
 		rest_plug = node.findPlug("scaleRestX");
-		rest_q_x = rest_plug.asDouble();
+		rest_scale[0] = rest_plug.asDouble();
 		rest_plug = node.findPlug("scaleRestY");
-		rest_q_y = rest_plug.asDouble();
+		rest_scale[1] = rest_plug.asDouble();
 		rest_plug = node.findPlug("scaleRestZ");
-		rest_q_z = rest_plug.asDouble();
+		rest_scale[2] = rest_plug.asDouble();
 	}
 
 	rest_plug = node.findPlug("rotateRest");
@@ -184,10 +184,16 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		MEulerRotation euler_qq((rest_q_x / 180) * PI, (rest_q_y / 180) * PI, (rest_q_z / 180) * PI);
 		MQuaternion qq = euler_qq.asQuaternion();
 		Quaternion qqq(qq.w, qq.x, qq.y, qq.z);
+
+		rest_q_w = qq.w;
+		rest_q_x = qq.x;
+		rest_q_y = qq.y;
+		rest_q_z = qq.z;
 	}
 
 	if(interpolator_type == "NiTransformInterpolator") {
 		NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(NiTransformInterpolator::Create());
+		interpolator = DynamicCast<NiInterpolator>(transform_interpolator);
 
 		transform_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
 		transform_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
@@ -654,19 +660,20 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			}
 		}
 
-		interpolator = DynamicCast<NiInterpolator>(transform_interpolator);
-
 	} else  if(interpolator_type == "NiBSplineCompTransformInterpolator") {
 		NiBSplineCompTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineCompTransformInterpolator>(NiBSplineCompTransformInterpolator::Create());
+		interpolator = DynamicCast<NiInterpolator>(spline_interpolator);
 
 		spline_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
 		spline_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
 		spline_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
+		spline_interpolator->SetStartTime(controller_sequence->GetStartTime());
+		spline_interpolator->SetStopTime(controller_sequence->GetStopTime());
 
 		NiBSplineDataRef spline_data;
 		NiBSplineBasisDataRef spline_basis_data;
 
-		int control_points = this->translatorOptions->sampleKeysCount;
+		int control_points = this->translatorOptions->numberOfKeysToSample;
 
 		MFnDependencyNode node(object);
 		MPlug plug = node.findPlug("controlPoints");
@@ -678,6 +685,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		if(this->translatorData->splinesData.find(control_points) != this->translatorData->splinesData.end()) {
 			spline_data = this->translatorData->splinesData.at(control_points);
 			spline_basis_data = this->translatorData->splinesBasisData.at(control_points);
+
 		} else {
 			spline_data = DynamicCast<NiBSplineData>(NiBSplineData::Create());
 			spline_basis_data = DynamicCast<NiBSplineBasisData>(NiBSplineBasisData::Create());
@@ -686,6 +694,9 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			this->translatorData->splinesData[control_points] = spline_data;
 			this->translatorData->splinesBasisData[control_points] = spline_basis_data;
 		}
+
+		spline_interpolator->SetSplineData(spline_data);
+		spline_interpolator->SetBasisData(spline_basis_data);
 
 		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
 			vector<Vector3> translate_keys;
@@ -708,7 +719,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 					key.y = value;
 				}
 				if(!translateZ.object().isNull()) {
-					translateY.evaluate(MTime(current_time, MTime::kSeconds), value);
+					translateZ.evaluate(MTime(current_time, MTime::kSeconds), value);
 					key.z = value;
 				}
 
@@ -754,8 +765,167 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				short_control_points.push_back(z);
 			}
 
+			spline_interpolator->SetTranslationOffset(spline_data->GetNumShortControlPoints());
+			spline_interpolator->SetTranslateBias(translation_bias);
+			spline_interpolator->SetTranslateMultiplier(translation_max);
+			spline_data->AppendShortControlPoints(short_control_points);
+
 		} else {
-			spline_interpolator->SetTranslationOffset(65536);
+			spline_interpolator->SetTranslationOffset(65535);
+			spline_interpolator->SetTranslateBias(FLT_MAX);
+			spline_interpolator->SetTranslateMultiplier(FLT_MAX);
+		}
+
+		if(!rotateX.object().isNull() || !rotateY.object().isNull() || !rotateZ.object().isNull()) {
+			vector<MQuaternion> rotate_keys;
+
+			float current_time = controller_sequence->GetStartTime();
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			float rotation_bias = FLT_MAX;
+			float rotation_max = FLT_MIN;
+
+			float rest_r_x;
+			float rest_r_y;
+			float rest_r_z;
+
+			for(int i = 0; i < control_points; i++) {
+				MEulerRotation euler_key(rest_r_x, rest_r_y, rest_r_z);
+				double value;
+
+				if(!rotateX.object().isNull()) {
+					rotateX.evaluate(MTime(current_time, MTime::kSeconds), value);
+					euler_key.x = value;
+				}
+				if(!rotateY.object().isNull()) {
+					rotateY.evaluate(MTime(current_time, MTime::kSeconds), value);
+					euler_key.y = value;
+				}
+				if(!rotateZ.object().isNull()) {
+					rotateZ.evaluate(MTime(current_time, MTime::kSeconds), value);
+					euler_key.z = value;
+				}
+
+				MQuaternion key = euler_key.asQuaternion();
+
+				if(rotation_bias > abs(key.w)) {
+					rotation_bias = abs(key.w);
+				}
+				if(rotation_bias > abs(key.x)) {
+					rotation_bias = abs(key.x);
+				}
+				if(rotation_bias > abs(key.y)) {
+					rotation_bias = abs(key.y);
+				}
+				if(rotation_bias > abs(key.z)) {
+					rotation_bias = abs(key.z);
+				}
+
+				if(rotation_max < abs(key.w)) {
+					rotation_max = abs(key.w);
+				}
+				if(rotation_max < abs(key.x)) {
+					rotation_max = abs(key.x);
+				}
+				if(rotation_max < abs(key.y)) {
+					rotation_max = abs(key.y);
+				}
+				if(rotation_max < abs(key.z)) {
+					rotation_max = abs(key.z);
+				}
+
+				rotate_keys.push_back(key);
+				current_time += time_increment;
+			}
+
+			rotation_max -= rotation_bias; 
+
+			vector<short> short_control_points;
+
+			for(int i = 0; i < rotate_keys.size(); i++) {
+				short w;
+				short x;
+				short y;
+				short z;
+
+				w = ((rotate_keys[i].w - rotation_bias) / rotation_max) * 32767;
+				x = ((rotate_keys[i].x - rotation_bias) / rotation_max) * 32767;
+				y = ((rotate_keys[i].y - rotation_bias) / rotation_max) * 32767;
+				z = ((rotate_keys[i].z - rotation_bias) / rotation_max) * 32767;
+				
+				short_control_points.push_back(w);
+				short_control_points.push_back(x);
+				short_control_points.push_back(y);
+				short_control_points.push_back(z);
+			}
+
+			spline_interpolator->SetRotationOffset(spline_data->GetNumShortControlPoints());
+			spline_interpolator->SetRotationBias(rotation_bias);
+			spline_interpolator->SetRotationMultiplier(rotation_max);
+			spline_data->AppendShortControlPoints(short_control_points);
+		} else {
+			spline_interpolator->SetRotationOffset(65535);
+			spline_interpolator->SetRotationBias(FLT_MAX);
+			spline_interpolator->SetRotationMultiplier(FLT_MAX);
+		}
+		
+		if(!scaleX.object().isNull() || !scaleY.object().isNull() || !scaleZ.object().isNull()) {
+			vector<float> scale_keys;
+
+			float current_time = controller_sequence->GetStartTime();
+			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
+			float scale_bias = FLT_MAX;
+			float scale_max = FLT_MIN;
+
+			for(int i = 0; i < control_points; i++) {
+				Vector3 key(rest_scale[0], rest_scale[1], rest_scale[2]);
+				double value;
+
+				if(!scaleX.object().isNull()) {
+					scaleX.evaluate(MTime(current_time, MTime::kSeconds), value);
+					key.x = value;
+				}
+				if(!scaleY.object().isNull()) {
+					scaleY.evaluate(MTime(current_time, MTime::kSeconds), value);
+					key.y = value;
+				}
+				if(!scaleZ.object().isNull()) {
+					scaleZ.evaluate(MTime(current_time, MTime::kSeconds), value);
+					key.z = value;
+				}
+
+				float float_key = pow(key.x * key.y * key.z, 1.0f/3.0f);
+
+				if(scale_bias > abs(float_key)) {
+					scale_bias = abs(float_key);
+				}
+				if(scale_max < abs(float_key)) {
+					scale_bias = abs(float_key);
+				}
+
+				scale_keys.push_back(float_key);
+				current_time += time_increment;
+			}
+
+			scale_max -= scale_bias; 
+
+			vector<short> short_control_points;
+
+			for(int i = 0; i < scale_keys.size(); i++) {
+				short x;
+
+				x = ((scale_keys[i] - scale_bias) /	scale_max) * 32767;
+
+				short_control_points.push_back(x);
+			}
+
+			spline_interpolator->SetScaleOffset(spline_data->GetNumShortControlPoints());
+			spline_interpolator->SetScaleBias(scale_bias);
+			spline_interpolator->SetScaleMultiplier(scale_max);
+			spline_data->AppendShortControlPoints(short_control_points);
+		} else {
+			spline_interpolator->SetScaleOffset(65535);
+			spline_interpolator->SetScaleBias(FLT_MAX);
+			spline_interpolator->SetScaleMultiplier(FLT_MAX);
 		}
 
 	} else if(interpolator_type == "NiPoint3Interpolator") {

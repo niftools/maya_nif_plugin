@@ -47,6 +47,7 @@
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MVector.h>
 
 #include <string> 
 #include <vector>

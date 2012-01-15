@@ -78,6 +78,8 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
+#include <obj/NiBSplineData.h>
+#include <obj/NiBSplineBasisData.h>
 #include <Ref.h>
 
 #include "NifTranslatorRefObject.h"
@@ -117,7 +119,7 @@ public:
 
 	map< string, vector<NiPropertyRef> > shaders;
 
-	map<MObject> animatedObjects; //the animated objects to export animation from
+	vector<MObject> animatedObjects; //the animated objects to export animation from
 
 	//the spline datas used by the NiBSplineInterpolators
 	//the key represents the amount of control points for all the NiBSplineInterpolators
@@ -127,7 +129,7 @@ public:
 
 	//all the basis data shared between NiBSplineInterpolators that share the same number of
 	//control points
-	vector<int, NiBSplineBasisDataRef> splinesBasisData;
+	map<int, NiBSplineBasisDataRef> splinesBasisData;
 
 
 	map<string,NifTranslatorDataWrapperRef> customData;

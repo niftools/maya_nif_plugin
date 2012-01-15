@@ -203,6 +203,12 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			}
 		}
 
+		if(tokens[0] == "numberOfKeysToSample") {
+			if(tokens.length() > 1) {
+				this->numberOfKeysToSample = atoi(tokens[1].asChar());
+			}
+		}
+
 		if(tokens[0] == "exportedShapes") {
 			if(tokens.length() > 1) {
 				MStringArray exportedShapesTokens; 

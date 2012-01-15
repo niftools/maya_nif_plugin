@@ -110,7 +110,7 @@ public:
 	
 	string exportType; //this tells the exporter what to export from the scene: geometry or animation
 
-	int sampleKeysCount; //the default control points for splines
+	int numberOfKeysToSample; //the default control points for some interpolators such as splines
 
 	string animationTarget; // the name of the target of the kf file or controller sequence
 	string animationName; //the name of the animation stored in the kf file or the controlelr sequence

@@ -56,6 +56,7 @@ global proc int nifTranslatorOpts ( string $parent,
 		"./textures",
 		"C:/Program Files/Firaxis Games/Sid Meier's Civilization 4/Assets/Art/shared"
 	};
+	string $defaultNumberOfKeysToSample = "20";
 	
 	
 	if ($action == "post") {
@@ -275,6 +276,15 @@ global proc int nifTranslatorOpts ( string $parent,
 								-text "Bip01"
 								-annotation "The target of the animation"
 								animationTargetTx;
+			setParent exportColumnLayout;
+			rowLayout -numberOfColumns 2
+					  -columnWidth2 160 50
+					  -columnAttach2 "both" "both";
+					  text -label "Number of keys to sample from animations:";
+					  textField -editable true
+					            -text $defaultNumberOfKeysToSample
+								-annotation "How many keys to extract from each individual object in the scene"
+								numberOfKeysToSampleTx;
 			setParent exportColumnLayout;
 			text -label "Texture Path Adjustment:"
 			     -width 150
@@ -496,6 +506,14 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "animationTarget=Bip01;";
 		} else {
 			$currentOptions = $currentOptions + "animationTarget=" + $animationTarget + ";";
+		}
+
+		string $numberOfKeysToSample = "";
+		$numberOfKeysToSample = `textField -query -text numberOfKeysToSampleTx`;
+		if($numberOfKeysToSample == "") {
+			$currentOptions = $currentOptions + "numberOfKeysToSample=" + $defaultNumberOfKeysToSample + ";";
+		} else {
+			$currentOptions = $currentOptions + "numberOfKeysToSample=" + $numberOfKeysToSample + ";";
 		}
 		
 		int $ckVal;

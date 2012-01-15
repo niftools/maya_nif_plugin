@@ -266,7 +266,7 @@ global proc nifTranslatorSetInterpolatorToNiTransformInterpolator() {
 }
 
 global proc nifTranslatorSetInterpolatorToNiBSplineCompInterpolator() {
-	nifTranslatorSetInterpolator("NiBSplineCompInterpolator");
+	nifTranslatorSetInterpolator("NiBSplineCompTransformInterpolator");
 }
 
 global proc nifTranslatorSetInterpolatorToNiPoint3Interpolator() {
