@@ -658,6 +658,11 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 	} else  if(interpolator_type == "NiBSplineCompTransformInterpolator") {
 		NiBSplineCompTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineCompTransformInterpolator>(NiBSplineCompTransformInterpolator::Create());
+
+		spline_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
+		spline_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
+		spline_interpolator->SetRotation(Quaternion(rest_q_w, rest_q_x, rest_q_y, rest_q_z));
+
 		NiBSplineDataRef spline_data;
 		NiBSplineBasisDataRef spline_basis_data;
 
@@ -676,14 +681,15 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		} else {
 			spline_data = DynamicCast<NiBSplineData>(NiBSplineData::Create());
 			spline_basis_data = DynamicCast<NiBSplineBasisData>(NiBSplineBasisData::Create());
+			spline_basis_data->SetNumControlPoints(control_points);
 
 			this->translatorData->splinesData[control_points] = spline_data;
 			this->translatorData->splinesBasisData[control_points] = spline_basis_data;
 		}
 
 		if(!translateX.object().isNull() || !translateY.object().isNull() || !translateZ.object().isNull()) {
-
 			vector<Vector3> translate_keys;
+
 			float current_time = controller_sequence->GetStartTime();
 			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
 			float translation_bias = FLT_MAX;
@@ -706,21 +712,47 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 					key.z = value;
 				}
 
-				if(translation_bias > key.x) {
-					translation_bias = key.x;
+				if(translation_bias > abs(key.x)) {
+					translation_bias = abs(key.x);
 				}
-				if(translation_bias > key.y) {
-					translation_bias = key.y;
+				if(translation_bias > abs(key.y)) {
+					translation_bias = abs(key.y);
 				}
-				if(translation_bias > key.z) {
-					translation_bias = key.z;
+				if(translation_bias > abs(key.z)) {
+					translation_bias = abs(key.z);
+				}
+
+				if(translation_max < abs(key.x)) {
+					translation_max = abs(key.x);
+				}
+				if(translation_max < abs(key.y)) {
+					translation_max = abs(key.y);
+				}
+				if(translation_max < abs(key.z)) {
+					translation_max = abs(key.z);
 				}
 
 				translate_keys.push_back(key);
 				current_time += time_increment;
 			}
 
+			translation_max -= translation_bias; 
 
+			vector<short> short_control_points;
+
+			for(int i = 0; i < translate_keys.size(); i++) {
+				short x;
+				short y;
+				short z;
+
+				x = ((translate_keys[i].x - translation_bias) /	translation_max) * 32767;
+				y = ((translate_keys[i].y - translation_bias) / translation_max) * 32767;
+				z = ((translate_keys[i].z - translation_bias) / translation_max) * 32767;
+
+				short_control_points.push_back(x);
+				short_control_points.push_back(y);
+				short_control_points.push_back(z);
+			}
 
 		} else {
 			spline_interpolator->SetTranslationOffset(65536);
@@ -731,7 +763,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 	}
 
 	if(interpolator != NULL) {
-		Niflib::byte priority = 255;
+		Niflib::byte priority = 30;
 		MPlug plug_priority = node.findPlug("animationPriority");
 
 		if(!plug_priority.isNull()) {
