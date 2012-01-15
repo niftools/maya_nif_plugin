@@ -784,9 +784,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			float rotation_bias = FLT_MAX;
 			float rotation_max = FLT_MIN;
 
-			float rest_r_x;
-			float rest_r_y;
-			float rest_r_z;
+
+			MQuaternion rest_qq(rest_q_x, rest_q_y, rest_q_z, rest_q_w);
+			MEulerRotation rot = rest_qq.asEulerRotation();
+			float rest_r_x = rot.x;
+			float rest_r_y = rot.y;
+			float rest_r_z = rot.z;
 
 			for(int i = 0; i < control_points; i++) {
 				MEulerRotation euler_key(rest_r_x, rest_r_y, rest_r_z);
