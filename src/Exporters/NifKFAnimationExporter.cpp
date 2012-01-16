@@ -703,7 +703,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 			float current_time = controller_sequence->GetStartTime();
 			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
-			float translation_bias = FLT_MAX;
+			float translation_min = FLT_MAX;
 			float translation_max = FLT_MIN;
 
 			for(int i = 0; i < control_points; i++) {
@@ -723,31 +723,32 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 					key.z = value;
 				}
 
-				if(translation_bias > abs(key.x)) {
-					translation_bias = abs(key.x);
+				if(translation_min > key.x) {
+					translation_min = key.x;
 				}
-				if(translation_bias > abs(key.y)) {
-					translation_bias = abs(key.y);
+				if(translation_min > key.y) {
+					translation_min = key.y;
 				}
-				if(translation_bias > abs(key.z)) {
-					translation_bias = abs(key.z);
+				if(translation_min > key.z) {
+					translation_min = key.z;
 				}
 
-				if(translation_max < abs(key.x)) {
-					translation_max = abs(key.x);
+				if(translation_max < key.x) {
+					translation_max = key.x;
 				}
-				if(translation_max < abs(key.y)) {
-					translation_max = abs(key.y);
+				if(translation_max < key.y) {
+					translation_max = key.y;
 				}
-				if(translation_max < abs(key.z)) {
-					translation_max = abs(key.z);
+				if(translation_max < key.z) {
+					translation_max = key.z;
 				}
 
 				translate_keys.push_back(key);
 				current_time += time_increment;
 			}
-
-			translation_max -= translation_bias; 
+			
+			double translation_bias = (translation_min + translation_max) / 2;
+			double translation_multiplier = translation_max - translation_bias;
 
 			vector<short> short_control_points;
 
@@ -756,9 +757,9 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				short y;
 				short z;
 
-				x = ((translate_keys[i].x - translation_bias) /	translation_max) * 32767;
-				y = ((translate_keys[i].y - translation_bias) / translation_max) * 32767;
-				z = ((translate_keys[i].z - translation_bias) / translation_max) * 32767;
+				x = ((translate_keys[i].x - translation_bias) /	translation_multiplier) * 32767;
+				y = ((translate_keys[i].y - translation_bias) / translation_multiplier) * 32767;
+				z = ((translate_keys[i].z - translation_bias) / translation_multiplier) * 32767;
 
 				short_control_points.push_back(x);
 				short_control_points.push_back(y);
@@ -767,7 +768,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 			spline_interpolator->SetTranslationOffset(spline_data->GetNumShortControlPoints());
 			spline_interpolator->SetTranslateBias(translation_bias);
-			spline_interpolator->SetTranslateMultiplier(translation_max);
+			spline_interpolator->SetTranslateMultiplier(translation_multiplier);
 			spline_data->AppendShortControlPoints(short_control_points);
 
 		} else {
@@ -781,8 +782,8 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 			float current_time = controller_sequence->GetStartTime();
 			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
-			float rotation_bias = FLT_MAX;
-			float rotation_max = FLT_MIN;
+			double rotation_min = FLT_MAX;
+			double rotation_max = FLT_MIN;
 
 
 			MQuaternion rest_qq(rest_q_x, rest_q_y, rest_q_z, rest_q_w);
@@ -810,39 +811,43 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 				MQuaternion key = euler_key.asQuaternion();
 
-				if(rotation_bias > abs(key.w)) {
-					rotation_bias = abs(key.w);
+				if(rotation_min > key.w) {
+					rotation_min = key.w;
 				}
-				if(rotation_bias > abs(key.x)) {
-					rotation_bias = abs(key.x);
+				if(rotation_min > key.x) {
+					rotation_min = key.x;
 				}
-				if(rotation_bias > abs(key.y)) {
-					rotation_bias = abs(key.y);
+				if(rotation_min > key.y) {
+					rotation_min = key.y;
 				}
-				if(rotation_bias > abs(key.z)) {
-					rotation_bias = abs(key.z);
+				if(rotation_min > key.z) {
+					rotation_min = key.z;
 				}
 
-				if(rotation_max < abs(key.w)) {
-					rotation_max = abs(key.w);
+				if(rotation_max < key.w) {
+					rotation_max = key.w;
 				}
-				if(rotation_max < abs(key.x)) {
-					rotation_max = abs(key.x);
+				if(rotation_max < key.x) {
+					rotation_max = key.x;
 				}
-				if(rotation_max < abs(key.y)) {
-					rotation_max = abs(key.y);
+				if(rotation_max < key.y) {
+					rotation_max = key.y;
 				}
-				if(rotation_max < abs(key.z)) {
-					rotation_max = abs(key.z);
+				if(rotation_max < key.z) {
+					rotation_max = key.z;
 				}
 
 				rotate_keys.push_back(key);
 				current_time += time_increment;
 			}
 
-			rotation_max -= rotation_bias; 
-
 			vector<short> short_control_points;
+
+			double rotation_bias;
+			double rotation_multiplier;
+
+			rotation_bias = (rotation_min + rotation_max) / 2;
+			rotation_multiplier = rotation_max - rotation_bias;
 
 			for(int i = 0; i < rotate_keys.size(); i++) {
 				short w;
@@ -850,10 +855,10 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 				short y;
 				short z;
 
-				w = ((rotate_keys[i].w - rotation_bias) / rotation_max) * 32767;
-				x = ((rotate_keys[i].x - rotation_bias) / rotation_max) * 32767;
-				y = ((rotate_keys[i].y - rotation_bias) / rotation_max) * 32767;
-				z = ((rotate_keys[i].z - rotation_bias) / rotation_max) * 32767;
+				w = ((rotate_keys[i].w - rotation_bias) / rotation_multiplier) * 32767.0;
+				x = ((rotate_keys[i].x - rotation_bias) / rotation_multiplier) * 32767.0;
+				y = ((rotate_keys[i].y - rotation_bias) / rotation_multiplier) * 32767.0;
+				z = ((rotate_keys[i].z - rotation_bias) / rotation_multiplier) * 32767.0;
 				
 				short_control_points.push_back(w);
 				short_control_points.push_back(x);
@@ -863,7 +868,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 			spline_interpolator->SetRotationOffset(spline_data->GetNumShortControlPoints());
 			spline_interpolator->SetRotationBias(rotation_bias);
-			spline_interpolator->SetRotationMultiplier(rotation_max);
+			spline_interpolator->SetRotationMultiplier(rotation_multiplier);
 			spline_data->AppendShortControlPoints(short_control_points);
 		} else {
 			spline_interpolator->SetRotationOffset(65535);
@@ -876,7 +881,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 			float current_time = controller_sequence->GetStartTime();
 			float time_increment = (controller_sequence->GetStopTime() - controller_sequence->GetStartTime()) / control_points;
-			float scale_bias = FLT_MAX;
+			float scale_min = FLT_MAX;
 			float scale_max = FLT_MIN;
 
 			for(int i = 0; i < control_points; i++) {
@@ -898,32 +903,33 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 				float float_key = pow(key.x * key.y * key.z, 1.0f/3.0f);
 
-				if(scale_bias > abs(float_key)) {
-					scale_bias = abs(float_key);
+				if(scale_min > float_key) {
+					scale_min = float_key;
 				}
-				if(scale_max < abs(float_key)) {
-					scale_bias = abs(float_key);
+				if(scale_max < float_key) {
+					scale_min = float_key;
 				}
 
 				scale_keys.push_back(float_key);
 				current_time += time_increment;
 			}
 
-			scale_max -= scale_bias; 
+			double scale_bias = (scale_min + scale_max) / 2;
+			double scale_multiplier = scale_max - scale_bias;
 
 			vector<short> short_control_points;
 
 			for(int i = 0; i < scale_keys.size(); i++) {
 				short x;
 
-				x = ((scale_keys[i] - scale_bias) /	scale_max) * 32767;
+				x = ((scale_keys[i] - scale_bias) /	scale_multiplier) * 32767;
 
 				short_control_points.push_back(x);
 			}
 
 			spline_interpolator->SetScaleOffset(spline_data->GetNumShortControlPoints());
 			spline_interpolator->SetScaleBias(scale_bias);
-			spline_interpolator->SetScaleMultiplier(scale_max);
+			spline_interpolator->SetScaleMultiplier(scale_multiplier);
 			spline_data->AppendShortControlPoints(short_control_points);
 		} else {
 			spline_interpolator->SetScaleOffset(65535);

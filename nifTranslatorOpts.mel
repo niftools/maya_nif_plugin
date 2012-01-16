@@ -278,9 +278,9 @@ global proc int nifTranslatorOpts ( string $parent,
 								animationTargetTx;
 			setParent exportColumnLayout;
 			rowLayout -numberOfColumns 2
-					  -columnWidth2 160 50
+					  -columnWidth2 220 50
 					  -columnAttach2 "both" "both";
-					  text -label "Number of keys to sample from animations:";
+					  text -label "Number of keys to sample from animations:" -align "left";
 					  textField -editable true
 					            -text $defaultNumberOfKeysToSample
 								-annotation "How many keys to extract from each individual object in the scene"
