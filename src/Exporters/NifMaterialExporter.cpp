@@ -38,7 +38,13 @@ void NifMaterialExporter::ExportShaders()
 			MFnLambertShader lambertFn( itDep.item() );
 
 			//Get name
-			mat_name = this->translatorUtils->MakeNifName( lambertFn.name() );
+			mat_name = this->translatorUtils->MakeNifName(lambertFn.name());
+
+			//check if the material is a skin
+			int is_skin = mat_name.find("skin");
+			if(is_skin == 0) {
+				mat_name = "skin";
+			}
 
 			//--Get info from Color slots--//
 			//out << "Getting color slot info..." << endl;

@@ -84,6 +84,14 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			}
 			//out << "Import Bind Pose:  " << import_bind_pose << endl;
 		}
+		if(tokens[0] == "importNormalizedWeights") {
+			if(tokens[1] == "1") {
+				this->importNormalizedWeights = true;
+			} else {
+				this->importNormalizedWeights = false;
+			}
+			//out << "Import Normalized weights:  " << importNormalizedWeights << endl;
+		}
 		if ( tokens[0] == "importNormals" ) {
 			if ( tokens[1] == "1" ) {
 				this->importNormals = true;

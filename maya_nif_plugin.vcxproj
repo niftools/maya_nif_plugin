@@ -246,7 +246,7 @@
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\NifTranslator\include;D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
-    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">PrepareForRun</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">Run</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">
     <ClCompile>

@@ -47,6 +47,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultUserVersion = "0";
 	string $defaultUserVersion2 = "0";
 	string $defaultBonesPerPart = "0";
+	string $defaultImportNormalizedWeights = "false";
 	string $defaultJointMatch = "Bip";
 	string $defaultPathPrefix = "textures/";
 	string $defaultPaths[] = { 
@@ -104,6 +105,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 1
 						  -annotation "Attempts to extract the original position the NIF file was bound in rather than its current position."
 						  impBindPoseCk;
+				checkBox -label "Import normalized vertex weights"
+						 -value 0
+						 -annotation "Truncates the individual vertex weights so that together they sum up to 1.0"
+						 importNormalizedVertexWeightsCk;
 				checkBox -label "Try to Use Original Normals" 
 					      -value 0
 						  -annotation "Attepts to import the normals from the NIF file as user normals."
@@ -136,7 +141,7 @@ global proc int nifTranslatorOpts ( string $parent,
 				string $shapes[];
 				string $selectedShapes[];
 				string $tmpshapes[];
-			
+
 				int $x = 0;
 				$shapes = `ls -type "transform" -type "joint"`;
 				clear($gNifExportedObjects);
@@ -153,7 +158,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						$gNifExportedObjectsTypes[$x] = "joint";
 						$x++;
 					}		
-				}		
+				}	
 			
 				clear($gNifExportedObjectsValues);		
 				for($i = 0;$i < size($gNifExportedObjects); $i++) {
@@ -198,7 +203,8 @@ global proc int nifTranslatorOpts ( string $parent,
 							}
 						}
 					}
-				}	
+				}
+				
 				AdjustSelectedJoints();
 			setParent exportFrameLayout;
 
@@ -520,6 +526,9 @@ global proc int nifTranslatorOpts ( string $parent,
 		
 		$ckVal = `checkBox -query -value impBindPoseCk`;
 		$currentOptions = $currentOptions + "importBindPose=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value importNormalizedVertexWeightsCk`;
+		$currentOptions = $currentOptions + "importNormalizedWeights=" + $ckVal + ";";
 		
 		$ckVal = `checkBox -query -value impNormalsCk`;
 		$currentOptions = $currentOptions + "importNormals=" + $ckVal + ";";
@@ -641,23 +650,25 @@ global proc AdjustSelectedJoints() {
 	for($i = 0;$i < size($gNifExportedObjects); $i++) {
 		if($gNifExportedObjectsTypes[$i] == "shape" && $gNifExportedObjectsValues[$i] == 1) {
 			string $skin = findRelatedSkinCluster($gNifExportedObjects[$i]);
-			string $influences[] = `skinCluster -query -influence $skin`;
+			if($skin != "") {
+				string $influences[] = `skinCluster -query -influence $skin`;
 			
-			int $invalid = 0;
+				int $invalid = 0;
 			
-			for($j = 0;$j < size($influences);$j++) {
-				for($k = 0;$k < size($gNifExportedObjects); $k++) {
-					if($gNifExportedObjects[$k] == $influences[$j] &&  $gNifExportedObjectsValues[$k] == 0 && $gNifExportedObjectsTypes[$k] == "joint") {
-						$gNifExportedObjectsValues[$k] = 1;
-						treeView -edit -buttonTextIcon $gNifExportedObjects[$k] 1 "E" overviewTreeView;
-						SelectParentJoints($gNifExportedObjects[$k]);
-						$invalid++;
+				for($j = 0;$j < size($influences);$j++) {
+					for($k = 0;$k < size($gNifExportedObjects); $k++) {
+						if($gNifExportedObjects[$k] == $influences[$j] &&  $gNifExportedObjectsValues[$k] == 0 && $gNifExportedObjectsTypes[$k] == "joint") {
+							$gNifExportedObjectsValues[$k] = 1;
+							treeView -edit -buttonTextIcon $gNifExportedObjects[$k] 1 "E" overviewTreeView;
+							SelectParentJoints($gNifExportedObjects[$k]);
+							$invalid++;
+						}
 					}
 				}
-			}
 			
-			if($invalid > 0) {
-				warning("Some shapes had weights that depended on bones not selected for export \n");
+				if($invalid > 0) {
+					warning("Some shapes had weights that depended on bones not selected for export \n");
+				}
 			}
 		}
 	}

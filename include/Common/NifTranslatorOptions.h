@@ -95,6 +95,7 @@ public:
 	vector<string> exportedJoints; //contains all the names of the joints that the users selected to export from the scene
 	bool importNormals; //Determines whether normals are imported
 	bool importNoAmbient; //Determines whether ambient color is imported
+	bool importNormalizedWeights; //Determines whether weights are normalized, it truncates all the weights on a vertex to 1.0
 	bool exportWhiteAmbient; //Determines whether ambient color is automatically set to white if a texture is present
 	bool importCombineSkeletons; //Determines whether the importer tries to combine new skins with skeletons that exist in the scene
 	string jointMatch; //String to match in the name of nodes as another way to cause them to import as IK joints

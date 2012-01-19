@@ -38,46 +38,9 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 	MPointArray maya_verts(NumVertices);
 
-#if _DEBUG
-	//we manually extract the vertices from the mesh 
-	//all the vertices that have the exact position are ignored 
-	//in a way they are merged
-	NiTriBasedGeomRef nif_geometry = DynamicCast<NiTriBasedGeom>(root);
-	NiGeometryDataRef nif_geometry_data = nif_geometry->GetData();
-	vector<Vector3> nif_vertices = nif_geometry_data->GetVertices();
-	vector<Vector3> nif_merged_vertices;
-
-	for(int i = 0;i < nif_geometry_data->GetVertexCount(); i++) {
-		int duplicate = 0;
-
-		for(int j = 0;j < nif_merged_vertices.size(); j++) {
-			if(nif_merged_vertices[j].x == nif_vertices[i].x && nif_merged_vertices[j].y == nif_vertices[i].y && nif_merged_vertices[j].z == nif_vertices[i].z) {
-				duplicate = 1;
-			}
-		}
-
-		if(duplicate == 0) {
-			nif_merged_vertices.push_back(nif_vertices[i]);
-		}
-	}
-
-
-	//if the manually extracted vertices are ok it executes the else branch
-	//else if the number of merged vertices differ from the complexshape vertex count, we use the complexshape vertices
-	if(NumVertices != nif_merged_vertices.size()) {
-		for (unsigned i = 0; i < NumVertices; ++i) {
-			maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
-		}
-	} else {
-		for (unsigned i = 0; i < NumVertices; ++i) {
-			maya_verts[i] = MPoint(nif_merged_vertices[i].x, nif_merged_vertices[i].y, nif_merged_vertices[i].z, 0.0f);
-		}
-	}
-#else 
 	for (unsigned i = 0; i < NumVertices; ++i) {
 		maya_verts[i] = MPoint(nif_verts[i].position.x, nif_verts[i].position.y, nif_verts[i].position.z, 0.0f);
 	}
-#endif
 
 	//out << "Getting polygons..." << endl;
 	//Get Polygons
@@ -117,25 +80,6 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		niFaces.push_back( f );
 	}
 	niRawFaces.clear();
-
-	//#if _DEBUG
-	//
-	//	cout<<"OBJ dump"<<endl<<endl<<endl<<endl;
-	//	for(int i = 0;i < maya_verts.length(); i++) {
-	//		cout<<"v "<<maya_verts[i].x<<"  "<<maya_verts[i].y<<" "<<maya_verts[i].z<<endl;
-	//	}
-	//
-	//	int j = 0;
-	//
-	//	for(int i = 0;i < maya_poly_counts.length(); i++) {
-	//		cout<<"f ";
-	//		for(int k = j; k < j + maya_poly_counts[i]; k++) {
-	//			cout<<(maya_connects[k] + 1)<<" ";
-	//		}
-	//		cout<<endl;
-	//		j += maya_poly_counts[i];
-	//	}
-	//#endif
 
 	//NumPolygons = triangles.size();
 	NumPolygons = niFaces.size();
@@ -263,15 +207,6 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				v_arr[j] = 1.0f - uv_set[j].v;
 			}
 
-			//out << "Original UV Array:" << endl;
-			//for ( unsigned j = 0; j < uv_set.size(); ++j ) {
-			//	out << "U:  " << uv_set[j].u << "  V:  " << uv_set[j].v << endl;
-			//}
-			//out << "Maya UV Array:" << endl;
-			//for ( unsigned j = 0; j < uv_set.size(); ++j ) {
-			//	out << "U:  " << u_arr[j] << "  V:  " << v_arr[j]<< endl;
-			//}
-
 			//Assign the UVs to the object
 			MString uv_set_name("map1");
 			if ( i < int(uv_set_list.size()) ) {
@@ -354,15 +289,6 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 				maya_connects.append(tcIndices[2]);
 
 			}
-
-			//unsigned sum = 0;
-			//for ( unsigned i = 0; i < maya_poly_counts.length(); ++i ) {
-			//	sum += maya_poly_counts[i];
-			//}
-
-			//out << "Poly Count Length:  " << maya_poly_counts.length() << endl;
-			//out << "Poly Count Sum:  " << sum << endl;
-			//out << "Connects Length:  " << maya_connects.length() << endl;
 
 			stat = meshFn.assignUVs( maya_poly_counts, maya_connects, &uv_set_name );
 			if ( stat != MS::kSuccess ) {
@@ -472,6 +398,10 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 		MGlobal::executeCommand( cmd.c_str(), result );
 		MFnSkinCluster clusterFn;
 
+		if(this->translatorOptions->importNormalizedWeights == false) {
+			MGlobal::executeCommand("setAttr " + clusterFn.name() + "\.normalizeWeights 0");
+		}
+
 		MSelectionList selList;
 		selList.add(result[0]);
 		MObject skinOb;
@@ -534,7 +464,7 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 		//out << "Send the weights to Maya" << endl;
 		//Send the weights to Maya
-		clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, true );
+		clusterFn.setWeights( meshPath, vertices, influence_list, weight_list, this->translatorOptions->importNormalizedWeights);
 	}			
 
 	//out << "ImportMesh() end" << endl;
