@@ -546,7 +546,8 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 	this->nodeExporter->ExportAV(tempAV, dagNode );
 
 	//out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
-	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, this->translatorOptions->exportAsTriStrips, this->translatorOptions->exportTangentSpace );
+	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, 
+		this->translatorOptions->exportAsTriStrips, this->translatorOptions->exportTangentSpace, this->translatorOptions->exportMinimumVertexWeight );
 
 	//out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split

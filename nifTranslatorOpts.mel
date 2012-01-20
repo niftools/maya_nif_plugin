@@ -48,6 +48,7 @@ global proc int nifTranslatorOpts ( string $parent,
 	string $defaultUserVersion2 = "0";
 	string $defaultBonesPerPart = "0";
 	string $defaultImportNormalizedWeights = "false";
+	string $defaultExportMinimumVertexWeight = "0.001";
 	string $defaultJointMatch = "Bip";
 	string $defaultPathPrefix = "textures/";
 	string $defaultPaths[] = { 
@@ -269,6 +270,15 @@ global proc int nifTranslatorOpts ( string $parent,
 						  -annotation "CivIV No Shader: 4  CivIV FX Shader: 16  Oblivion: 20  Morrowind: 0"
 						  expPartBonesTx;
 			setParent exportColumnLayout;
+			rowLayout -numberOfColumns 2
+					  -columnWidth2 220 50
+					  -columnAttach2 "both" "both";
+					  text -label "Remove from vertices bone weights bellow:" -align "left";
+					  textField -editable true
+						  -text $defaultExportMinimumVertexWeight
+						  -annotation "The minium amount of weight that a joint can have on a vertex in order to export the weight"
+						  minimumVertexWeightTx;
+			setParent exportColumnLayout;
 			rowLayout -numberOfColumns 4
 					  -columnWidth4 80 110 110 100
 					  -columnAttach4 "both" "both" "both" "both";
@@ -402,6 +412,9 @@ global proc int nifTranslatorOpts ( string $parent,
 					} else {
 						checkBox -edit -value false expWhiteAmbientCk;
 					}
+				}
+				if ($optionBreakDown[0] == "minimumVertexWeight") {
+					textField -edit -text $optionBreakDown[1] minimumVertexWeightTx;
 				}
 				if ($optionBreakDown[0] == "exportTriStrips") {
 					if ($optionBreakDown[1] == "1" ) {
@@ -555,6 +568,14 @@ global proc int nifTranslatorOpts ( string $parent,
 			$currentOptions = $currentOptions + "numberOfKeysToSample=" + $defaultNumberOfKeysToSample + ";";
 		} else {
 			$currentOptions = $currentOptions + "numberOfKeysToSample=" + $numberOfKeysToSample + ";";
+		}
+
+		string $minimumVertexWeight = "0.001";
+		$minimumVertexWeight = `textField -query -text minimumVertexWeightTx`;
+		if($minimumVertexWeight == "") {
+			$currentOptions = $currentOptions + "minimumVertexWeight=0.001;";
+		} else {
+			$currentOptions = $currentOptions + "minimumVertexWeight=" + $minimumVertexWeight + ";";
 		}
 		
 		int $ckVal;

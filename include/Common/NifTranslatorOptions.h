@@ -104,6 +104,7 @@ public:
 	int exportBonesPerSkinPartition; //Determines the maximum number of bones per skin partition.
 	bool exportTangentSpace; //Determines whether Oblivion tangent space data is generated for meshes on export
 	bool exportMorrowindRename; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
+	float exportMinimumVertexWeight; //Determines the minimum bone weight for a vertices that will be exported for each individual vertex
 	
 	TexPathMode texturePathMode;  //Determines the way textures paths are exported
 	string texturePathPrefix; //Optional prefix to add to texture paths.

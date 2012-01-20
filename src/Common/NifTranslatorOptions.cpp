@@ -140,6 +140,9 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			}
 			//out << "Export Morrowind Rename:  " << export_mor_rename << endl;
 		}
+		if ( tokens[0] == "minimumVertexWeight") {
+			this->exportMinimumVertexWeight = atof(tokens[1].asChar());
+		}
 		if ( tokens[0] == "importSkelComb" ) {
 			if ( tokens[1] == "1" ) {
 				this->importCombineSkeletons = true;
