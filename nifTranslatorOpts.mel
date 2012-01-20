@@ -212,10 +212,10 @@ global proc int nifTranslatorOpts ( string $parent,
 			global string $gNifExportType;
 			text -label "Export from the scene:" -font boldLabelFont -align "left";
 			radioCollection;
-				radioButton -label "Selected geometry only" -select -onCommand "nifTranslatorSetToExportGeometry";
-				radioButton -label "All geometry only" -onCommand "nifTranslatorSetToExportAllGeometry";
-				radioButton -label "Selected animation only" -onCommand "nifTranslatorSetToExportAnimation";
-				radioButton -label "All animation only" -onCommand "nifTranslatorSetToExportAllAnimation";
+				radioButton -label "Selected geometry only" -select -onCommand "nifTranslatorSetToExportGeometry" exportGeometryRd;
+				radioButton -label "All geometry only" -onCommand "nifTranslatorSetToExportAllGeometry" exportAllGeometryRd;
+				radioButton -label "Selected animation only" -onCommand "nifTranslatorSetToExportAnimation" exportAnimationRd;
+				radioButton -label "All animation only" -onCommand "nifTranslatorSetToExportAllAnimation" exportAllAnimationRd;
 			setParent exportFrameLayout;
 
 			rowLayout -numberOfColumns 2
@@ -340,11 +340,43 @@ global proc int nifTranslatorOpts ( string $parent,
 				if ($optionBreakDown[0] == "exportUserVersion") {
 					textField -edit -text $optionBreakDown[1] expUserVersionTx;
 				}
+				if ($optionBreakDown[0] == "exportUserVersion2") {
+					textField -edit -text $optionBreakDown[1] expUserVersion2Tx;
+				}
+				if ($optionBreakDown[0] == "exportType") {
+					global string $gNifExportType;
+					if ($optionBreakDown[1] == "geometry") {
+						$gNifExportType = "geometry";
+						radioButton -edit -select exportGeometryRd;
+					} else if ($optionBreakDown[1] == "allgeometry") {
+						$gNifExportType = "allgeometry";
+						radioButton -edit -select exportAllGeometryRd;
+					} else if ($optionBreakDown[1] == "animation") {
+						$gNifExportType = "animation";
+						radioButton -edit -select exportAnimationRd;
+					} else if ($optionBreakDown[1] == "allanimation") {
+						$gNifExportType = "allanimation";
+						radiobutton -edit -select exportAllAnimationRd;
+					}
+				}
+				if ($optionBreakDown[0] == "animationName") {
+					textField -edit -text $optionBreakDown[1] animationNameTx;
+				}
+				if ($optionBreakDown[0] == "animationTarget") {
+					textField -edit -text $optionBreakDown[1] animationTargetTx;
+				}
 				if ($optionBreakDown[0] == "importBindPose") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true impBindPoseCk;
 					} else {
 						checkBox -edit -value false impBindPoseCk;
+					}
+				}
+				if ($optionBreakDown[0] == "importNormalizedWeights") {
+					if ($optionBreakDown[1] == "1") {
+						checkBox -edit -value true importNormalizedVertexWeightsCk;
+					} else {
+						checkBox -edit -value false importNormalizedVertexWeightsCk;
 					}
 				}
 				if ($optionBreakDown[0] == "importNormals") {
@@ -621,10 +653,12 @@ global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) 
 			if($gNifExportedObjectsValues[$i] == 1) {
 				$unselected = 1;
 				$gNifExportedObjectsValues[$i] = 0;
-				treeView -edit -buttonTextIcon $treeItem 1 "" overviewTreeView;		
+				treeView -edit -buttonTextIcon $treeItem 1 "" overviewTreeView;	
+				eval("select -deselect " + $gNifExportedObjects[$i]);	
 			} else if($gNifExportedObjectsValues[$i] == 0) {
 				$gNifExportedObjectsValues[$i] = 1;
 				treeView -edit -buttonTextIcon $treeItem 1 "E" overviewTreeView;
+				eval("select -add " + $gNifExportedObjects[$i]);
 			}
 			
 			if($gNifExportedObjectsTypes[$i] == "joint") {
@@ -660,6 +694,7 @@ global proc AdjustSelectedJoints() {
 						if($gNifExportedObjects[$k] == $influences[$j] &&  $gNifExportedObjectsValues[$k] == 0 && $gNifExportedObjectsTypes[$k] == "joint") {
 							$gNifExportedObjectsValues[$k] = 1;
 							treeView -edit -buttonTextIcon $gNifExportedObjects[$k] 1 "E" overviewTreeView;
+							eval("select -add " + $gNifExportedObjects[$k]);
 							SelectParentJoints($gNifExportedObjects[$k]);
 							$invalid++;
 						}
@@ -692,6 +727,7 @@ global proc AdjustSelectedShapes() {
 						if($influences[$k] == $gNifExportedObjects[$i] && $gNifExportedObjectsValues[$i] == 0) {
 							$gNifExportedObjectsValues[$j] = 0;
 							treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "" overviewTreeView;
+							eval("select -deselect " + $gNifExportedObjects[$j]);
 							$invalid++;
 						}
 					}
@@ -717,6 +753,7 @@ global proc UnselectChildJoints(string $joint) {
 			if($gNifExportedObjects[$j] == $children[$i] && $gNifExportedObjectsTypes[$j] == "joint") {
 				$gNifExportedObjectsValues[$j] = 0;
 				treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "" overviewTreeView;	
+				eval("select -deselect " + $gNifExportedObjects[$j]);
 				UnselectChildJoints($gNifExportedObjects[$j]);
 			}
 		}
@@ -735,6 +772,7 @@ global proc SelectParentJoints(string $joint) {
 			if($gNifExportedObjects[$j] == $parent[$i] && $gNifExportedObjectsTypes[$j] == "joint") {
 				$gNifExportedObjectsValues[$j] = 1;
 				treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "E" overviewTreeView;	
+				eval("select -add " + $gNifExportedObjects[$j]);
 				SelectParentJoints($gNifExportedObjects[$j]);
 			}
 		}
