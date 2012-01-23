@@ -37,7 +37,8 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 			continue;
 		}
 
-		if(!(this->translatorOptions->exportType == "allanimation") && (!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()))) {
+		if(!(this->translatorOptions->exportType == "allanimation") && 
+			(!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedMisc(node.name()))) {
 			continue;
 		}
 

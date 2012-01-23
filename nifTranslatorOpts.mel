@@ -156,6 +156,10 @@ global proc int nifTranslatorOpts ( string $parent,
 						$gNifExportedObjects[$x] = $shapes[$i];
 						$gNifExportedObjectsTypes[$x] = "shape";
 						$x++;
+					} else if(`objectType -isType "transform" $shapes[$i]` == 1 && hasValidNifName($shapes[$i]) == 1) {
+						$gNifExportedObjects[$x] = $shapes[$i];
+						$gNifExportedObjectsTypes[$x] = "misc";
+						$x++;
 					}
 				
 					if(`objectType -isType "joint" $shapes[$i]` == 1) {
@@ -175,6 +179,8 @@ global proc int nifTranslatorOpts ( string $parent,
 				treeView -edit -pressCommand 1 "ChangeSelectionExportOverviewTreeView" overviewTreeView;
 				treeView -edit -addItem "Shapes" "" -hideButtons overviewTreeView;
 				treeView -edit -addItem "Joints" "" -hideButtons overviewTreeView;
+				treeView -edit -addItem "Misc" "" -hideButtons overviewTreeView;
+
 				for($i = 0;$i < size($gNifExportedObjects); $i++) {
 					if($gNifExportedObjectsTypes[$i] == "shape") {
 						treeView -edit -addItem $gNifExportedObjects[$i] "Shapes" overviewTreeView;
@@ -182,6 +188,10 @@ global proc int nifTranslatorOpts ( string $parent,
 				
 					if($gNifExportedObjectsTypes[$i] == "joint") {
 						treeView -edit -addItem $gNifExportedObjects[$i] "Joints" overviewTreeView;
+					}
+
+					if($gNifExportedObjectsTypes[$i] == "misc") {
+						treeView -edit -addItem $gNifExportedObjects[$i] "Misc" overviewTreeView;
 					}
 				
 					treeView -edit -buttonStyle $gNifExportedObjects[$i] 1 "pushButton" overviewTreeView;
@@ -197,6 +207,14 @@ global proc int nifTranslatorOpts ( string $parent,
 								break;
 							}
 						}
+					} else if(`objectType -isType "transform" $selectedShapes[$i]` == 1 && hasValidNifName($shapes[$i]) == 1) {
+						treeView -edit -buttonTextIcon $selectedShapes[$i] 1 "E" overviewTreeView;
+						for($j = 0;$j < size($gNifExportedObjects); $j++) {
+							if ($gNifExportedObjects[$j] == $selectedShapes[$i]) {
+								$gNifExportedObjectsValues[$j] = 1;
+								break;
+							}
+						}
 					}
 				
 					if(`objectType -isType "joint" $selectedShapes[$i]` == 1) {
@@ -204,6 +222,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						for($j = 0;$j < size($gNifExportedObjects); $j++) {
 							if ($gNifExportedObjects[$j] == $selectedShapes[$i]) {
 								$gNifExportedObjectsValues[$j] = 1;
+								SelectParentJoints($gNifExportedObjects[$j]);
 								break;
 							}
 						}
@@ -553,7 +572,20 @@ global proc int nifTranslatorOpts ( string $parent,
 			}
 		}
 		$currentOptions = $currentOptions + $exportedJoints + ";";
-	
+		string $exportedMisc = "exportedMisc=";
+		$first = 1;
+		for($i = 0;$i < size($gNifExportedObjects);$i++) {
+			if($gNifExportedObjectsTypes[$i] == "misc" && $gNifExportedObjectsValues[$i] == 1) {
+				if($first == 1) {
+					$exportedMisc = $exportedMisc + $gNifExportedObjects[$i];
+					$first = 0;
+				} else {
+					$exportedMisc = $exportedMisc + "," + $gNifExportedObjects[$i];
+				}
+			}
+		}
+		$currentOptions = $currentOptions + $exportedMisc + ";";
+
 		global string $gNifExportType;
 		$currentOptions = $currentOptions + "exportType=" + $gNifExportType + ";";
 
@@ -706,7 +738,7 @@ global proc ChangeSelectionExportOverviewTreeView(string $treeItem, int $state) 
 					SelectParentJoints($gNifExportedObjects[$i]);
 				}
 				AdjustSelectedShapes();
-			} else {
+			} else if($gNifExportedObjectsTypes[$i] == "shape") {
 				AdjustSelectedJoints();
 			}
 			break;

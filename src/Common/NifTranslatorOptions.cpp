@@ -248,6 +248,17 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 				}
 			}
 		}
+
+		if(tokens[0] == "exportedMisc") {
+			if(tokens.length() > 1) {
+				MStringArray exportedMiscTokens; 
+				tokens[1].split(',',exportedMiscTokens);
+				this->exportedShapes.clear();
+				for(int k = 0;k < exportedMiscTokens.length();k++) {
+					this->exportedMisc.push_back(exportedMiscTokens[k].asChar());
+				}
+			}
+		}
 	}
 }
 

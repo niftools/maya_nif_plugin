@@ -93,6 +93,7 @@ public:
 
 	vector<string> exportedShapes; //contains all the names of the shapes that the users selected to export from the scene
 	vector<string> exportedJoints; //contains all the names of the joints that the users selected to export from the scene
+	vector<string> exportedMisc; //contains all the names of the misc things that the user selected to export from the scene
 	bool importNormals; //Determines whether normals are imported
 	bool importNoAmbient; //Determines whether ambient color is imported
 	bool importNormalizedWeights; //Determines whether weights are normalized, it truncates all the weights on a vertex to 1.0

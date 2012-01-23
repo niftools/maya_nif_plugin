@@ -119,6 +119,8 @@ public:
 
 	bool isExportedJoint( const MString& name );
 
+	bool isExportedMisc( const MString& name );
+
 	string MakeNifName( const MString & mayaName );
 
 	MString MakeMayaName( const string & nifName );

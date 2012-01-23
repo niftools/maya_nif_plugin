@@ -388,6 +388,21 @@ bool NifTranslatorUtils::isExportedJoint( const MString& name )
 	return false;
 }
 
+
+bool NifTranslatorUtils::isExportedMisc( const MString& name )
+{
+	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
+		return true;
+	}
+	for(int i = 0;i < this->translatorOptions->exportedMisc.size(); i++) {
+		if(name.asChar() == this->translatorOptions->exportedMisc[i])
+			return true;
+	}
+
+	return false;
+}
+
+
 std::string NifTranslatorUtils::MakeNifName( const MString & mayaName )
 {
 	stringstream newName;
