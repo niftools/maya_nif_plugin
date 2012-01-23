@@ -23,7 +23,8 @@ global proc nifTranslatorMenuCreate() {
 
 			menuItem -label "Interpolator type" -subMenu true;
 				menuItem -label "Set to NiTransformInterpolator" -command "nifTranslatorSetInterpolatorToNiTransformInterpolator";
-				menuItem -label "Set to NiBSplineCompInterpolator" -command "nifTranslatorSetInterpolatorToNiBSplineCompInterpolator";
+				menuItem -label "Set to NiBSplineTransformInterpolator" -command "nifTranslatorSetInterpolatorToNiBSplineInterpolator";
+				menuItem -label "Set to NiBSplineCompTransformInterpolator" -command "nifTranslatorSetInterpolatorToNiBSplineCompInterpolator";
 				menuItem -label "Set to NiPoint3Interpolator" -command "nifTranslatorSetInterpolatorToNiPoint3Interpolator";
 			setParent -menu animationMenu;
 
@@ -271,6 +272,10 @@ global proc nifTranslatorSetInterpolatorToNiBSplineCompInterpolator() {
 
 global proc nifTranslatorSetInterpolatorToNiPoint3Interpolator() {
 	nifTranslatorSetInterpolator("NiPoint3Interpolator");
+}
+
+global proc nifTranslatorSetInterpolatorToNiBSplineInterpolator() {
+	nifTranslatorSetInterpolator("NiBSplineTransformInterpolator");
 }
 
 global proc nifTranslatorSetInterpolator(string $type) {

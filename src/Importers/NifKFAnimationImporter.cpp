@@ -56,16 +56,16 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 		MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiTransformInterpolator\"");
 	}
 
-	if(interpolator->GetType().IsSameType(NiBSplineCompTransformInterpolator::TYPE)) {
-		NiBSplineCompTransformInterpolatorRef splineInterpolator = DynamicCast<NiBSplineCompTransformInterpolator>(interpolator);
-		NiBSplineBasisDataRef spline_interpolator_bdata = splineInterpolator->GetBasisData();
+	if(interpolator->GetType().IsDerivedType(NiBSplineTransformInterpolator::TYPE)) {
+		NiBSplineTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineTransformInterpolator>(interpolator);
+		NiBSplineBasisDataRef spline_interpolator_bdata = spline_interpolator->GetBasisData();
 		
 		if(spline_interpolator_bdata != NULL) {
-			if(splineInterpolator->GetTranslateBias() != FLT_MAX && splineInterpolator->GetTranslateMultiplier() != FLT_MAX) {
-				vector<Vector3> translationValues = splineInterpolator->GetTranslateControlData();
+			if(spline_interpolator->GetTranslationOffset() != 65535) {
+				vector<Vector3> translationValues = spline_interpolator->GetTranslateControlData();
 
-				float start = splineInterpolator->GetStartTime();
-				float increment = (splineInterpolator->GetStopTime() - splineInterpolator->GetStartTime()) / translationValues.size();
+				float start = spline_interpolator->GetStartTime();
+				float increment = (spline_interpolator->GetStopTime() - spline_interpolator->GetStartTime()) / translationValues.size();
 
 				for(int i = 0; i < translationValues.size(); i++) {
 					Key<Vector3> key;
@@ -76,11 +76,11 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 				}
 			}
 
-			if(splineInterpolator->GetRotationBias() != FLT_MAX && splineInterpolator->GetRotationMultiplier() != FLT_MAX) {
-				vector<Quaternion> rotationValues = splineInterpolator->GetQuatRotateControlData();
+			if(spline_interpolator->GetRotationOffset() != 65535) {
+				vector<Quaternion> rotationValues = spline_interpolator->GetQuatRotateControlData();
 
-				float start = splineInterpolator->GetStartTime();
-				float increment = (splineInterpolator->GetStopTime() - splineInterpolator->GetStartTime()) / rotationValues.size();
+				float start = spline_interpolator->GetStartTime();
+				float increment = (spline_interpolator->GetStopTime() - spline_interpolator->GetStartTime()) / rotationValues.size();
 
 				for(int i = 0; i < rotationValues.size(); i++) {
 				Key<Quaternion> key;
@@ -91,11 +91,11 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 				}
 			}
 
-			if(splineInterpolator->GetScaleBias() != FLT_MAX && splineInterpolator->GetScaleMultiplier() != FLT_MAX) {
-				vector<float> scaleValues = splineInterpolator->GetScaleControlData();
+			if(spline_interpolator->GetScaleOffset() != 65535) {
+				vector<float> scaleValues = spline_interpolator->GetScaleControlData();
 
-				float start = splineInterpolator->GetStartTime();
-				float increment = (splineInterpolator->GetStopTime() - splineInterpolator->GetStartTime()) / scaleValues.size();
+				float start = spline_interpolator->GetStartTime();
+				float increment = (spline_interpolator->GetStopTime() - spline_interpolator->GetStartTime()) / scaleValues.size();
 
 				for(int i = 0; i < scaleValues.size(); i++) {
 					Key<float> key;
@@ -106,9 +106,18 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 				}
 			}
 
-			mel_command = "setAttr -type \"string\" ";
-			MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiBSplineCompTransformInterpolator\"");
+			if(interpolator->GetType().IsSameType(NiBSplineCompTransformInterpolator::TYPE)) {
+				mel_command = "setAttr -type \"string\" ";
+				MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiBSplineCompTransformInterpolator\"");
+			} else if(interpolator->GetType().IsSameType(NiBSplineTransformInterpolator::TYPE)) {
+				mel_command = "setAttr -type \"string\" ";
+				MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiBSplineTransformInterpolator\"");
+			}
 		}
+	}
+
+	if(interpolator->GetType().IsSameType(NiBSplineTransformInterpolator::TYPE)) {
+
 	}
 
 	if(interpolator->GetType().IsSameType(NiPoint3Interpolator::TYPE)) {

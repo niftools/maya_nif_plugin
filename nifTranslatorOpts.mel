@@ -370,7 +370,7 @@ global proc int nifTranslatorOpts ( string $parent,
 						radioButton -edit -select exportAnimationRd;
 					} else if ($optionBreakDown[1] == "allanimation") {
 						$gNifExportType = "allanimation";
-						radiobutton -edit -select exportAllAnimationRd;
+						radioButton -edit -select exportAllAnimationRd;
 					}
 				}
 				if ($optionBreakDown[0] == "animationName") {

@@ -939,6 +939,7 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 
 	} else if(interpolator_type == "NiBSplineTransformInterpolator") {
 		NiBSplineTransformInterpolatorRef spline_interpolator = DynamicCast<NiBSplineTransformInterpolator>(NiBSplineTransformInterpolator::Create());
+		interpolator = DynamicCast<NiInterpolator>(spline_interpolator);
 
 		spline_interpolator->SetTranslation(Vector3(rest_translation.x, rest_translation.y, rest_translation.z));
 		spline_interpolator->SetScale(pow((float)(rest_scale[0] * rest_scale[1] * rest_scale[2]), (float)(1.0 / 3.0)));
