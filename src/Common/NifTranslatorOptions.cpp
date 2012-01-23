@@ -92,6 +92,13 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			}
 			//out << "Import Normalized weights:  " << importNormalizedWeights << endl;
 		}
+		if(tokens[0] == "importCreateDummyAnimationObjects") {
+			if(tokens[1] == "1") {
+				this->importCreateDummyAnimationObjects = true;
+			} else {
+				this->importCreateDummyAnimationObjects = false;
+			}
+		}
 		if ( tokens[0] == "importNormals" ) {
 			if ( tokens[1] == "1" ) {
 				this->importNormals = true;

@@ -393,6 +393,13 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value false importNormalizedVertexWeightsCk;
 					}
 				}
+				if($optionBreakDown[0] == "importCreateDummyAnimationObjects") {
+					if ($optionBreakDown[1] == "1") {
+						checkBox -edit -value true importCreateDummyAnimationObjectsCk;
+					} else {
+						checkBox -edit -value false importCreateDummyAnimationObjectsCk;
+					}
+				}
 				if ($optionBreakDown[0] == "numberOfKeysToSample") {
 					textField -edit -text $optionBreakDown[1] numberOfKeysToSampleTx;
 				}
@@ -589,6 +596,9 @@ global proc int nifTranslatorOpts ( string $parent,
 
 		$ckVal = `checkBox -query -value importNormalizedVertexWeightsCk`;
 		$currentOptions = $currentOptions + "importNormalizedWeights=" + $ckVal + ";";
+
+		$ckVal = `checkBox -query -value importCreateDummyAnimationObjectsCk`;
+		$currentOptions = $currentOptions + "importCreateDummyAnimationObjects=" + $ckVal + ";";
 		
 		$ckVal = `checkBox -query -value impNormalsCk`;
 		$currentOptions = $currentOptions + "importNormals=" + $ckVal + ";";

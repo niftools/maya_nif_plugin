@@ -47,7 +47,97 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 		object = this->animationImporter->GetObjectByName(target_object);
 
 		if(object.isNull()) {
-			continue;
+			if(this->translatorOptions->importCreateDummyAnimationObjects == true) {
+				MFnTransform node_new;
+				node_new.create();
+				node_new.setName(target_object);
+
+				MVector translation;
+				MQuaternion rotation;
+				double scale[3] = { 1, 1, 1};
+
+				NiInterpolatorRef transform_provider = controllerLinks[i].interpolator;
+
+				if(transform_provider->GetType().IsSameType(NiTransformInterpolator::TYPE)) {
+
+					NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(transform_provider);
+
+					if(transform_interpolator->GetTranslation().x != FLT_MIN && 
+						transform_interpolator->GetTranslation().y != FLT_MIN &&
+						transform_interpolator->GetTranslation().z != FLT_MIN) {
+						translation.x = transform_interpolator->GetTranslation().x;
+						translation.y = transform_interpolator->GetTranslation().y;
+						translation.z = transform_interpolator->GetTranslation().z;
+					}
+
+					if (transform_interpolator->GetScale() != FLT_MIN && transform_interpolator->GetScale() != FLT_MAX) {
+						scale[0] = transform_interpolator->GetScale();
+						scale[1] = transform_interpolator->GetScale();
+						scale[2] = transform_interpolator->GetScale();
+					}
+
+					if(transform_interpolator->GetRotation().w != FLT_MIN &&
+						transform_interpolator->GetRotation().x != FLT_MIN &&
+						transform_interpolator->GetRotation().y != FLT_MIN &&
+						transform_interpolator->GetRotation().z != FLT_MIN) {
+							rotation.w = transform_interpolator->GetRotation().w;
+							rotation.x = transform_interpolator->GetRotation().x;
+							rotation.y = transform_interpolator->GetRotation().y;
+							rotation.z = transform_interpolator->GetRotation().z;
+					}
+				}
+
+				if(transform_provider->GetType().IsDerivedType(NiBSplineTransformInterpolator::TYPE)) {
+
+					NiBSplineTransformInterpolatorRef transform_interpolator = DynamicCast<NiBSplineTransformInterpolator>(transform_provider);
+
+					if(transform_interpolator->GetTranslation().x != FLT_MIN && 
+						transform_interpolator->GetTranslation().y != FLT_MIN &&
+						transform_interpolator->GetTranslation().z != FLT_MIN) {
+							translation.x = transform_interpolator->GetTranslation().x;
+							translation.y = transform_interpolator->GetTranslation().y;
+							translation.z = transform_interpolator->GetTranslation().z;
+					}
+
+					if (transform_interpolator->GetScale() > FLT_MIN && transform_interpolator->GetScale() != FLT_MAX) {
+						scale[0] = transform_interpolator->GetScale();
+						scale[1] = transform_interpolator->GetScale();
+						scale[2] = transform_interpolator->GetScale();
+					}
+
+					if(transform_interpolator->GetRotation().w != FLT_MIN &&
+						transform_interpolator->GetRotation().x != FLT_MIN &&
+						transform_interpolator->GetRotation().y != FLT_MIN &&
+						transform_interpolator->GetRotation().z != FLT_MIN) {
+							rotation.w = transform_interpolator->GetRotation().w;
+							rotation.x = transform_interpolator->GetRotation().x;
+							rotation.y = transform_interpolator->GetRotation().y;
+							rotation.z = transform_interpolator->GetRotation().z;
+					}
+				}
+
+				if(transform_provider->GetType().IsSameType(NiPoint3Interpolator::TYPE)) {
+
+					NiPoint3InterpolatorRef transform_interpolator = DynamicCast<NiPoint3Interpolator>(transform_provider);
+
+					if(transform_interpolator->GetPoint3Value().x != FLT_MIN && 
+						transform_interpolator->GetPoint3Value().y != FLT_MIN &&
+						transform_interpolator->GetPoint3Value().z != FLT_MIN) {
+							translation.x = transform_interpolator->GetPoint3Value().x;
+							translation.y = transform_interpolator->GetPoint3Value().y;
+							translation.z = transform_interpolator->GetPoint3Value().z;
+					}
+				}
+
+				node_new.setTranslation(translation,MSpace::kPostTransform);
+				node_new.setScale(scale);
+				node_new.setRotationQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+
+				object = node_new.object();
+
+			} else {
+				continue;
+			}
 		}
 
 		MFnTransform transformNode(object);

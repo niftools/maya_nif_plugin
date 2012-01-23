@@ -106,7 +106,7 @@ public:
 	bool exportMorrowindRename; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
 	float exportMinimumVertexWeight; //Determines the minimum bone weight for a vertices that will be exported for each individual vertex
 
-	bool importCreateAnimationObjects; //Determines if dummy objects should be created for animation in case no matching target objects are found
+	bool importCreateDummyAnimationObjects; //Determines if dummy objects should be created for animation in case no matching target objects are found
 	
 	TexPathMode texturePathMode;  //Determines the way textures paths are exported
 	string texturePathPrefix; //Optional prefix to add to texture paths.
