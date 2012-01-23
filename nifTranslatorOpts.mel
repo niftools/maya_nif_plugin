@@ -106,6 +106,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 1
 						  -annotation "Attempts to extract the original position the NIF file was bound in rather than its current position."
 						  impBindPoseCk;
+				checkBox -label "Create dummy animation objects if no matching objects exist"
+						 -value 1
+						 -annotation "Creates dummy transform objects to hold the animation if no object with the matching name of the target of an animation is found"
+						 importCreateDummyAnimationObjectsCk;
 				checkBox -label "Import normalized vertex weights"
 						 -value 0
 						 -annotation "Truncates the individual vertex weights so that together they sum up to 1.0"

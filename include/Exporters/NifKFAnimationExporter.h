@@ -88,6 +88,8 @@
 #include "obj/NiBSplineCompTransformInterpolator.h"
 #include "obj/NiBSplineBasisData.h"
 #include "obj/NiBSplineData.h"
+#include "obj/NiPoint3Interpolator.h"
+#include "obj/NiPosData.h"
 #include <Ref.h>
 
 #include "include/Common/NifTranslatorFixtureItem.h"
