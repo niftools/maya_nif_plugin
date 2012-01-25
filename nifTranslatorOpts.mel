@@ -791,14 +791,17 @@ global proc AdjustSelectedShapes() {
 			for($j = 0;$j < size($gNifExportedObjects); $j++) {
 				if( $gNifExportedObjectsTypes[$j] == "shape") {
 					string $skin = findRelatedSkinCluster($gNifExportedObjects[$j]);
-					string $influences[] = `skinCluster -query -influence $skin`;
+
+					if($skin != "") {
+						string $influences[] = `skinCluster -query -influence $skin`;
 					
-					for($k = 0;$k < size($influences); $k++) {
-						if($influences[$k] == $gNifExportedObjects[$i] && $gNifExportedObjectsValues[$i] == 0) {
-							$gNifExportedObjectsValues[$j] = 0;
-							treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "" overviewTreeView;
-							eval("select -deselect " + $gNifExportedObjects[$j]);
-							$invalid++;
+						for($k = 0;$k < size($influences); $k++) {
+							if($influences[$k] == $gNifExportedObjects[$i] && $gNifExportedObjectsValues[$i] == 0) {
+								$gNifExportedObjectsValues[$j] = 0;
+								treeView -edit -buttonTextIcon $gNifExportedObjects[$j] 1 "" overviewTreeView;
+								eval("select -deselect " + $gNifExportedObjects[$j]);
+								$invalid++;
+							}
 						}
 					}
 				}
