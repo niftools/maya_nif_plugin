@@ -45,12 +45,12 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 		this->translatorData->animatedObjects.push_back(iterator.currentItem());
 	}
 
-	NiControllerSequenceRef controllerSequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
-	controllerSequence->SetStartTime(this->animationExporter->GetAnimationStartTime());
-	controllerSequence->SetStopTime(this->animationExporter->GetAnimationEndTime());
-	controllerSequence->SetName(this->translatorOptions->animationName);
-	controllerSequence->SetTargetName(this->translatorOptions->animationTarget);
-	controllerSequence->SetFrequency(1.0);
+	NiControllerSequenceRef controller_sequence = DynamicCast<NiControllerSequence>(NiControllerSequence::Create());
+	controller_sequence->SetStartTime(this->animationExporter->GetAnimationStartTime());
+	controller_sequence->SetStopTime(this->animationExporter->GetAnimationEndTime());
+	controller_sequence->SetName(this->translatorOptions->animationName);
+	controller_sequence->SetTargetName(this->translatorOptions->animationTarget);
+	controller_sequence->SetFrequency(1.0);
 
 	vector<MFnDependencyNode> objectsWithExportIndexes;
 	vector<MFnDependencyNode> objectsWithoutExportIndexes;
@@ -97,7 +97,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
 		MFnDependencyNode node(this->translatorData->animatedObjects.at(i));
 		string name = node.name().asChar();
-		this->animationExporter->ExportAnimation(controllerSequence, this->translatorData->animatedObjects.at(i));
+		this->animationExporter->ExportAnimation(controller_sequence, this->translatorData->animatedObjects.at(i));
 	}
 
 	//out << "Writing Finished NIF file..." << endl;
@@ -106,7 +106,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 	nif_info.userVersion2 = this->translatorOptions->exportUserVersion2;
 
-	Niflib::WriteNifTree(file.fullName().asChar(), controllerSequence, nif_info);
+	Niflib::WriteNifTree(file.fullName().asChar(), controller_sequence, nif_info);
 
 	return MStatus::kSuccess;
 }

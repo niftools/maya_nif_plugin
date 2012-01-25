@@ -129,6 +129,24 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 					}
 				}
 
+				if(transform_provider->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
+					NiFloatInterpolatorRef float_interpolator = DynamicCast<NiFloatInterpolator>(transform_provider);
+
+					if(float_interpolator->GetFloatValue() != FLT_MIN) {
+						translation.x = float_interpolator->GetFloatValue();
+					}
+				}
+
+				if(transform_provider->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
+					NiBoolInterpolatorRef bool_interpolator = DynamicCast<NiBoolInterpolator>(transform_provider);
+
+					if(bool_interpolator->GetBoolValue() == true) {
+						translation.x = 1;
+					} else {
+						translation.y = 0;
+					}
+				}
+
 				node_new.setTranslation(translation,MSpace::kPostTransform);
 				node_new.setScale(scale);
 				node_new.setRotationQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);

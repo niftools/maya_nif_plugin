@@ -81,6 +81,9 @@
 #include <obj/NiImage.h>
 #include <obj/NiControllerSequence.h>
 #include <obj/NiStringPalette.h>
+#include <obj/NiBSplineFloatInterpolator.h>
+#include <obj/NiBSplinePoint3Interpolator.h>
+#include <obj/NiBoolInterpolator.h>
 
 #include "include/Common/NifTranslatorData.h"
 #include "include/Common/NifTranslatorOptions.h"

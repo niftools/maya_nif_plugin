@@ -1,5 +1,7 @@
 #include "Importers\NifKFAnimationImporter.h"
 
+
+
 NifKFAnimationImporter::NifKFAnimationImporter() {
 
 }
@@ -114,10 +116,6 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 				MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiBSplineTransformInterpolator\"");
 			}
 		}
-	}
-
-	if(interpolator->GetType().IsSameType(NiBSplineTransformInterpolator::TYPE)) {
-
 	}
 
 	if(interpolator->GetType().IsSameType(NiPoint3Interpolator::TYPE)) {
@@ -341,6 +339,54 @@ void NifKFAnimationImporter::ImportAnimation( NiInterpolatorRef interpolator,MSt
 
 		mel_command = "setAttr -type \"string\" ";
 		MGlobal::executeCommand(mel_command + node_name + "\.rotationType \"XYZ\"");
+	}
+
+	if(interpolator->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
+		NiFloatInterpolatorRef float_interpolator = DynamicCast<NiFloatInterpolator>(interpolator);
+		NiFloatDataRef float_data = float_interpolator->GetData();
+
+		MFnAnimCurve translate_float;
+
+		if (float_data != NULL) {
+			translate_float.create(transformNode.findPlug("translateX"));
+			vector<Key<float>> translate_keys = float_data->GetKeys();
+			
+
+			for(int i = 0; i < translate_keys.size(); i++) {
+				MTime key_time(translate_keys[i].time, MTime::kSeconds);
+				translate_float.addKey(key_time, translate_keys[i].data);
+			}
+		}
+
+		mel_command = "setAttr -type \"string\" ";
+		MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiFloatInterpolator\"");
+	}
+
+	if(interpolator->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
+		NiBoolInterpolatorRef bool_interpolator = DynamicCast<NiBoolInterpolator>(interpolator);
+
+		NiBoolDataRef bool_data = bool_interpolator->GetData();
+
+		MFnAnimCurve translate_bool;
+
+		if(bool_data != NULL) {
+			translate_bool.create(transformNode.findPlug("translateX"));
+			vector<Key<unsigned char>> bool_keys = bool_data->GetKeys();
+
+			for(int i = 0; i < bool_keys.size(); i++) {
+				MTime key_time(bool_keys[i].time, MTime::kSeconds);
+				unsigned char key_value = bool_keys[i].data;
+
+				if(abs(key_value - 1) < 0.5) {
+					translate_bool.addKey(key_time, 1);
+				} else {
+					translate_bool.addKey(key_time, 0);
+				}
+			}
+		}
+
+		mel_command = "setAttr -type \"string\" ";
+		MGlobal::executeCommand(mel_command + node_name + "\.interpolatorType \"NiBoolInterpolator\"");
 	}
 }
 

@@ -1,5 +1,6 @@
 #include "include/Exporters/NifKFAnimationExporter.h"
 
+
 NifKFAnimationExporter::NifKFAnimationExporter() {
 
 }
@@ -1222,6 +1223,61 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			pos_data->SetKeys(translation_keys);
 			pos_data->SetKeyType(KeyType::LINEAR_KEY);
 		}
+	} else if(interpolator_type == "NiFloatInterpolator") {
+		NiFloatInterpolatorRef float_interpolator = DynamicCast<NiFloatInterpolator>(NiFloatInterpolator::Create());
+		float_interpolator->SetFloatValue(rest_translation.x);
+		interpolator = DynamicCast<NiInterpolator>(float_interpolator);
+
+		if(!translateX.object().isNull()) {
+			NiFloatDataRef float_data = DynamicCast<NiFloatData>(NiFloatData::Create());
+			float_data->SetKeyType(KeyType::LINEAR_KEY);
+			float_interpolator->SetData(float_data);
+
+			vector<Key<float>> float_keys;
+
+			for(int i = 0; i < translateX.numKeys(); i++) {
+				Key<float> float_key;
+				float_key.data = translateX.value(i);
+				float_key.time = translateX.time(i).asUnits(MTime::kSeconds);
+				float_keys.push_back(float_key);
+			}
+
+			float_data->SetKeys(float_keys);
+		}
+
+		
+	} else if(interpolator_type == "NiBoolInterpolator") {
+		NiBoolInterpolatorRef bool_interpolator = DynamicCast<NiBoolInterpolator>(NiBoolInterpolator::Create());
+		if(abs(rest_translation.x - 1) < 0.5) {
+			bool_interpolator->SetBoolValue(true);
+		} else {
+			bool_interpolator->SetBoolValue(false);
+		}
+
+		interpolator = DynamicCast<NiInterpolator>(bool_interpolator);
+
+		if(!translateX.object().isNull()) {
+			NiBoolDataRef bool_data = DynamicCast<NiBoolData>(NiBoolData::Create());
+			bool_data->SetKeyType(KeyType::CONST_KEY);
+			bool_interpolator->SetData(bool_data);
+
+			vector<Key<unsigned char>> bool_keys;
+
+			for(int i = 0; i < translateX.numKeys(); i++) {
+				Key<unsigned char> bool_key;
+				bool_key.time = translateX.time(i).asUnits(MTime::kSeconds);
+
+				if(abs(translateX.value(i) - 1) < 0.5) {
+					bool_key.data = 1;
+				} else {
+					bool_key.data = 0;
+				}
+
+				bool_keys.push_back(bool_key);
+			}
+
+			bool_data->SetKeys(bool_keys);
+		}
 	}
 
 	if(interpolator != NULL) {
@@ -1239,7 +1295,12 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 		transform_controller->SetInterpolator(interpolator);
 		target->AddController(transform_controller);
 
-		controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority);
+		if(this->translatorOptions->exportVersion >= VER_20_2_0_7) {
+			controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority, false);
+		} else {
+			controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority);
+		}
+		
 	}
 }
 

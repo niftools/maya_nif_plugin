@@ -88,6 +88,10 @@
 #include <obj/NiBSplineBasisData.h>
 #include <obj/NiPoint3Interpolator.h>
 #include <obj/NiPosData.h>
+#include <obj/NiFloatInterpolator.h>
+#include <obj/NiFloatData.h>
+#include <obj/NiBoolInterpolator.h>
+#include <obj/NiBoolData.h>
 
 #include "Common\NifTranslatorRefObject.h"
 #include "Common\NifTranslatorOptions.h"
