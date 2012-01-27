@@ -670,6 +670,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClInclude Include="include\Importers\NifKFAnimationImporter.h" />
     <ClInclude Include="include\Importers\NifKFImportingFixture.h" />
     <ClInclude Include="include\Importers\NifMaterialImporter.h" />
+    <ClInclude Include="include\Importers\NifMaterialImporterSkyrim.h" />
     <ClInclude Include="include\Importers\NifMeshImporter.h" />
     <ClInclude Include="include\Importers\NifNodeImporter.h" />
     <ClInclude Include="NifTranslator.h" />
@@ -696,6 +697,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClCompile Include="src\Importers\NifKFAnimationImporter.cpp" />
     <ClCompile Include="src\Importers\NifKFImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifMaterialImporter.cpp" />
+    <ClCompile Include="src\Importers\NifMaterialImporterSkyrim.cpp" />
     <ClCompile Include="src\Importers\NifMeshImporter.cpp" />
     <ClCompile Include="src\Importers\NifNodeImporter.cpp" />
   </ItemGroup>
