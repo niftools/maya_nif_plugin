@@ -81,6 +81,7 @@
 #include <obj/NiImage.h>
 #include <obj/NiAVObject.h>
 #include <obj/NiTriBasedGeom.h>
+#include <obj/BSLightingShaderProperty.h>
 
 #include "include/Common/NifTranslatorRefObject.h"
 #include "include/Common/NifTranslatorOptions.h"
@@ -96,6 +97,8 @@ typedef Ref<NifMaterialImporterSkyrim> NifMaterialImporterSkyrimRef;
 class NifMaterialImporterSkyrim : public NifMaterialImporter {
 private:
 
+	vector<vector<NiPropertyRef>> property_groups;
+
 public:
 
 	NifMaterialImporterSkyrim();
@@ -103,6 +106,8 @@ public:
 	NifMaterialImporterSkyrim(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 	virtual void ImportMaterialsAndTextures( NiAVObjectRef & root );
+
+	virtual void GatherMaterialsAndTextures( NiAVObjectRef & root);
 
 	virtual string asString( bool verbose = false ) const;
 
