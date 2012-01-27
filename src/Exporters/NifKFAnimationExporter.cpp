@@ -1288,19 +1288,25 @@ void NifKFAnimationExporter::ExportAnimation( NiControllerSequenceRef controller
 			priority = plug_priority.asInt();
 		}
 
-		NiTransformControllerRef transform_controller = DynamicCast<NiTransformController>(NiTransformController::Create());
+		string controller_type_name;
+
+		if(interpolator->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
+			controller_type_name = NiGeomMorpherController::TYPE.GetTypeName();
+		} else if (interpolator->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
+			controller_type_name = NiVisController::TYPE.GetTypeName();
+		} else {
+			controller_type_name = NiTransformController::TYPE.GetTypeName();
+		}
+		
 		NiObjectNETRef target = DynamicCast<NiObjectNET>(NiObjectNET::Create());
 
 		target->SetName(this->translatorUtils->MakeNifName(node.name()));
-		transform_controller->SetInterpolator(interpolator);
-		target->AddController(transform_controller);
 
 		if(this->translatorOptions->exportVersion >= VER_20_2_0_7) {
-			controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority, false);
+			controller_sequence->AddGenericInterpolator(interpolator, target, controller_type_name, priority, false);
 		} else {
-			controller_sequence->AddInterpolator(DynamicCast<NiSingleInterpController>(transform_controller), priority);
+			controller_sequence->AddGenericInterpolator(interpolator, target, controller_type_name, priority, true);
 		}
-		
 	}
 }
 
@@ -1317,24 +1323,7 @@ float NifKFAnimationExporter::GetAnimationStartTime() {
 			continue;
 		}
 
-		if ( 
-			node.name().substring(0, 13) == "UniversalManip" ||
-			node.name() == "groundPlane_transform" ||
-			node.name() == "ViewCompass" ||
-			node.name() == "Manipulator1" ||
-			node.name() == "persp" ||
-			node.name() == "top" ||
-			node.name() == "front" ||
-			node.name() == "side"
-			) {
-				continue;
-		}
-
-		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
-			continue;
-		}
-
-		if(!(this->translatorOptions->exportType == "allanimation") && (!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedShape(node.name()))) {
+		if(!this->translatorUtils->isExportedShape(node.name()) && !this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedMisc(node.name())) {
 			continue;
 		}
 
@@ -1380,25 +1369,22 @@ float NifKFAnimationExporter::GetAnimationEndTime() {
 			continue;
 		}
 
-		if ( 
-			node.name().substring(0, 13) == "UniversalManip" ||
-			node.name() == "groundPlane_transform" ||
-			node.name() == "ViewCompass" ||
-			node.name() == "Manipulator1" ||
-			node.name() == "persp" ||
-			node.name() == "top" ||
-			node.name() == "front" ||
-			node.name() == "side"
-			) {
-				continue;
-		}
-
-		if(!iterator.currentItem().hasFn(MFn::Type::kTransform)) {
+		if(!this->translatorUtils->isExportedShape(node.name()) && !this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedMisc(node.name())) {
 			continue;
 		}
 
-		if(!(this->translatorOptions->exportType == "allanimation") && (!this->translatorUtils->isExportedJoint(node.name()) && !this->translatorUtils->isExportedJoint(node.name()))) {
-			continue;
+		if(MAnimUtil::isAnimated(iterator.currentItem())) {
+			animated_plugs.clear();
+			MAnimUtil::findAnimatedPlugs(iterator.currentItem(), animated_plugs);
+		}
+
+		for(int i = 0; i < animated_plugs.length(); i++) {
+			MString partial_name = animated_plugs[i].partialName();
+			if(partial_name == "rx" || partial_name == "ry" || partial_name == "rz" ||
+				partial_name == "tx" || partial_name == "ty" || partial_name == "tz" ||
+				partial_name == "sx" || partial_name == "sy" || partial_name == "sz") {
+					MAnimUtil::findAnimation(animated_plugs[i], animation_curves);
+			}
 		}
 
 		if(MAnimUtil::isAnimated(iterator.currentItem())) {

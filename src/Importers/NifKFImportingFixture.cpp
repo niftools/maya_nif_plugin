@@ -12,6 +12,114 @@ NifKFImportingFixture::NifKFImportingFixture( NifTranslatorOptionsRef translator
 		this->translatorUtils = translatorUtils;
 }
 
+MObject NifKFImportingFixture::CreateDummyObject( MString target_object, ControllerLink controller_link )
+{
+	MFnTransform node_new;
+	node_new.create();
+	node_new.setName(target_object);
+
+	MVector translation;
+	MQuaternion rotation;
+	double scale[3] = { 1, 1, 1};
+
+	NiInterpolatorRef transform_provider = controller_link.interpolator;
+
+	if(transform_provider->GetType().IsSameType(NiTransformInterpolator::TYPE)) {
+
+		NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(transform_provider);
+
+		if(transform_interpolator->GetTranslation().x > -100000000 && transform_interpolator->GetTranslation().x < 100000000 &&
+			transform_interpolator->GetTranslation().y > -100000000 && transform_interpolator->GetTranslation().y < 100000000 &&
+			transform_interpolator->GetTranslation().z > -100000000 && transform_interpolator->GetTranslation().z < 100000000) {
+				translation.x = transform_interpolator->GetTranslation().x;
+				translation.y = transform_interpolator->GetTranslation().y;
+				translation.z = transform_interpolator->GetTranslation().z;
+		}
+
+		if (transform_interpolator->GetScale() > -100000000 && transform_interpolator->GetScale() < 100000000) {
+			scale[0] = transform_interpolator->GetScale();
+			scale[1] = transform_interpolator->GetScale();
+			scale[2] = transform_interpolator->GetScale();
+		}
+
+		if(transform_interpolator->GetRotation().w > -100000000 && transform_interpolator->GetRotation().w < 100000000 &&
+			transform_interpolator->GetRotation().x > -100000000 && transform_interpolator->GetRotation().x < 100000000 &&
+			transform_interpolator->GetRotation().y > -100000000 && transform_interpolator->GetRotation().y < 100000000 &&
+			transform_interpolator->GetRotation().z > -100000000 && transform_interpolator->GetRotation().z < 100000000) {
+				rotation.w = transform_interpolator->GetRotation().w;
+				rotation.x = transform_interpolator->GetRotation().x;
+				rotation.y = transform_interpolator->GetRotation().y;
+				rotation.z = transform_interpolator->GetRotation().z;
+		}
+	}
+
+	if(transform_provider->GetType().IsDerivedType(NiBSplineTransformInterpolator::TYPE)) {
+
+		NiBSplineTransformInterpolatorRef transform_interpolator = DynamicCast<NiBSplineTransformInterpolator>(transform_provider);
+
+		if(transform_interpolator->GetTranslation().x > -100000000 && transform_interpolator->GetTranslation().x < 100000000 &&
+			transform_interpolator->GetTranslation().y > -100000000 && transform_interpolator->GetTranslation().y < 100000000 &&
+			transform_interpolator->GetTranslation().z > -100000000 && transform_interpolator->GetTranslation().z < 100000000) {
+				translation.x = transform_interpolator->GetTranslation().x;
+				translation.y = transform_interpolator->GetTranslation().y;
+				translation.z = transform_interpolator->GetTranslation().z;
+		}
+
+		if (transform_interpolator->GetScale() > -100000000 && transform_interpolator->GetScale() < 100000000) {
+			scale[0] = transform_interpolator->GetScale();
+			scale[1] = transform_interpolator->GetScale();
+			scale[2] = transform_interpolator->GetScale();
+		}
+
+		if(transform_interpolator->GetRotation().w > -100000000 && transform_interpolator->GetRotation().w < 100000000 &&
+			transform_interpolator->GetRotation().x > -100000000 && transform_interpolator->GetRotation().x < 100000000 &&
+			transform_interpolator->GetRotation().y > -100000000 && transform_interpolator->GetRotation().y < 100000000 &&
+			transform_interpolator->GetRotation().z > -100000000 && transform_interpolator->GetRotation().z < 100000000) {
+				rotation.w = transform_interpolator->GetRotation().w;
+				rotation.x = transform_interpolator->GetRotation().x;
+				rotation.y = transform_interpolator->GetRotation().y;
+				rotation.z = transform_interpolator->GetRotation().z;
+		}
+	}
+
+	if(transform_provider->GetType().IsSameType(NiPoint3Interpolator::TYPE)) {
+
+		NiPoint3InterpolatorRef transform_interpolator = DynamicCast<NiPoint3Interpolator>(transform_provider);
+
+		if(transform_interpolator->GetPoint3Value().x > -100000000 && transform_interpolator->GetPoint3Value().x < 100000000 &&
+			transform_interpolator->GetPoint3Value().y > -100000000 && transform_interpolator->GetPoint3Value().y < 100000000 &&
+			transform_interpolator->GetPoint3Value().z > -100000000 && transform_interpolator->GetPoint3Value().z < 100000000) {
+				translation.x = transform_interpolator->GetPoint3Value().x;
+				translation.y = transform_interpolator->GetPoint3Value().y;
+				translation.z = transform_interpolator->GetPoint3Value().z;
+		}
+	}
+
+	if(transform_provider->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
+		NiFloatInterpolatorRef float_interpolator = DynamicCast<NiFloatInterpolator>(transform_provider);
+
+		if(float_interpolator->GetFloatValue() > -100000000 && float_interpolator->GetFloatValue() < 100000000) {
+			translation.x = float_interpolator->GetFloatValue();
+		}
+	}
+
+	if(transform_provider->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
+		NiBoolInterpolatorRef bool_interpolator = DynamicCast<NiBoolInterpolator>(transform_provider);
+
+		if(bool_interpolator->GetBoolValue() == true) {
+			translation.x = 1;
+		} else {
+			translation.y = 0;
+		}
+	}
+
+	node_new.setTranslation(translation,MSpace::kPostTransform);
+	node_new.setScale(scale);
+	node_new.setRotationQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);
+
+	return node_new.object();
+}
+
 MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 	NifInfo* nifInfo = new NifInfo();
 	Ref<NiObject> root = ReadNifTree(file.fullName().asChar(), nifInfo);
@@ -24,6 +132,9 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 
 	vector<ControllerLink> controllerLinks = controllerSequence->GetControllerData();
 
+
+	vector<MObject> created_objects;
+	int export_order = 0;
 
 	for(int i = 0; i < controllerLinks.size(); i++) {
 		MObject object;
@@ -48,113 +159,25 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 
 		if(object.isNull()) {
 			if(this->translatorOptions->importCreateDummyAnimationObjects == true) {
-				MFnTransform node_new;
-				node_new.create();
-				node_new.setName(target_object);
+				object = this->CreateDummyObject(target_object, controllerLinks[i]);
 
-				MVector translation;
-				MQuaternion rotation;
-				double scale[3] = { 1, 1, 1};
+				created_objects.push_back(object);
+			} 
+		} else {
+			int duplicates = 0;
+			MFnDependencyNode current_node;
 
-				NiInterpolatorRef transform_provider = controllerLinks[i].interpolator;
+			for(int i = 0; i < created_objects.size(); i++) {
+				current_node.setObject(created_objects[i]);
+				string current_name = this->translatorUtils->MakeNifName(current_node.name().asChar());
+				if(current_name == target) {
+					duplicates++;
+				}	
+			}
 
-				if(transform_provider->GetType().IsSameType(NiTransformInterpolator::TYPE)) {
-
-					NiTransformInterpolatorRef transform_interpolator = DynamicCast<NiTransformInterpolator>(transform_provider);
-
-					if(transform_interpolator->GetTranslation().x != FLT_MIN && 
-						transform_interpolator->GetTranslation().y != FLT_MIN &&
-						transform_interpolator->GetTranslation().z != FLT_MIN) {
-						translation.x = transform_interpolator->GetTranslation().x;
-						translation.y = transform_interpolator->GetTranslation().y;
-						translation.z = transform_interpolator->GetTranslation().z;
-					}
-
-					if (transform_interpolator->GetScale() != FLT_MIN && transform_interpolator->GetScale() != FLT_MAX) {
-						scale[0] = transform_interpolator->GetScale();
-						scale[1] = transform_interpolator->GetScale();
-						scale[2] = transform_interpolator->GetScale();
-					}
-
-					if(transform_interpolator->GetRotation().w != FLT_MIN &&
-						transform_interpolator->GetRotation().x != FLT_MIN &&
-						transform_interpolator->GetRotation().y != FLT_MIN &&
-						transform_interpolator->GetRotation().z != FLT_MIN) {
-							rotation.w = transform_interpolator->GetRotation().w;
-							rotation.x = transform_interpolator->GetRotation().x;
-							rotation.y = transform_interpolator->GetRotation().y;
-							rotation.z = transform_interpolator->GetRotation().z;
-					}
-				}
-
-				if(transform_provider->GetType().IsDerivedType(NiBSplineTransformInterpolator::TYPE)) {
-
-					NiBSplineTransformInterpolatorRef transform_interpolator = DynamicCast<NiBSplineTransformInterpolator>(transform_provider);
-
-					if(transform_interpolator->GetTranslation().x != FLT_MIN && 
-						transform_interpolator->GetTranslation().y != FLT_MIN &&
-						transform_interpolator->GetTranslation().z != FLT_MIN) {
-							translation.x = transform_interpolator->GetTranslation().x;
-							translation.y = transform_interpolator->GetTranslation().y;
-							translation.z = transform_interpolator->GetTranslation().z;
-					}
-
-					if (transform_interpolator->GetScale() > FLT_MIN && transform_interpolator->GetScale() != FLT_MAX) {
-						scale[0] = transform_interpolator->GetScale();
-						scale[1] = transform_interpolator->GetScale();
-						scale[2] = transform_interpolator->GetScale();
-					}
-
-					if(transform_interpolator->GetRotation().w != FLT_MIN &&
-						transform_interpolator->GetRotation().x != FLT_MIN &&
-						transform_interpolator->GetRotation().y != FLT_MIN &&
-						transform_interpolator->GetRotation().z != FLT_MIN) {
-							rotation.w = transform_interpolator->GetRotation().w;
-							rotation.x = transform_interpolator->GetRotation().x;
-							rotation.y = transform_interpolator->GetRotation().y;
-							rotation.z = transform_interpolator->GetRotation().z;
-					}
-				}
-
-				if(transform_provider->GetType().IsSameType(NiPoint3Interpolator::TYPE)) {
-
-					NiPoint3InterpolatorRef transform_interpolator = DynamicCast<NiPoint3Interpolator>(transform_provider);
-
-					if(transform_interpolator->GetPoint3Value().x != FLT_MIN && 
-						transform_interpolator->GetPoint3Value().y != FLT_MIN &&
-						transform_interpolator->GetPoint3Value().z != FLT_MIN) {
-							translation.x = transform_interpolator->GetPoint3Value().x;
-							translation.y = transform_interpolator->GetPoint3Value().y;
-							translation.z = transform_interpolator->GetPoint3Value().z;
-					}
-				}
-
-				if(transform_provider->GetType().IsSameType(NiFloatInterpolator::TYPE)) {
-					NiFloatInterpolatorRef float_interpolator = DynamicCast<NiFloatInterpolator>(transform_provider);
-
-					if(float_interpolator->GetFloatValue() != FLT_MIN) {
-						translation.x = float_interpolator->GetFloatValue();
-					}
-				}
-
-				if(transform_provider->GetType().IsSameType(NiBoolInterpolator::TYPE)) {
-					NiBoolInterpolatorRef bool_interpolator = DynamicCast<NiBoolInterpolator>(transform_provider);
-
-					if(bool_interpolator->GetBoolValue() == true) {
-						translation.x = 1;
-					} else {
-						translation.y = 0;
-					}
-				}
-
-				node_new.setTranslation(translation,MSpace::kPostTransform);
-				node_new.setScale(scale);
-				node_new.setRotationQuaternion(rotation.x, rotation.y, rotation.z, rotation.w);
-
-				object = node_new.object();
-
-			} else {
-				continue;
+			if(duplicates > 0) {
+				target_object = this->translatorUtils->MakeMayaName(target, duplicates);
+				object = this->CreateDummyObject(target_object, controllerLinks[i]);
 			}
 		}
 
@@ -250,64 +273,36 @@ MStatus NifKFImportingFixture::ReadNodes( const MFileObject& file ) {
 		plug.setDouble((rotate_y / PI) * 180.0);
 		plug = transformNode.findPlug("rotateRestZ");
 		plug.setDouble((rotate_z / PI) * 180.0);
-	}
 
-	int export_order = 0;
+		this->animationImporter->ImportAnimation(controllerLinks[i].interpolator, target_object);
 
-	for(int i = 0;i < controllerLinks.size(); i++) {
-		NiInterpolatorRef interpolator = controllerLinks[i].interpolator;
+		MFnDagNode node(object);
 
-		string target = "";
+		plug = node.findPlug("exportIndex");
+		node_name = node.name();
 
-		if(controllerLinks[i].targetName.size() > 0) {
-			target = controllerLinks[i].targetName;
-		} else if (controllerLinks[i].nodeName.size() > 0) {
-			target = controllerLinks[i].nodeName;
-		} else {
-			string pallete_string = controllerLinks[i].stringPalette->GetPaletteString();
-			int offset = controllerLinks[i].nodeNameOffset;
-
-			while(pallete_string[offset] != 0 && offset < pallete_string.length()) {
-				target.append(1,pallete_string[offset]);
-				offset++;
-			}
-		}	
-
-		MString target_object = this->translatorUtils->MakeMayaName(target);
-		this->animationImporter->ImportAnimation(interpolator, target_object);
-
-		MObject object = this->animationImporter->GetObjectByName(target_object);
-		if(!object.isNull()) {
-			MFnDagNode node(object);
-
-			MPlug plug = node.findPlug("exportIndex");
-			MString node_name = node.name();
-			MString mel_command;
-
-			if(plug.isNull()) {
-				mel_command = "addAttr -at long -shortName \"exportIndex\" ";
-				MGlobal::executeCommand(mel_command + node_name);
-			}
-
-			mel_command = "setAttr " + node_name + "\.exportIndex " + export_order;
-			MGlobal::executeCommand(mel_command);
-			export_order++;
-
-			plug = node.findPlug("animationPriority");
-
-			if(plug.isNull()) {
-				mel_command = "addAttr -at byte -shortName \"animationPriority\" ";
-				MGlobal::executeCommand(mel_command + node_name);
-			}
-
-			mel_command = "setAttr " + node_name + "\.animationPriority " + controllerLinks[i].priority;
-			MGlobal::executeCommand(mel_command);
+		if(plug.isNull()) {
+			mel_command = "addAttr -at long -shortName \"exportIndex\" ";
+			MGlobal::executeCommand(mel_command + node_name);
 		}
-	}
+
+		mel_command = "setAttr " + node_name + "\.exportIndex " + export_order;
+		MGlobal::executeCommand(mel_command);
+		export_order++;
+
+		plug = node.findPlug("animationPriority");
+
+		if(plug.isNull()) {
+			mel_command = "addAttr -at byte -shortName \"animationPriority\" ";
+			MGlobal::executeCommand(mel_command + node_name);
+		}
+
+		mel_command = "setAttr " + node_name + "\.animationPriority " + controllerLinks[i].priority;
+		MGlobal::executeCommand(mel_command);
+}
 
 	return MStatus(MStatus::kSuccess);
 }
-
 
 MObject NifKFImportingFixture::GetObjectByName( const string& name ) {
 	MItDag iterator(MItDag::kDepthFirst);

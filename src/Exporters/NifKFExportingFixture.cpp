@@ -24,6 +24,7 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 			node.name().substring(0, 13) == "UniversalManip" ||
 			node.name() == "groundPlane_transform" ||
 			node.name() == "ViewCompass" ||
+			node.name() == "CubeCompass" ||
 			node.name() == "Manipulator1" ||
 			node.name() == "persp" ||
 			node.name() == "top" ||

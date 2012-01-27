@@ -100,7 +100,7 @@ public:
 	virtual void ExportShaders();
 
 	//--Iterate through all file textures, creating NiSourceTexture blocks for each one--//
-	virtual void ExportFileTextures();
+	virtual void ExportTextures();
 
 	void GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ); 
 

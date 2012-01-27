@@ -305,7 +305,7 @@ void NifMaterialExporter::GetColor( MFnDependencyNode& fn, MString name, MColor 
 	//out << "}" << endl;
 }
 
-void NifMaterialExporter::ExportFileTextures()
+void NifMaterialExporter::ExportTextures()
 {
 	// create an iterator to go through all file textures
 	MItDependencyNodes it(MFn::kFileTexture);

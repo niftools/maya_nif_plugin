@@ -121,9 +121,13 @@ public:
 
 	bool isExportedMisc( const MString& name );
 
-	string MakeNifName( const MString & mayaName );
+	bool isValidObject( const MString& name);
 
-	MString MakeMayaName( const string & nifName );
+	string MakeNifName( const MString& mayaName );
+
+	MString MakeMayaName( const string& nifName );
+
+	MString MakeMayaName( const string& nif_name, int duplicate_count);
 
 	virtual string asString( bool verbose = false ) const;
 

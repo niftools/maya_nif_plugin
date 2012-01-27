@@ -109,6 +109,8 @@ public:
 
 	NifKFImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils, NifKFAnimationImporterRef animationImporter);
 
+	MObject CreateDummyObject( MString target_object, ControllerLink controller_link );
+
 	virtual MStatus ReadNodes(const MFileObject& file);
 
 	virtual MObject GetObjectByName(const string& name);

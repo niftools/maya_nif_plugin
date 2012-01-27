@@ -228,18 +228,22 @@ global proc int nifTranslatorOpts ( string $parent,
 						}
 					}
 				}
-				
 				AdjustSelectedJoints();
+				rowLayout -numberOfColumns 4
+					      -columnWidth4 90 90 90 95
+						  -columnAttach4 "both" "both" "both" "both";
+				          button -label "Select all shapes" -command "nifTranslatorSelectAllShapes";
+						  button -label "Select all joints" -command "nifTranslatorSelectAllJoints";
+						  button -label "Select all misc" -command "nifTranslatorSelectAllMisc";
+						  button -label "Select everything" -command "nifTranslatorSelectEverything";
 			setParent exportFrameLayout;
 
 			columnLayout exportColumnLayout;
 			global string $gNifExportType;
 			text -label "Export from the scene:" -font boldLabelFont -align "left";
 			radioCollection;
-				radioButton -label "Selected geometry only" -select -onCommand "nifTranslatorSetToExportGeometry" exportGeometryRd;
-				radioButton -label "All geometry only" -onCommand "nifTranslatorSetToExportAllGeometry" exportAllGeometryRd;
-				radioButton -label "Selected animation only" -onCommand "nifTranslatorSetToExportAnimation" exportAnimationRd;
-				radioButton -label "All animation only" -onCommand "nifTranslatorSetToExportAllAnimation" exportAllAnimationRd;
+				radioButton -label "Geometry only" -select -onCommand "nifTranslatorSetToExportGeometry" exportGeometryRd;
+				radioButton -label "Animation only" -onCommand "nifTranslatorSetToExportAnimation" exportAnimationRd;
 			setParent exportFrameLayout;
 
 			rowLayout -numberOfColumns 2
@@ -381,16 +385,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					if ($optionBreakDown[1] == "geometry") {
 						$gNifExportType = "geometry";
 						radioButton -edit -select exportGeometryRd;
-					} else if ($optionBreakDown[1] == "allgeometry") {
-						$gNifExportType = "allgeometry";
-						radioButton -edit -select exportAllGeometryRd;
-					} else if ($optionBreakDown[1] == "animation") {
+					} else  if ($optionBreakDown[1] == "animation") {
 						$gNifExportType = "animation";
 						radioButton -edit -select exportAnimationRd;
-					} else if ($optionBreakDown[1] == "allanimation") {
-						$gNifExportType = "allanimation";
-						radioButton -edit -select exportAllAnimationRd;
-					}
+					} 
 				}
 				if ($optionBreakDown[0] == "animationName") {
 					textField -edit -text $optionBreakDown[1] animationNameTx;
@@ -852,30 +850,71 @@ global proc SelectParentJoints(string $joint) {
 	}
 }
 
+global proc nifTranslatorSelectAllShapes() {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+
+	for($i = 0; $i < size($gNifExportedObjects); $i++) {
+		if($gNifExportedObjectsTypes[$i] == "shape" && $gNifExportedObjectsValues[$i] == 0) {
+			$gNifExportedObjectsValues[$i] = 1;
+			treeView -edit -buttonTextIcon $gNifExportedObjects[$i] 1 "E" overviewTreeView;	
+			eval("select -add " + $gNifExportedObjects[$i]);
+		}
+	}
+
+	AdjustSelectedJoints();
+}
+
+global proc nifTranslatorSelectAllJoints() {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+
+	for($i = 0; $i < size($gNifExportedObjects); $i++) {
+		if($gNifExportedObjectsTypes[$i] == "joint" && $gNifExportedObjectsValues[$i] == 0) {
+			$gNifExportedObjectsValues[$i] = 1;
+			treeView -edit -buttonTextIcon $gNifExportedObjects[$i] 1 "E" overviewTreeView;	
+			eval("select -add " + $gNifExportedObjects[$i]);
+		}
+	}
+}
+
+global proc nifTranslatorSelectAllMisc() {
+	global string $gNifExportedObjects[];
+	global int $gNifExportedObjectsValues[];
+	global string $gNifExportedObjectsTypes[];
+
+	for($i = 0; $i < size($gNifExportedObjects); $i++) {
+		if($gNifExportedObjectsTypes[$i] == "misc" && $gNifExportedObjectsValues[$i] == 0) {
+			$gNifExportedObjectsValues[$i] = 1;
+			treeView -edit -buttonTextIcon $gNifExportedObjects[$i] 1 "E" overviewTreeView;	
+			eval("select -add " + $gNifExportedObjects[$i]);
+		}
+	}
+}
+
+global proc nifTranslatorSelectEverything() {
+	nifTranslatorSelectAllJoints();
+	nifTranslatorSelectAllShapes();
+	nifTranslatorSelectAllMisc();
+}
+
 global proc nifTranslatorSetToExportGeometry() {
 	global string $gNifExportType;
 
 	$gNifExportType = "geometry";
 }
-global proc nifTranslatorSetToExportAllGeometry() {
-	global string $gNifExportType;
 
-	$gNifExportType = "allgeometry";
-}
 global proc nifTranslatorSetToExportAnimation() {
 	global string $gNifExportType;
 
 	$gNifExportType = "animation";
 }
-global proc nifTranslatorSetToExportAllAnimation() {
-	global string $gNifExportType;
-
-	$gNifExportType = "allanimation";
-}
 
 global proc int hasValidNifName(string $name) {
 	if($name == "front" || $name == "side" || $name == "top" || $name == "persp" ) return 0;
-	if($name == "Manipulator1" || $name == "ViewCompass" || $name == "groundPlane_transform") return 0;
+	if($name == "Manipulator1" || $name == "ViewCompass" ||  $name == "CubeCompass" || $name == "groundPlane_transform") return 0;
 	
 	return 1;
 }

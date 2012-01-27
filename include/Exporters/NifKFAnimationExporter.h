@@ -94,6 +94,8 @@
 #include <obj/NiFloatData.h>
 #include <obj/NiBoolInterpolator.h>
 #include <obj/NiBoolData.h>
+#include <obj/NiGeomMorpherController.h>
+#include <obj/NiVisController.h>
 #include <Ref.h>
 
 #include "include/Common/NifTranslatorFixtureItem.h"

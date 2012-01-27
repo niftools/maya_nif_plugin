@@ -26,7 +26,7 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	//out << "Exporting file textures..." << endl;
 	this->translatorData->textures.clear();
 	//Export file textures and get back a map of DAG path to Nif block
-	this->materialExporter->ExportFileTextures();
+	this->materialExporter->ExportTextures();
 
 
 	//out << "Exporting shaders..." << endl;

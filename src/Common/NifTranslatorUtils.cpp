@@ -69,6 +69,94 @@ MString NifTranslatorUtils::MakeMayaName( const string & nifName ) {
 	return MString( newName.str().c_str() );
 }
 
+MString NifTranslatorUtils::MakeMayaName( const string& nif_name, int duplicate_count )
+{
+	stringstream newName;
+	newName.fill('0');
+
+	for ( unsigned int i = 0; i < nif_name.size(); ++i ) {
+		if ( this->translatorOptions->useNameMangling ) {
+			if ( nif_name[i] == ' ' ) {
+				newName << "_";
+			} else if ( 
+				(nif_name[i] >= '0' && nif_name[i] <= '9') ||
+				(nif_name[i] >= 'A' && nif_name[i] <= 'Z') ||
+				(nif_name[i] >= 'a' && nif_name[i] <= 'z')
+				) {
+					newName << nif_name[i];
+			} else {
+				newName << "_0x" << setw(2) << hex << int(nif_name[i]);
+			}
+		} else {
+			if ( 
+				(nif_name[i] >= '0' && nif_name[i] <= '9') ||
+				(nif_name[i] >= 'A' && nif_name[i] <= 'Z') ||
+				(nif_name[i] >= 'a' && nif_name[i] <= 'z')
+				) {
+					newName << nif_name[i];
+			} else {
+				newName << "_";
+			}
+		}
+	}
+
+	if (duplicate_count >= 0) {
+		newName << "_00DUP" << duplicate_count;
+	}
+
+	//out << "New Maya name:  " << newName.str() << endl;
+	return MString( newName.str().c_str() );
+}
+
+string NifTranslatorUtils::MakeNifName( const MString & mayaName )
+{
+	stringstream newName;
+	stringstream temp;
+	temp.setf ( ios_base::hex, ios_base::basefield );  // set hex as the basefield
+
+	string str = mayaName.asChar();
+
+	if ( this->translatorOptions->useNameMangling ) {
+		for ( unsigned int i = 0; i < str.size(); ++i ) {
+			if ( i + 5 < str.size() ) {
+				string sub = str.substr( i, 3);
+				//out << "Sub string:  " << sub << endl;
+				if ( sub == "_0x" ) {
+					sub = str.substr( i+3, 2);
+					//out << "Sub sub string:  " << sub << endl;
+					temp.clear();
+					temp << sub; // should be the char number
+					int ch_num;
+					temp >> ch_num;
+					//out << "The int returned from the string stream extraction is:  " << ch_num << endl;
+					if ( temp.fail() == false ) {
+						newName << char(ch_num);
+						i += 4;
+					}
+					continue;
+				}
+			}
+
+			if(i + 6 < str.size()) {
+				string sub = str.substr( i, 6);
+				if(sub == "_00DUP") {
+					break;
+				}
+			}
+
+			if ( str[i] == '_' ) {
+				newName << " ";
+			} else {
+				newName << str[i];
+			}
+		}
+
+		return newName.str();
+	} else {
+		return str;
+	}
+}
+
 void NifTranslatorUtils::ConnectShader( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list )
 {
 	//--Look for Materials--//
@@ -364,9 +452,10 @@ const Type& NifTranslatorUtils::GetType() const {
 
 bool NifTranslatorUtils::isExportedShape( const MString& name )
 {
-	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
-		return true;
+	if(!this->isValidObject(name)) {
+		return false;
 	}
+
 	for(int i = 0;i < this->translatorOptions->exportedShapes.size(); i++) {
 		if(name.asChar() == this->translatorOptions->exportedShapes[i])
 			return true;
@@ -377,9 +466,10 @@ bool NifTranslatorUtils::isExportedShape( const MString& name )
 
 bool NifTranslatorUtils::isExportedJoint( const MString& name )
 {
-	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
-		return true;
+	if(!this->isValidObject(name)) {
+		return false;
 	}
+	
 	for(int i = 0;i < this->translatorOptions->exportedJoints.size(); i++) {
 		if(name.asChar() == this->translatorOptions->exportedJoints[i])
 			return true;
@@ -391,9 +481,10 @@ bool NifTranslatorUtils::isExportedJoint( const MString& name )
 
 bool NifTranslatorUtils::isExportedMisc( const MString& name )
 {
-	if(this->translatorOptions->exportType =="allgeometry" || this->translatorOptions->exportType == "allanimation") {
-		return true;
+	if(!this->isValidObject(name)) {
+		return false;
 	}
+	
 	for(int i = 0;i < this->translatorOptions->exportedMisc.size(); i++) {
 		if(name.asChar() == this->translatorOptions->exportedMisc[i])
 			return true;
@@ -403,46 +494,12 @@ bool NifTranslatorUtils::isExportedMisc( const MString& name )
 }
 
 
-std::string NifTranslatorUtils::MakeNifName( const MString & mayaName )
+bool NifTranslatorUtils::isValidObject( const MString& name )
 {
-	stringstream newName;
-	stringstream temp;
-	temp.setf ( ios_base::hex, ios_base::basefield );  // set hex as the basefield
+	if(name == "front" || name == "side" || name == "top" || name == "persp" ) return false;
+	if(name == "Manipulator1" || name == "ViewCompass" ||  name == "CubeCompass" || name == "groundPlane_transform") return false;
 
-	string str = mayaName.asChar();
-
-	if ( this->translatorOptions->useNameMangling ) {
-		for ( unsigned int i = 0; i < str.size(); ++i ) {
-			if ( i + 5 < str.size() ) {
-				string sub = str.substr( i, 3);
-				//out << "Sub string:  " << sub << endl;
-				if ( sub == "_0x" ) {
-					sub = str.substr( i+3, 2);
-					//out << "Sub sub string:  " << sub << endl;
-					temp.clear();
-					temp << sub; // should be the char number
-					int ch_num;
-					temp >> ch_num;
-					//out << "The int returned from the string stream extraction is:  " << ch_num << endl;
-					if ( temp.fail() == false ) {
-						newName << char(ch_num);
-						i += 4;
-					}
-					continue;
-				}
-			}
-
-			if ( str[i] == '_' ) {
-				newName << " ";
-			} else {
-				newName << str[i];
-			}
-		}
-
-		return newName.str();
-	} else {
-		return str;
-	}
+	return true;
 }
 
 NiNodeRef NifTranslatorUtils::GetDAGParent( MObject dagNode )
