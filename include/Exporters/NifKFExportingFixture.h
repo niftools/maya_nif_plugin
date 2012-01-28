@@ -100,7 +100,7 @@ public:
 
 	NifKFExportingFixture();
 
-	NifKFExportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils, NifKFAnimationExporterRef animationExporter);
+	NifKFExportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 	virtual MStatus WriteNodes(const MFileObject& file);
 

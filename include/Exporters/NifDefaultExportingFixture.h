@@ -89,6 +89,10 @@
 using namespace Niflib;
 using namespace std;
 
+class NifDefaultExportingFixture;
+
+typedef Ref<NifDefaultExportingFixture> NifDefaultExportingFixtureRef;
+
 class NifDefaultExportingFixture : public NifExportingFixture {
 
 public:
@@ -103,8 +107,7 @@ public:
 
 	NifDefaultExportingFixture();
 
-	NifDefaultExportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils,
-		NifNodeExporterRef nodeExporter, NifMeshExporterRef meshExporter, NifMaterialExporterRef materialExporter, NifAnimationExporterRef animationExporter);
+	NifDefaultExportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils);
 
 	virtual MStatus WriteNodes( const MFileObject& file );
 

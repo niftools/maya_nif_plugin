@@ -163,15 +163,14 @@ NifDefaultImportingFixture::NifDefaultImportingFixture() {
 
 }
 
-NifDefaultImportingFixture::NifDefaultImportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils, NifNodeImporterRef nodeImporter, NifMeshImporterRef meshImporter, NifMaterialImporterRef materialImporter,NifAnimationImporterRef animationImporter ) {
+NifDefaultImportingFixture::NifDefaultImportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils ) {
 	this->translatorData = translatorData;
 	this->translatorOptions = translatorOptions;
 	this->translatorUtils = translatorUtils;
-	this->nodeImporter = nodeImporter;
-	this->meshImporter = meshImporter;
-	this->materialImporter = materialImporter;
-	this->animationImporter = animationImporter;
-
+	this->nodeImporter = new NifNodeImporter(translatorOptions, translatorData, translatorUtils);
+	this->meshImporter = new NifMeshImporter(translatorOptions, translatorData, translatorUtils);
+	this->materialImporter = new NifMaterialImporter(translatorOptions, translatorData, translatorUtils);
+	this->animationImporter = new NifAnimationImporter(translatorOptions, translatorData, translatorUtils);
 }
 
 string NifDefaultImportingFixture::asString( bool verbose /*= false */ ) const {

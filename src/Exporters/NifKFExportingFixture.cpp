@@ -4,11 +4,11 @@ NifKFExportingFixture::NifKFExportingFixture() {
 
 }
 
-NifKFExportingFixture::NifKFExportingFixture( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils, NifKFAnimationExporterRef animationExporter ) {
+NifKFExportingFixture::NifKFExportingFixture( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) {
 	this->translatorOptions = translatorOptions;
 	this->translatorData = translatorData;
 	this->translatorUtils = translatorUtils;
-	this->animationExporter = animationExporter;
+	this->animationExporter = new NifKFAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
 
 MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {

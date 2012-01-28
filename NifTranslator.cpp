@@ -88,12 +88,7 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	MString fileExtension = fileNameParts[(int)(fileNameParts.length()) - 1];
 
 	if(fileExtension == "nif") {
-		NifNodeImporterRef node_importer(new NifNodeImporter(translator_options,translator_data,translator_utils));
-		NifMeshImporterRef mesh_importer(new NifMeshImporter(translator_options,translator_data,translator_utils));
-		NifMaterialImporterRef material_importer(new NifMaterialImporter(translator_options,translator_data,translator_utils));
-		NifAnimationImporterRef animation_importer(new NifAnimationImporter(translator_options,translator_data,translator_utils));
-
-		NifDefaultImportingFixture importer_fixture(translator_data,translator_options,translator_utils,node_importer,mesh_importer,material_importer, animation_importer);
+		NifDefaultImportingFixture importer_fixture(translator_data,translator_options,translator_utils);
 
 		importer_fixture.ReadNodes(file);
 
@@ -110,7 +105,7 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	if(fileExtension == "kf") {
 		NifKFAnimationImporterRef kf_animation_importer(new NifKFAnimationImporter(translator_options, translator_data, translator_utils));
 
-		NifKFImportingFixtureRef kf_importing_fixture(new NifKFImportingFixture(translator_options, translator_data, translator_utils, kf_animation_importer));
+		NifKFImportingFixtureRef kf_importing_fixture(new NifKFImportingFixture(translator_options, translator_data, translator_utils));
 
 		return kf_importing_fixture->ReadNodes(file);
 	}
@@ -138,21 +133,14 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		export_type = translator_options->exportType;
 	}
 
-	if(export_type == "geometry" || export_type == "allgeometry") {
-		NifNodeExporterRef nodeExporter(new NifNodeExporter(translator_options, translator_data, translator_utils));
-		NifMeshExporterRef meshExporter(new NifMeshExporter(nodeExporter, translator_options,translator_data,translator_utils));
-		NifMaterialExporterRef materialExporter(new NifMaterialExporter(translator_options,translator_data,translator_utils));
-		NifAnimationExporterRef animationExporter(new NifAnimationExporter(translator_options, translator_data, translator_utils));
+	if(export_type == "geometry") {
+		NifDefaultExportingFixtureRef exportingFixture(new NifDefaultExportingFixture(translator_data, translator_options, translator_utils));
 
-		NifDefaultExportingFixture exportingFixture(translator_data, translator_options, translator_utils, nodeExporter, meshExporter, materialExporter, animationExporter);
-
-		return exportingFixture.WriteNodes(file);
+		return exportingFixture->WriteNodes(file);
 	}
 
-	if(export_type == "animation" || export_type == "allanimation") {
-		NifKFAnimationExporterRef animation_exporter(new NifKFAnimationExporter(translator_options, translator_data, translator_utils));
-
-		NifKFExportingFixtureRef exporting_fixture(new NifKFExportingFixture(translator_options, translator_data, translator_utils, animation_exporter));
+	if(export_type == "animation") {
+		NifKFExportingFixtureRef exporting_fixture(new NifKFExportingFixture(translator_options, translator_data, translator_utils));
 
 		return exporting_fixture->WriteNodes(file);
 	}

@@ -5,11 +5,11 @@ NifKFImportingFixture::NifKFImportingFixture() {
 
 }
 
-NifKFImportingFixture::NifKFImportingFixture( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils, NifKFAnimationImporterRef animationImporter ) {
-		this->animationImporter = animationImporter;
-		this->translatorOptions = translatorOptions;
-		this->translatorData = translatorData;
-		this->translatorUtils = translatorUtils;
+NifKFImportingFixture::NifKFImportingFixture( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) {
+	this->translatorOptions = translatorOptions;
+	this->translatorData = translatorData;
+	this->translatorUtils = translatorUtils;
+	this->animationImporter = new NifKFAnimationImporter(translatorOptions, translatorData, translatorUtils);
 }
 
 MObject NifKFImportingFixture::CreateDummyObject( MString target_object, ControllerLink controller_link )

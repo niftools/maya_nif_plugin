@@ -92,6 +92,10 @@ class NifImportingFixture : public NifTranslatorFixtureItem {
 
 public:
 
+	NifImportingFixture();
+
+	NifImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
+
 	virtual MStatus ReadNodes(const MFileObject& file) = 0;
 
 	virtual string asString( bool verbose = false ) const;

@@ -1,5 +1,17 @@
 #include "include/Importers/NifImportingFixture.h"
 
+
+NifImportingFixture::NifImportingFixture() {
+
+}
+
+NifImportingFixture::NifImportingFixture( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) {
+	this->translatorOptions = translatorOptions;
+	this->translatorData = translatorData;
+	this->translatorUtils = translatorUtils;
+}
+
+
 string NifImportingFixture::asString( bool verbose /*= false */ ) const {
 	stringstream out;
 

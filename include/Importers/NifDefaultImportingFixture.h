@@ -101,12 +101,11 @@ public:
 
 	NifAnimationImporterRef animationImporter;
 
-	virtual MStatus ReadNodes(const MFileObject& file);
-
 	NifDefaultImportingFixture();
 
-	NifDefaultImportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils,
-		NifNodeImporterRef nodeImporter, NifMeshImporterRef meshImporter, NifMaterialImporterRef materialImporter, NifAnimationImporterRef animationImporter);
+	NifDefaultImportingFixture(NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils);
+
+	virtual MStatus ReadNodes(const MFileObject& file);
 
 	virtual string asString( bool verbose = false ) const;
 

@@ -4,15 +4,14 @@ NifDefaultExportingFixture::NifDefaultExportingFixture() {
 
 }
 
-NifDefaultExportingFixture::NifDefaultExportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions,
-	NifTranslatorUtilsRef translatorUtils, NifNodeExporterRef nodeExporter, NifMeshExporterRef meshExporter, NifMaterialExporterRef materialExporter, NifAnimationExporterRef animationExporter) {
-		this->translatorOptions = translatorOptions;
-		this->translatorData = translatorData;
-		this->translatorUtils = translatorUtils;
-		this->nodeExporter = nodeExporter;
-		this->meshExporter = meshExporter;
-		this->materialExporter = materialExporter;
-		this->animationExporter = animationExporter;
+NifDefaultExportingFixture::NifDefaultExportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils ) {
+	this->translatorOptions = translatorOptions;
+	this->translatorData = translatorData;
+	this->translatorUtils = translatorUtils;
+	this->nodeExporter = new NifNodeExporter(translatorOptions, translatorData, translatorUtils);
+	this->meshExporter = new NifMeshExporter(this->nodeExporter, translatorOptions, translatorData, translatorUtils);
+	this->materialExporter = new NifMaterialExporter(translatorOptions, translatorData, translatorUtils);
+	this->animationExporter = new NifAnimationExporter(translatorOptions, translatorData, translatorUtils);
 }
 
 MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {

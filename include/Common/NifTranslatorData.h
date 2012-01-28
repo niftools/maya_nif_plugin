@@ -106,6 +106,11 @@ public:
 
 	map< unsigned int, MObject > importedTextures;
 	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
+
+	//map to hold references between the nif meshes and the material objects in maya
+	//because skyrim materials don't have proper names
+	vector< pair<NiGeometryRef, MObject>> importedMaterialsSkyrim;
+
 	MFileObject importFile; //The file currently being imported
 
 	map<string, unsigned int> textures;

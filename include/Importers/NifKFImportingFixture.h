@@ -107,7 +107,7 @@ public:
 
 	NifKFImportingFixture();
 
-	NifKFImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils, NifKFAnimationImporterRef animationImporter);
+	NifKFImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 	MObject CreateDummyObject( MString target_object, ControllerLink controller_link );
 

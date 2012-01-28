@@ -95,6 +95,10 @@ class NifExportingFixture : public NifTranslatorFixtureItem {
 
 public:
 
+	NifExportingFixture();
+
+	NifExportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
+
 	virtual MStatus WriteNodes(const MFileObject& file) = 0;
 
 	virtual string asString( bool verbose = false ) const;
