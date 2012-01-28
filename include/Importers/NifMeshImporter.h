@@ -96,11 +96,11 @@ typedef Ref<NifMeshImporter> NifMeshImporterRef;
 class NifMeshImporter : public NifTranslatorFixtureItem{
 public:
 
-	virtual MDagPath ImportMesh( NiAVObjectRef root, MObject parent );
-
 	NifMeshImporter();
 
 	NifMeshImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorsUtils);
+
+	virtual MDagPath ImportMesh( NiAVObjectRef root, MObject parent );
 
 	virtual ~NifMeshImporter();
 

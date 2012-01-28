@@ -109,7 +109,7 @@ public:
 
 	NifKFImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
-	MObject CreateDummyObject( MString target_object, ControllerLink controller_link );
+	virtual MObject CreateDummyObject( MString target_object, ControllerLink controller_link );
 
 	virtual MStatus ReadNodes(const MFileObject& file);
 

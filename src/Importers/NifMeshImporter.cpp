@@ -1,5 +1,14 @@
 #include "include/Importers/NifMeshImporter.h"
 
+NifMeshImporter::NifMeshImporter() {
+
+}
+
+NifMeshImporter::NifMeshImporter( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) 
+	: NifTranslatorFixtureItem(translatorOptions,translatorData,translatorUtils) {
+
+}
+
 MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	//out << "ImportMesh() begin" << endl;
 
@@ -485,15 +494,6 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 #endif
 
 	return meshPath;
-}
-
-NifMeshImporter::NifMeshImporter() {
-
-}
-
-NifMeshImporter::NifMeshImporter( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) 
-	: NifTranslatorFixtureItem(translatorOptions,translatorData,translatorUtils) {
-
 }
 
 NifMeshImporter::~NifMeshImporter() {

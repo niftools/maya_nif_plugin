@@ -1,5 +1,19 @@
 #include "include/Importers/NifDefaultImportingFixture.h"
 
+NifDefaultImportingFixture::NifDefaultImportingFixture() {
+
+}
+
+NifDefaultImportingFixture::NifDefaultImportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils ) {
+	this->translatorData = translatorData;
+	this->translatorOptions = translatorOptions;
+	this->translatorUtils = translatorUtils;
+	this->nodeImporter = new NifNodeImporter(translatorOptions, translatorData, translatorUtils);
+	this->meshImporter = new NifMeshImporter(translatorOptions, translatorData, translatorUtils);
+	this->materialImporter = new NifMaterialImporter(translatorOptions, translatorData, translatorUtils);
+	this->animationImporter = new NifAnimationImporter(translatorOptions, translatorData, translatorUtils);
+}
+
 MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 {
 	try {
@@ -157,20 +171,6 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 		MGlobal::displayError( "Error:  Unknown Exception." );
 		return MStatus::kFailure;
 	}
-}
-
-NifDefaultImportingFixture::NifDefaultImportingFixture() {
-
-}
-
-NifDefaultImportingFixture::NifDefaultImportingFixture( NifTranslatorDataRef translatorData, NifTranslatorOptionsRef translatorOptions, NifTranslatorUtilsRef translatorUtils ) {
-	this->translatorData = translatorData;
-	this->translatorOptions = translatorOptions;
-	this->translatorUtils = translatorUtils;
-	this->nodeImporter = new NifNodeImporter(translatorOptions, translatorData, translatorUtils);
-	this->meshImporter = new NifMeshImporter(translatorOptions, translatorData, translatorUtils);
-	this->materialImporter = new NifMaterialImporter(translatorOptions, translatorData, translatorUtils);
-	this->animationImporter = new NifAnimationImporter(translatorOptions, translatorData, translatorUtils);
 }
 
 string NifDefaultImportingFixture::asString( bool verbose /*= false */ ) const {

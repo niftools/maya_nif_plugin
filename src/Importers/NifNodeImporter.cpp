@@ -1,5 +1,14 @@
 #include "include/Importers/NifNodeImporter.h"
 
+NifNodeImporter::NifNodeImporter() {
+
+}
+
+NifNodeImporter::NifNodeImporter(NifTranslatorOptionsRef translatorOptions,NifTranslatorDataRef translatorData,NifTranslatorUtilsRef translatorUtils) 
+	: NifTranslatorFixtureItem(translatorOptions,translatorData,translatorUtils) {
+
+}
+
 void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MDagPath > & objs, MObject parent )
 {
 	MObject obj;
@@ -171,15 +180,6 @@ void NifNodeImporter::ImportNodes( NiAVObjectRef niAVObj, map< NiAVObjectRef, MD
 }
 
 NifNodeImporter::~NifNodeImporter() {
-
-}
-
-NifNodeImporter::NifNodeImporter(NifTranslatorOptionsRef translatorOptions,NifTranslatorDataRef translatorData,NifTranslatorUtilsRef translatorUtils) 
-	: NifTranslatorFixtureItem(translatorOptions,translatorData,translatorUtils) {
-
-}
-
-NifNodeImporter::NifNodeImporter() {
 
 }
 
