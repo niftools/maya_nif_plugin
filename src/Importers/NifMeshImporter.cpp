@@ -379,7 +379,27 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 	}
 
 	for ( unsigned i = 0; i < propGroups.size(); ++i ) {
-		this->translatorUtils->ConnectShader( propGroups[i], meshPath, sel_lists[i] );
+		//--Look for Materials--//
+		MObject grpOb;
+
+		//out << "Looking for previously imported shaders..." << endl;
+
+		unsigned int mat_index = this->translatorData->materialCollection.GetMaterialIndex( propGroups[i] );
+
+		if ( mat_index == NO_MATERIAL ) {
+			//No material to connect
+			continue;
+		}
+
+		//Look up Maya Shader
+		if ( this->translatorData->importedMaterials.find( mat_index ) == this->translatorData->importedMaterials.end() ) {
+			throw runtime_error("The material was previously imported, but does not appear in the list.  This should not happen.");
+		}
+
+		MObject matOb = this->translatorData->importedMaterials[mat_index];
+		vector<NifTextureConnectorRef> texture_connectors = this->translatorData->importedTextureConnectors[mat_index];
+
+		this->translatorUtils->ConnectShader( matOb, texture_connectors, meshPath, sel_lists[i] );
 	}
 
 	//out << "Bind skin if any" << endl;

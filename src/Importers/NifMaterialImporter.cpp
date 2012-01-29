@@ -181,7 +181,140 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 		}
 	}
 
-	
+	MDGModifier dgModifier;
+
+	for(int material_index = 0; material_index < this->translatorData->materialCollection.GetNumMaterials(); material_index++) {
+		MaterialWrapper mw = this->translatorData->materialCollection.GetMaterial(material_index);
+		vector<NifTextureConnectorRef> texture_connectors;
+
+		MObject material_object = this->translatorData->importedMaterials[material_index];
+		MFnPhongShader phongFn(material_object);
+
+		//Cycle through for each type of texture
+		for (int i = 0; i < 8; ++i) {
+			//Texture type is supported, get Texture
+			unsigned int tex_index = mw.GetTextureIndex( TexType(i) );
+
+			//If there is no matching texture for this slot, continue to the next one.
+			if ( tex_index == NO_TEXTURE ) {
+				continue;
+			}
+
+			//Skip this texture slot if it's an un-supported type.
+			switch(i) {
+			case DARK_MAP:
+				//Temporary until/if Dark Textures are supported
+				MGlobal::displayWarning( "Dark Textures are not yet supported." );
+				continue;
+			case DETAIL_MAP:
+				//Temporary until/if Detail Textures are supported
+				MGlobal::displayWarning( "Detail Textures are not yet supported." );
+				continue;
+			case GLOSS_MAP:
+				//Temporary until/if Detail Textures are supported
+				MGlobal::displayWarning( "Gloss Textures are not yet supported." );
+				continue;
+			case BUMP_MAP:
+				//Temporary until/if Bump Map Textures are supported
+				MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
+				continue;
+			case DECAL_0_MAP:
+			case DECAL_1_MAP:
+				//Temporary until/if Decal Textures are supported
+				MGlobal::displayWarning( "Decal Textures are not yet supported." );
+				continue;
+			};
+
+
+			//Look up Maya fileTexture
+			if ( this->translatorData->importedTextures.find( tex_index ) == this->translatorData->importedTextures.end() ) {
+				//There was no match in the previously imported textures.
+				//This may be caused by the NIF textures being stored internally, so just continue to the next slot.
+				continue;
+			}
+
+			MObject texture_object = this->translatorData->importedTextures[tex_index];
+
+			//out << "Connecting a texture..." << endl;
+			//Connect the texture
+			MFnDependencyNode texture_node;
+			NiAlphaPropertyRef alpha_property = mw.GetTranslucencyInfo();
+			if ( texture_object != MObject::kNullObj ) {
+				texture_node.setObject(texture_object);
+				MPlug texture_color = texture_node.findPlug( MString("outColor") );
+				switch(i) {
+				case BASE_MAP:
+					//Base Texture
+					dgModifier.connect( texture_color, phongFn.findPlug("color") );
+					//Check if Alpha needs to be used
+
+					if ( alpha_property != NULL && ( alpha_property->GetBlendState() == true || alpha_property->GetTestState() == true ) ) {
+						//Alpha is used, connect it
+						dgModifier.connect( texture_node.findPlug("outTransparency"), phongFn.findPlug("transparency") );
+					}
+					break;
+				case GLOW_MAP:
+					//Glow Texture
+					dgModifier.connect( texture_node.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
+					texture_node.findPlug("alphaGain").setValue(0.25);
+					texture_node.findPlug("defaultColorR").setValue( 0.0 );
+					texture_node.findPlug("defaultColorG").setValue( 0.0 );
+					texture_node.findPlug("defaultColorB").setValue( 0.0 );
+					dgModifier.connect( texture_color, phongFn.findPlug("incandescence") );
+					break;
+				}
+
+				//Check for clamp mode
+				bool wrap_u = true, wrap_v = true;
+				TexClampMode clamp_mode = mw.GetTexClampMode( TexType(i) );
+				if ( clamp_mode == CLAMP_S_CLAMP_T ) {
+					wrap_u = false;
+					wrap_v = false;
+				} else if ( clamp_mode == CLAMP_S_WRAP_T ) {
+					wrap_u = false;
+				} else if ( clamp_mode == WRAP_S_CLAMP_T ) {
+					wrap_v = false;
+				}
+
+				//Create 2D Texture Placement
+				MFnDependencyNode texture_placement;
+				texture_placement.create( "place2dTexture", "place2dTexture" );
+				texture_placement.findPlug("wrapU").setValue(wrap_u);
+				texture_placement.findPlug("wrapV").setValue(wrap_v);
+
+				//Connect all the 18 things
+				dgModifier.connect( texture_placement.findPlug("coverage"), texture_node.findPlug("coverage") );
+				dgModifier.connect( texture_placement.findPlug("mirrorU"), texture_node.findPlug("mirrorU") );
+				dgModifier.connect( texture_placement.findPlug("mirrorV"), texture_node.findPlug("mirrorV") );
+				dgModifier.connect( texture_placement.findPlug("noiseUV"), texture_node.findPlug("noiseUV") );
+				dgModifier.connect( texture_placement.findPlug("offset"), texture_node.findPlug("offset") );
+				dgModifier.connect( texture_placement.findPlug("outUV"), texture_node.findPlug("uvCoord") );
+				dgModifier.connect( texture_placement.findPlug("outUvFilterSize"), texture_node.findPlug("uvFilterSize") );
+				dgModifier.connect( texture_placement.findPlug("repeatUV"), texture_node.findPlug("repeatUV") );
+				dgModifier.connect( texture_placement.findPlug("rotateFrame"), texture_node.findPlug("rotateFrame") );
+				dgModifier.connect( texture_placement.findPlug("rotateUV"), texture_node.findPlug("rotateUV") );
+				dgModifier.connect( texture_placement.findPlug("stagger"), texture_node.findPlug("stagger") );
+				dgModifier.connect( texture_placement.findPlug("translateFrame"), texture_node.findPlug("translateFrame") );
+				dgModifier.connect( texture_placement.findPlug("vertexCameraOne"), texture_node.findPlug("vertexCameraOne") );
+				dgModifier.connect( texture_placement.findPlug("vertexUvOne"), texture_node.findPlug("vertexUvOne") );
+				dgModifier.connect( texture_placement.findPlug("vertexUvTwo"), texture_node.findPlug("vertexUvTwo") );
+				dgModifier.connect( texture_placement.findPlug("vertexUvThree"), texture_node.findPlug("vertexUvThree") );
+				dgModifier.connect( texture_placement.findPlug("wrapU"), texture_node.findPlug("wrapU") );
+				dgModifier.connect( texture_placement.findPlug("wrapV"), texture_node.findPlug("wrapV") );
+				//(Whew!)
+
+				//Create uvChooser if necessary
+				unsigned int uv_set = mw.GetTexUVSetIndex( TexType(i) );
+				if ( uv_set > 0 ) {
+					NifTextureConnectorRef texture_connector = new NifTextureConnector(texture_placement, uv_set);
+					texture_connectors.push_back(texture_connector);
+				}
+			}
+		}
+		this->translatorData->importedTextureConnectors[material_index] = texture_connectors;
+	}
+
+	dgModifier.doIt();
 }
 
 MObject NifMaterialImporter::ImportMaterial( MaterialWrapper & mw )

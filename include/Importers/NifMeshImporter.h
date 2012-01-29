@@ -84,6 +84,7 @@
 #include "include/Common/NifTranslatorData.h"
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
+#include "include/Importers/NifTextureConnector.h"
 
 using namespace Niflib;
 using namespace std;

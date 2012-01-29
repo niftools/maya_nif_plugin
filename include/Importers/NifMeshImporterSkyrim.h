@@ -1,5 +1,5 @@
-#ifndef _NIFMATERIALSIMPORTER_H
-#define _NIFMATERIALSIMPORTER_H
+#ifndef _NIFMESHIMPORTERSKYRIM_H
+#define _NIFMESHIMPORTERSKYRIM_H
 
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
@@ -47,7 +47,6 @@
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
-#include <maya/MProgressWindow.h>
 
 #include <string> 
 #include <vector>
@@ -79,41 +78,27 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
-#include <obj/NiAVObject.h>
-#include <obj/NiTriBasedGeom.h>
 
 #include "include/Common/NifTranslatorRefObject.h"
 #include "include/Common/NifTranslatorOptions.h"
 #include "include/Common/NifTranslatorData.h"
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
-#include "include/Importers/NifTextureConnector.h"
+#include "include/Importers/NifMeshImporter.h"
 
-using namespace std;
 using namespace Niflib;
+using namespace std;
 
-class NifMaterialImporter;
+class NifMeshImporterSkyrim;
 
-typedef Ref<NifMaterialImporter> NifMaterialImporterRef;
+typedef Ref<NifMeshImporterSkyrim> NifMeshImporterSkyrimRef;
 
-class NifMaterialImporter : public NifTranslatorFixtureItem {
+class NifMeshImporterSkyrim : public NifMeshImporter {
 public:
 
-	NifMaterialImporter();
+	NifMeshImporterSkyrim();
 
-	NifMaterialImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
-
-	virtual MObject ImportTexture( TextureWrapper & tw );
-
-	virtual void ImportMaterialsAndTextures( NiAVObjectRef & root );
-
-	virtual MObject ImportMaterial( MaterialWrapper & mw );
-
-	virtual string asString( bool verbose = false ) const;
-
-	virtual const Type& GetType() const;
-
-	const static Type TYPE;
+	NifMeshImporterSkyrim(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 };
 

@@ -1,5 +1,6 @@
-#ifndef _NIFTRANSLATORDATA_H
-#define _NIFTRANSLATORDATA_H
+#ifndef _NIFTEXTURECONNECTOR_H
+#define _NIFTEXTURECONNECTOR_H
+
 
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
@@ -47,6 +48,7 @@
 #include <maya/MAnimUtil.h>
 #include <maya/MItMeshPolygon.h>
 #include <maya/MItMeshVertex.h>
+#include <maya/MProgressWindow.h>
 
 #include <string> 
 #include <vector>
@@ -78,75 +80,29 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
-#include <obj/NiBSplineData.h>
-#include <obj/NiBSplineBasisData.h>
-#include <Ref.h>
+#include <obj/NiAVObject.h>
+#include <obj/NiTriBasedGeom.h>
 
-#include "NifTranslatorRefObject.h"
-#include "NifTranslatorDataWrapper.h"
-#include "include/Importers/NifTextureConnector.h"
+#include "include/Common/NifTranslatorRefObject.h"
 
-using namespace Niflib;
-using namespace std;
+class NifTextureConnector;
 
-class NifTranslatorData;
+typedef Ref<NifTextureConnector> NifTextureConnectorRef;
 
-typedef Ref<NifTranslatorData> NifTranslatorDataRef;
+class NifTextureConnector : public NifTranslatorRefObject {
+protected:
 
-class NifTranslatorData : public NifTranslatorRefObject {
+	MFnDependencyNode texturePlacement;
+
+	int uvSet;
+
 public:
 
-	//Map to hold existing nodes that were found for connecting skins to
-	//skeletons on import
-	map<string, MDagPath> existingNodes;
-	//maps to hold information about what has already been imported
-	map< NiAVObjectRef, MDagPath > importedNodes;
-	map< unsigned int, MObject > importedMaterials;
-	map< unsigned int, vector<NifTextureConnectorRef>> importedTextureConnectors;
+	NifTextureConnector();
 
-	MatTexCollection materialCollection;
+	NifTextureConnector(MFnDependencyNode texture_placement, int uv_set);
 
-	map< unsigned int, MObject > importedTextures;
-	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
-
-	//map to hold references between the nif meshes and the material objects in maya
-	//because skyrim materials don't have proper names
-	vector< pair<NiGeometryRef, MObject>> importedMaterialsSkyrim;
-
-	MFileObject importFile; //The file currently being imported
-
-	map<string, unsigned int> textures;
-	NiNodeRef sceneRoot;
-
-	list< MObject > meshes;
-	//A map to hold associations between DAG paths and NIF object
-	map<string, NiNodeRef> nodes; 
-
-	map< string, vector<MObject> > meshClusters;
-
-	map< string, vector<NiPropertyRef> > shaders;
-
-	vector<MObject> animatedObjects; //the animated objects to export animation from
-
-	//the spline datas used by the NiBSplineInterpolators
-	//the key represents the amount of control points for all the NiBSplineInterpolators
-	//all the interpolators that share a NiBSplineData must share a NiBSplineBasisData 
-	//that keeps track of the control points
-	map<int, NiBSplineDataRef> splinesData; 
-
-	//all the basis data shared between NiBSplineInterpolators that share the same number of
-	//control points
-	map<int, NiBSplineBasisDataRef> splinesBasisData;
-
-
-	map<string,NifTranslatorDataWrapperRef> customData;
-
-	NifTranslatorData();
-	NifTranslatorData(const NifTranslatorData& copy);
-
-	virtual ~NifTranslatorData();
-
-	virtual void Reset();
+	virtual void ConnectTexture(MDagPath mesh_path);
 
 	virtual string asString( bool verbose = false ) const;
 
@@ -156,3 +112,4 @@ public:
 };
 
 #endif
+

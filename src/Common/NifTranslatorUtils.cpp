@@ -157,28 +157,9 @@ string NifTranslatorUtils::MakeNifName( const MString & mayaName )
 	}
 }
 
-void NifTranslatorUtils::ConnectShader( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list )
+void NifTranslatorUtils::ConnectShader( MObject material_object, vector<NifTextureConnectorRef> texture_connectors, MDagPath mesh_path, MSelectionList selection_list )
 {
-	//--Look for Materials--//
-	MObject grpOb;
-
-	//out << "Looking for previously imported shaders..." << endl;
-
-	unsigned int mat_index = this->translatorData->materialCollection.GetMaterialIndex( properties );
-
-	if ( mat_index == NO_MATERIAL ) {
-		//No material to connect
-		return;
-	}
-
-	//Look up Maya Shader
-	if ( this->translatorData->importedMaterials.find( mat_index ) == this->translatorData->importedMaterials.end() ) {
-		throw runtime_error("The material was previously imported, but does not appear in the list.  This should not happen.");
-	}
-
-	MObject matOb = this->translatorData->importedMaterials[mat_index];
-
-	if ( matOb == MObject::kNullObj ) {
+	if ( material_object == MObject::kNullObj ) {
 		//No material to connect
 		return;
 	}
@@ -190,165 +171,31 @@ void NifTranslatorUtils::ConnectShader( const vector<NiPropertyRef> & properties
 
 	//Create the shading group from the list
 	MFnSet setFn;
-	setFn.create( sel_list, MFnSet::kRenderableOnly, false );
+	setFn.create( selection_list, MFnSet::kRenderableOnly, false );
 	setFn.setName("shadingGroup");
 
 	//--Connect the mesh to the shading group--//
 
 	//Set material to a phong function set
 	MFnPhongShader phongFn;
-	phongFn.setObject( matOb );
+	phongFn.setObject( material_object );
 
 	//Break the default connection that is created
-	MPlugArray arr;
+	MPlugArray plug_array;
 	MPlug surfaceShader = setFn.findPlug("surfaceShader");
-	surfaceShader.connectedTo( arr, true, true );
+	surfaceShader.connectedTo( plug_array, true, true );
 	MDGModifier dgModifier;
-	dgModifier.disconnect( arr[0], surfaceShader );
+	dgModifier.disconnect( plug_array[0], surfaceShader );
 
 	//Connect outColor to surfaceShader
 	dgModifier.connect( phongFn.findPlug("outColor"), surfaceShader );
 
-	//out << "Looking for previously imported textures..." << endl;
-
-	MaterialWrapper mw = this->translatorData->materialCollection.GetMaterial( mat_index );
-
-	//Cycle through for each type of texture
-	for (int i = 0; i < 8; ++i) {
-		//Texture type is supported, get Texture
-		unsigned int tex_index = mw.GetTextureIndex( TexType(i) );
-
-		//If there is no matching texture for this slot, continue to the next one.
-		if ( tex_index == NO_TEXTURE ) {
-			continue;
-		}
-
-		//Skip this texture slot if it's an un-supported type.
-		switch(i) {
-		case DARK_MAP:
-			//Temporary until/if Dark Textures are supported
-			MGlobal::displayWarning( "Dark Textures are not yet supported." );
-			continue;
-		case DETAIL_MAP:
-			//Temporary until/if Detail Textures are supported
-			MGlobal::displayWarning( "Detail Textures are not yet supported." );
-			continue;
-		case GLOSS_MAP:
-			//Temporary until/if Detail Textures are supported
-			MGlobal::displayWarning( "Gloss Textures are not yet supported." );
-			continue;
-		case BUMP_MAP:
-			//Temporary until/if Bump Map Textures are supported
-			MGlobal::displayWarning( "Bump Map Textures are not yet supported." );
-			continue;
-		case DECAL_0_MAP:
-		case DECAL_1_MAP:
-			//Temporary until/if Decal Textures are supported
-			MGlobal::displayWarning( "Decal Textures are not yet supported." );
-			continue;
-		};
-
-
-		//Look up Maya fileTexture
-		if ( this->translatorData->importedTextures.find( tex_index ) == this->translatorData->importedTextures.end() ) {
-			//There was no match in the previously imported textures.
-			//This may be caused by the NIF textures being stored internally, so just continue to the next slot.
-			continue;
-		}
-
-		MObject txOb = this->translatorData->importedTextures[tex_index];
-
-		//out << "Connecting a texture..." << endl;
-		//Connect the texture
-		MFnDependencyNode nodeFn;
-		NiAlphaPropertyRef niAlphaProp = mw.GetTranslucencyInfo();
-		if ( txOb != MObject::kNullObj ) {
-			nodeFn.setObject(txOb);
-			MPlug tx_outColor = nodeFn.findPlug( MString("outColor") );
-			switch(i) {
-			case BASE_MAP:
-				//Base Texture
-				dgModifier.connect( tx_outColor, phongFn.findPlug("color") );
-				//Check if Alpha needs to be used
-
-				if ( niAlphaProp != NULL && ( niAlphaProp->GetBlendState() == true || niAlphaProp->GetTestState() == true ) ) {
-					//Alpha is used, connect it
-					dgModifier.connect( nodeFn.findPlug("outTransparency"), phongFn.findPlug("transparency") );
-				}
-				break;
-			case GLOW_MAP:
-				//Glow Texture
-				dgModifier.connect( nodeFn.findPlug("outAlpha"), phongFn.findPlug("glowIntensity") );
-				nodeFn.findPlug("alphaGain").setValue(0.25);
-				nodeFn.findPlug("defaultColorR").setValue( 0.0 );
-				nodeFn.findPlug("defaultColorG").setValue( 0.0 );
-				nodeFn.findPlug("defaultColorB").setValue( 0.0 );
-				dgModifier.connect( tx_outColor, phongFn.findPlug("incandescence") );
-				break;
-			}
-
-			//Check for clamp mode
-			bool wrap_u = true, wrap_v = true;
-			TexClampMode clamp_mode = mw.GetTexClampMode( TexType(i) );
-			if ( clamp_mode == CLAMP_S_CLAMP_T ) {
-				wrap_u = false;
-				wrap_v = false;
-			} else if ( clamp_mode == CLAMP_S_WRAP_T ) {
-				wrap_u = false;
-			} else if ( clamp_mode == WRAP_S_CLAMP_T ) {
-				wrap_v = false;
-			}
-
-			//Create 2D Texture Placement
-			MFnDependencyNode tp2dFn;
-			tp2dFn.create( "place2dTexture", "place2dTexture" );
-			tp2dFn.findPlug("wrapU").setValue(wrap_u);
-			tp2dFn.findPlug("wrapV").setValue(wrap_v);
-
-			//Connect all the 18 things
-			dgModifier.connect( tp2dFn.findPlug("coverage"), nodeFn.findPlug("coverage") );
-			dgModifier.connect( tp2dFn.findPlug("mirrorU"), nodeFn.findPlug("mirrorU") );
-			dgModifier.connect( tp2dFn.findPlug("mirrorV"), nodeFn.findPlug("mirrorV") );
-			dgModifier.connect( tp2dFn.findPlug("noiseUV"), nodeFn.findPlug("noiseUV") );
-			dgModifier.connect( tp2dFn.findPlug("offset"), nodeFn.findPlug("offset") );
-			dgModifier.connect( tp2dFn.findPlug("outUV"), nodeFn.findPlug("uvCoord") );
-			dgModifier.connect( tp2dFn.findPlug("outUvFilterSize"), nodeFn.findPlug("uvFilterSize") );
-			dgModifier.connect( tp2dFn.findPlug("repeatUV"), nodeFn.findPlug("repeatUV") );
-			dgModifier.connect( tp2dFn.findPlug("rotateFrame"), nodeFn.findPlug("rotateFrame") );
-			dgModifier.connect( tp2dFn.findPlug("rotateUV"), nodeFn.findPlug("rotateUV") );
-			dgModifier.connect( tp2dFn.findPlug("stagger"), nodeFn.findPlug("stagger") );
-			dgModifier.connect( tp2dFn.findPlug("translateFrame"), nodeFn.findPlug("translateFrame") );
-			dgModifier.connect( tp2dFn.findPlug("vertexCameraOne"), nodeFn.findPlug("vertexCameraOne") );
-			dgModifier.connect( tp2dFn.findPlug("vertexUvOne"), nodeFn.findPlug("vertexUvOne") );
-			dgModifier.connect( tp2dFn.findPlug("vertexUvTwo"), nodeFn.findPlug("vertexUvTwo") );
-			dgModifier.connect( tp2dFn.findPlug("vertexUvThree"), nodeFn.findPlug("vertexUvThree") );
-			dgModifier.connect( tp2dFn.findPlug("wrapU"), nodeFn.findPlug("wrapU") );
-			dgModifier.connect( tp2dFn.findPlug("wrapV"), nodeFn.findPlug("wrapV") );
-			//(Whew!)
-
-			//Create uvChooser if necessary
-			unsigned int uv_set = mw.GetTexUVSetIndex( TexType(i) );
-			if ( uv_set > 0 ) {
-				MFnDependencyNode chooserFn;
-				chooserFn.create( "uvChooser", "uvChooser" );
-
-				//Connection between the mesh and the uvChooser
-				MFnMesh meshFn;
-				meshFn.setObject(meshPath);
-				dgModifier.connect( meshFn.findPlug("uvSet")[uv_set].child(0), chooserFn.findPlug("uvSets").elementByLogicalIndex(0) );
-
-				//Connections between the uvChooser and the place2dTexture
-				dgModifier.connect( chooserFn.findPlug("outUv"), tp2dFn.findPlug("uvCoord") );
-				dgModifier.connect( chooserFn.findPlug("outVertexCameraOne"), tp2dFn.findPlug("vertexCameraOne") );
-				dgModifier.connect( chooserFn.findPlug("outVertexUvOne"), tp2dFn.findPlug("vertexUvOne") );
-				dgModifier.connect( chooserFn.findPlug("outVertexUvTwo"), tp2dFn.findPlug("vertexUvTwo") );
-				dgModifier.connect( chooserFn.findPlug("outVertexUvThree"), tp2dFn.findPlug("vertexUvThree") );
-			}
-		}
-	}
-
 	//out << "Invoking dgModifier..." << endl;
 	dgModifier.doIt();
+
+	for(int i = 0; i < texture_connectors.size(); i++) {
+		texture_connectors[i]->ConnectTexture(mesh_path);
+	}
 }
 
 void NifTranslatorUtils::AdjustSkeleton( NiAVObjectRef & root )

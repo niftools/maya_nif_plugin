@@ -82,6 +82,7 @@
 #include "NifTranslatorData.h"
 #include "NifTranslatorOptions.h"
 #include "NifTranslatorRefObject.h"
+#include "include/Importers/NifTextureConnector.h"
 
 using namespace Niflib;
 using namespace std;
@@ -95,6 +96,7 @@ class NifTranslatorUtils : public NifTranslatorRefObject {
 public:
 
 	NifTranslatorDataRef translatorData;
+
 	NifTranslatorOptionsRef translatorOptions;	
 
 	NifTranslatorUtils();
@@ -105,7 +107,7 @@ public:
 
 	MObject GetExistingJoint( const string & name );
 
-	void ConnectShader( const vector<NiPropertyRef> & properties, MDagPath meshPath, MSelectionList sel_list );
+	void ConnectShader( MObject matOb, vector<NifTextureConnectorRef> texture_connectors, MDagPath meshPath, MSelectionList sel_list );
 
 	void AdjustSkeleton( NiAVObjectRef & root );
 
