@@ -82,6 +82,7 @@
 #include <obj/NiAVObject.h>
 #include <obj/NiTriBasedGeom.h>
 #include <obj/BSLightingShaderProperty.h>
+#include <obj/BSShaderTextureSet.h>
 
 #include "include/Common/NifTranslatorRefObject.h"
 #include "include/Common/NifTranslatorOptions.h"

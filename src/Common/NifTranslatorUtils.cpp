@@ -375,12 +375,12 @@ NiNodeRef NifTranslatorUtils::GetDAGParent( MObject dagNode )
 			return this->translatorData->nodes[par_path];
 		} else {
 			//Block was created, parent to scene root
-			return this->translatorData->sceneRoot;
+			return this->translatorData->exportedSceneRoot;
 		}
 	}
 
 	//Block was created, parent to scene root
-	return this->translatorData->sceneRoot;
+	return this->translatorData->exportedSceneRoot;
 }
 
 

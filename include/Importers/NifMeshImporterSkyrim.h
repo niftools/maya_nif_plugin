@@ -78,6 +78,7 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
+#include <obj/BSShaderTextureSet.h>
 
 #include "include/Common/NifTranslatorRefObject.h"
 #include "include/Common/NifTranslatorOptions.h"

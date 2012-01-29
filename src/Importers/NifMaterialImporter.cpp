@@ -132,7 +132,7 @@ MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
 void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 {
 	//Gather all materials and textures from the file
-	this->translatorData->materialCollection.GatherMaterials( root );
+	this->materialCollection.GatherMaterials( root );
 
 	//out << mtCollection.GetNumTextures() << " textures and " << mtCollection.GetNumMaterials() << " found." << endl;
 
@@ -141,20 +141,20 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 	if(reserved == true) {
 
 		MProgressWindow::setProgressMin(0);
-		MProgressWindow::setProgressMax(this->translatorData->materialCollection.GetNumTextures() - 1);
+		MProgressWindow::setProgressMax(this->materialCollection.GetNumTextures() - 1);
 		MProgressWindow::setTitle("Importing textures");
 		MProgressWindow::startProgress();
 
 		//Cycle through each texture that was found, creating a Maya fileTexture for it
-		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumTextures(); ++i ) {
-			this->translatorData->importedTextures[i] = this->ImportTexture( this->translatorData->materialCollection.GetTexture(i) );
+		for ( size_t i = 0; i < this->materialCollection.GetNumTextures(); ++i ) {
+			this->importedTextures[i] = this->ImportTexture( this->materialCollection.GetTexture(i) );
 			MProgressWindow::advanceProgress(1);
 		}
 
 		MProgressWindow::endProgress();
 	} else {
-		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumTextures(); ++i ) {
-			this->translatorData->importedTextures[i] = this->ImportTexture( this->translatorData->materialCollection.GetTexture(i) );
+		for ( size_t i = 0; i < this->materialCollection.GetNumTextures(); ++i ) {
+			this->importedTextures[i] = this->ImportTexture( this->materialCollection.GetTexture(i) );
 		}
 	}
 
@@ -163,31 +163,35 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 	if(reserved == true) {
 
 		MProgressWindow::setProgressMin(0);
-		MProgressWindow::setProgressMax(this->translatorData->materialCollection.GetNumMaterials() - 1);
+		MProgressWindow::setProgressMax(this->materialCollection.GetNumMaterials() - 1);
 		MProgressWindow::setTitle("Importing materials");
 		MProgressWindow::startProgress();
 
 		//Cycle through each material that was found, creating a Maya phong shader for it
-		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumMaterials(); ++i ) {
-			this->translatorData->importedMaterials[i] = this->ImportMaterial( this->translatorData->materialCollection.GetMaterial(i) );
+		for ( size_t i = 0; i < this->materialCollection.GetNumMaterials(); ++i ) {
+			this->importedMaterials[i] = this->ImportMaterial( this->materialCollection.GetMaterial(i) );
+
 			MProgressWindow::advanceProgress(1);
 		}
 
 		MProgressWindow::endProgress();
 	} else {
 		//Cycle through each material that was found, creating a Maya phong shader for it
-		for ( size_t i = 0; i < this->translatorData->materialCollection.GetNumMaterials(); ++i ) {
-			this->translatorData->importedMaterials[i] = this->ImportMaterial( this->translatorData->materialCollection.GetMaterial(i) );
+		for ( size_t i = 0; i < this->materialCollection.GetNumMaterials(); ++i ) {
+			this->importedMaterials[i] = this->ImportMaterial( this->materialCollection.GetMaterial(i) );
 		}
 	}
 
 	MDGModifier dgModifier;
 
-	for(int material_index = 0; material_index < this->translatorData->materialCollection.GetNumMaterials(); material_index++) {
-		MaterialWrapper mw = this->translatorData->materialCollection.GetMaterial(material_index);
+	for(int material_index = 0; material_index < this->materialCollection.GetNumMaterials(); material_index++) {
+		MaterialWrapper mw = this->materialCollection.GetMaterial(material_index);
 		vector<NifTextureConnectorRef> texture_connectors;
+		vector<NiPropertyRef> property_group = mw.GetProperties();
 
-		MObject material_object = this->translatorData->importedMaterials[material_index];
+		MObject material_object = this->importedMaterials[material_index];
+		this->translatorData->importedMaterials.push_back(pair<vector<NiPropertyRef>, MObject>(property_group, material_object));
+
 		MFnPhongShader phongFn(material_object);
 
 		//Cycle through for each type of texture
@@ -227,13 +231,13 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 
 
 			//Look up Maya fileTexture
-			if ( this->translatorData->importedTextures.find( tex_index ) == this->translatorData->importedTextures.end() ) {
+			if ( this->importedTextures.find( tex_index ) == this->importedTextures.end() ) {
 				//There was no match in the previously imported textures.
 				//This may be caused by the NIF textures being stored internally, so just continue to the next slot.
 				continue;
 			}
 
-			MObject texture_object = this->translatorData->importedTextures[tex_index];
+			MObject texture_object = this->importedTextures[tex_index];
 
 			//out << "Connecting a texture..." << endl;
 			//Connect the texture
@@ -311,7 +315,7 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 				}
 			}
 		}
-		this->translatorData->importedTextureConnectors[material_index] = texture_connectors;
+		this->translatorData->importedTextureConnectors.push_back(pair<vector<NiPropertyRef>, vector<NifTextureConnectorRef>>(property_group, texture_connectors));
 	}
 
 	dgModifier.doIt();

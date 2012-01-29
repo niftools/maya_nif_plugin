@@ -384,22 +384,49 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 		//out << "Looking for previously imported shaders..." << endl;
 
-		unsigned int mat_index = this->translatorData->materialCollection.GetMaterialIndex( propGroups[i] );
+		vector<NiPropertyRef> property_group = propGroups[i];
 
-		if ( mat_index == NO_MATERIAL ) {
-			//No material to connect
-			continue;
+		MObject material_object;
+
+		for(int x = 0; x < this->translatorData->importedMaterials.size(); x++) {
+			int coincidences = 0;
+			vector<NiPropertyRef> current_property_group = this->translatorData->importedMaterials[x].first;
+
+			for(int y = 0; y < property_group.size(); y++) {
+				for(int z = 0; z < current_property_group.size(); z++) {
+					if(property_group[y] == current_property_group[z]) {
+						coincidences++;
+					}
+				}
+			}
+
+			if(coincidences == property_group.size()) {
+				material_object = this->translatorData->importedMaterials[x].second;
+				break;
+			}
 		}
 
-		//Look up Maya Shader
-		if ( this->translatorData->importedMaterials.find( mat_index ) == this->translatorData->importedMaterials.end() ) {
-			throw runtime_error("The material was previously imported, but does not appear in the list.  This should not happen.");
+		vector<NifTextureConnectorRef> texture_connectors;
+
+		for(int x = 0; x < this->translatorData->importedTextureConnectors.size(); x++) {
+			int coincidences = 0;
+			vector<NiPropertyRef> current_property_group = this->translatorData->importedTextureConnectors[x].first;
+
+			for(int y = 0; y < property_group.size(); y++) {
+				for(int z = 0; z < current_property_group.size(); z++) {
+					if(property_group[y] == current_property_group[z]) {
+						coincidences++;
+					}
+				}
+			}
+
+			if(coincidences == property_group.size()) {
+				texture_connectors = this->translatorData->importedTextureConnectors[x].second;
+				break;
+			}
 		}
 
-		MObject matOb = this->translatorData->importedMaterials[mat_index];
-		vector<NifTextureConnectorRef> texture_connectors = this->translatorData->importedTextureConnectors[mat_index];
-
-		this->translatorUtils->ConnectShader( matOb, texture_connectors, meshPath, sel_lists[i] );
+		this->translatorUtils->ConnectShader( material_object, texture_connectors, meshPath, sel_lists[i] );
 	}
 
 	//out << "Bind skin if any" << endl;

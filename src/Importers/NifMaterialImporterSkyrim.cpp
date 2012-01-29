@@ -87,6 +87,21 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 				new_shader.setIncandescence(incadescence_color);
 				new_shader.setCosPower(cosine_power);
 				new_shader.setTransparency(transparency);
+
+				BSShaderTextureSetRef texture_set = shader_property->getTextureSet();
+				if(texture_set != NULL) {
+					MDGModifier dg_modifier;
+					string color_texture = texture_set->GetTexture(0);
+					string normal_map = texture_set->GetTexture(1);
+
+					if(color_texture.length() > 0) {
+
+					}
+
+					if(normal_map.length() > 0) {
+
+					}
+				}
 			}
 			if(alpha_property != NULL) {
 
@@ -103,10 +118,8 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 
 			this->imported_materials.push_back(found_material);
 			this->property_groups.push_back(property_group);
+			this->translatorData->importedMaterials.push_back(pair<vector<NiPropertyRef>, MObject>(property_group, found_material));
 		}
-
-		this->translatorData->importedMaterialsSkyrim.push_back(pair<NiGeometryRef, MObject>(geometry, found_material));
-
 		return;
 	}
 

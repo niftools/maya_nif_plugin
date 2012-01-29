@@ -18,8 +18,8 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	try {
 	//out << "Creating root node...";
 	//Create new root node
-	this->translatorData->sceneRoot = new NiNode;
-	this->translatorData->sceneRoot->SetName( "Scene Root" );
+	this->translatorData->exportedSceneRoot = new NiNode;
+	this->translatorData->exportedSceneRoot->SetName( "Scene Root" );
 	//out << sceneRoot << endl;
 
 	//out << "Exporting file textures..." << endl;
@@ -53,7 +53,7 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	}
 
 	//out << "Applying Skin offsets..." << endl;
-	this->meshExporter->ApplyAllSkinOffsets( StaticCast<NiAVObject>(this->translatorData->sceneRoot) );
+	this->meshExporter->ApplyAllSkinOffsets( StaticCast<NiAVObject>(this->translatorData->exportedSceneRoot) );
 
 
 
@@ -64,7 +64,7 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	nif_info.endian = ENDIAN_LITTLE; //Intel endian format
 	nif_info.exportInfo1 = "NifTools Maya NIF Plug-in " + string(PLUGIN_VERSION);
 	nif_info.userVersion2 = this->translatorOptions->exportUserVersion2;
-	WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(this->translatorData->sceneRoot), nif_info );
+	WriteNifTree( file.fullName().asChar(), StaticCast<NiObject>(this->translatorData->exportedSceneRoot), nif_info );
 
 	//out << "Export Complete." << endl;
 

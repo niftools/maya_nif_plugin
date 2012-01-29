@@ -97,6 +97,14 @@ class NifMaterialImporter;
 typedef Ref<NifMaterialImporter> NifMaterialImporterRef;
 
 class NifMaterialImporter : public NifTranslatorFixtureItem {
+protected:
+
+	map< unsigned int, MObject > importedMaterials;
+
+	map< unsigned int, MObject > importedTextures;
+
+	MatTexCollection materialCollection;
+
 public:
 
 	NifMaterialImporter();

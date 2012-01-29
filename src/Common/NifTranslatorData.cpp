@@ -5,7 +5,7 @@ NifTranslatorData::NifTranslatorData() {
 }
 
 NifTranslatorData::NifTranslatorData( const NifTranslatorData& copy ) 
-	: importedNodes(copy.importedNodes), importedTextures(copy.importedTextures), importedMeshes(copy.importedMeshes), importedMaterials(copy.importedMaterials), existingNodes(copy.existingNodes) {
+	: importedNodes(copy.importedNodes), importedMeshes(copy.importedMeshes), existingNodes(copy.existingNodes) {
 
 }
 
@@ -16,11 +16,9 @@ NifTranslatorData::~NifTranslatorData() {
 void NifTranslatorData::Reset() {
 	this->existingNodes.clear();
 	this->importedNodes.clear();
-	this->importedMaterials.clear();
-	this->importedTextures.clear();
 	this->importedMeshes.clear();
 	this->importFile.setFullName("");
-	this->sceneRoot = NULL;
+	this->exportedSceneRoot = NULL;
 	this->meshes.clear();
 	this->nodes.clear(); 
 	this->meshClusters.clear();
@@ -35,11 +33,9 @@ std::string NifTranslatorData::asString( bool verbose /*= false */ ) const {
 	if(verbose == false) {
 		out<<"Existing nodes count:   "<<this->existingNodes.size();
 		out<<"Imported nodes count:   "<<this->importedNodes.size();
-		out<<"Imported materials count:   "<<this->importedMaterials.size();
-		out<<"Imported textures count:   "<<this->importedTextures.size();
 		out<<"Imported meshes count:   "<<this->importedMeshes.size();
 		out<<"Imported file name:   "<<this->importFile.name();
-		out<<"Scene root:  "<<endl<<this->sceneRoot->asString()<<endl;
+		out<<"Scene root:  "<<endl<<this->exportedSceneRoot->asString()<<endl;
 		out<<"Meshes:   "<<this->meshes.size()<<endl;
 
 	} else {
@@ -52,11 +48,9 @@ std::string NifTranslatorData::asString( bool verbose /*= false */ ) const {
 		for(map<NiAVObjectRef,MDagPath>::const_iterator it = this->importedNodes.begin();it != this->importedNodes.end(); it++) {
 			out<<"Imported nif nodes -  MDagPath:  "<<it->first->asString(false)<<"  -  "<<it->second.partialPathName()<<endl;
 		}
-		out<<"Imported materials count:   "<<this->importedMaterials.size();
-		out<<"Imported textures count:   "<<this->importedTextures.size();
 		out<<"Imported meshes count:   "<<this->importedMeshes.size();
 		out<<"Imported file name:   "<<this->importFile.name();
-		out<<"Scene root:  "<<endl<<this->sceneRoot->asString()<<endl;
+		out<<"Scene root:  "<<endl<<this->exportedSceneRoot->asString()<<endl;
 		out<<"Meshes:   "<<this->meshes.size()<<endl;
 	}
 

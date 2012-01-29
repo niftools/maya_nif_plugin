@@ -99,24 +99,28 @@ public:
 	//Map to hold existing nodes that were found for connecting skins to
 	//skeletons on import
 	map<string, MDagPath> existingNodes;
+
 	//maps to hold information about what has already been imported
 	map< NiAVObjectRef, MDagPath > importedNodes;
-	map< unsigned int, MObject > importedMaterials;
-	map< unsigned int, vector<NifTextureConnectorRef>> importedTextureConnectors;
 
-	MatTexCollection materialCollection;
-
-	map< unsigned int, MObject > importedTextures;
+	//map between nif meshes and maya meshes
 	vector< pair<NiAVObjectRef, MObject> > importedMeshes;
 
-	//map to hold references between the nif meshes and the material objects in maya
+	//map to hold references between the nif materials and the material objects in maya
 	//because skyrim materials don't have proper names
-	vector< pair<NiGeometryRef, MObject>> importedMaterialsSkyrim;
+	vector< pair<vector<NiPropertyRef>, MObject>> importedMaterials;
+
+	//map to hold references between nif materials and textures in maya
+	//and to execute other misc operations on connections between maya meshes and maya materials
+	vector< pair<vector<NiPropertyRef>, vector<NifTextureConnectorRef>>> importedTextureConnectors;
+
+	MatTexCollection materialCollection;
 
 	MFileObject importFile; //The file currently being imported
 
 	map<string, unsigned int> textures;
-	NiNodeRef sceneRoot;
+
+	NiNodeRef exportedSceneRoot;
 
 	list< MObject > meshes;
 	//A map to hold associations between DAG paths and NIF object
@@ -142,6 +146,7 @@ public:
 	map<string,NifTranslatorDataWrapperRef> customData;
 
 	NifTranslatorData();
+
 	NifTranslatorData(const NifTranslatorData& copy);
 
 	virtual ~NifTranslatorData();
