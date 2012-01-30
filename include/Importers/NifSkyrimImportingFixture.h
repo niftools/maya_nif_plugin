@@ -1,5 +1,5 @@
-#ifndef _NIFMATERIALSIMPORTER_H
-#define _NIFMATERIALSIMPORTER_H
+#ifndef _NIFSKYRIMIMPORTINGFIXTURE_H
+#define _NIFSKYRIMIMPORTINGFIXTURE_H
 
 #include <maya/MDagPath.h>
 #include <maya/MDagPathArray.h>
@@ -79,52 +79,34 @@
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
-#include <obj/NiAVObject.h>
-#include <obj/NiTriBasedGeom.h>
 
-#include "include/Common/NifTranslatorRefObject.h"
-#include "include/Common/NifTranslatorOptions.h"
 #include "include/Common/NifTranslatorData.h"
+#include "include/Common/NifTranslatorOptions.h"
 #include "include/Common/NifTranslatorUtils.h"
-#include "include/Common/NifTranslatorFixtureItem.h"
-#include "include/Importers/NifTextureConnector.h"
+#include "include/Importers/NifNodeImporter.h"
+#include "include/Importers/NifImportingFixture.h"
+#include "include/Importers/NifAnimationImporter.h"
+#include "include/Importers/NifMeshImporter.h"
+#include "include/Importers/NifMaterialImporter.h"
+#include "include/Importers/NifDefaultImportingFixture.h"
+#include "include/Importers/NifMaterialImporterSkyrim.h"
 
-using namespace std;
-using namespace Niflib;
+class NifSkyrimImportingFixture;
 
-class NifMaterialImporter;
+typedef Ref<NifSkyrimImportingFixture> NifSkyrimImportingFixtureRef;
 
-typedef Ref<NifMaterialImporter> NifMaterialImporterRef;
-
-class NifMaterialImporter : public NifTranslatorFixtureItem {
-protected:
-
-	map< unsigned int, MObject > importedMaterials;
-
-	map< unsigned int, MObject > importedTextures;
-
-	MatTexCollection materialCollection;
-
+class NifSkyrimImportingFixture : public NifDefaultImportingFixture {
 public:
 
-	NifMaterialImporter();
+	NifSkyrimImportingFixture();
 
-	NifMaterialImporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
-
-	virtual MString GetTextureFilePath( string &file_name );
-
-	virtual MObject ImportTexture( TextureWrapper & tw );
-
-	virtual void ImportMaterialsAndTextures( NiAVObjectRef & root );
-
-	virtual MObject ImportMaterial( MaterialWrapper & mw );
+	NifSkyrimImportingFixture(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& GetType() const;
 
 	const static Type TYPE;
-
 };
 
 #endif

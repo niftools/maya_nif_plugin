@@ -9,33 +9,16 @@ NifMaterialImporter::NifMaterialImporter( NifTranslatorOptionsRef translatorOpti
 
 }
 
-MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
-{
-	MObject obj;
 
-	string file_name = tw.GetTextureFileName();
-
-	//Warn the user that internal textures are not supported
-	if ( tw.IsTextureExternal() == false ) {
-		MGlobal::displayWarning( "This NIF file contains an internaly stored texture.  This is not currently supported." );
-		return MObject::kNullObj;
-	}
-
-	//create a texture node
-	MFnDependencyNode nodeFn;
-	obj = nodeFn.create( MString("file"), MString( file_name.c_str() ) );
-
+MString NifMaterialImporter::GetTextureFilePath( string &file_name ) {
 	//--Search for the texture file--//
 
 	//Replace back slash with forward slash
-	unsigned last_slash = 0;
 	for ( unsigned i = 0; i < file_name.size(); ++i ) {
 		if ( file_name[i] == '\\' ) {
 			file_name[i] = '/';
 		}
 	}
-
-	//MString fName = file_name.c_str();
 
 	MFileObject mFile;
 	mFile.setName( MString(file_name.c_str()) );
@@ -74,17 +57,6 @@ MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
 			} else {
 				//out << "File Not Found." << endl;
 			}
-
-			////Maybe it's a relative path
-			//mFile.setRawPath( importFile.rawPath() + paths[i] );
-			//				out << "Looking for file:  " << mFile.rawPath().asChar() << " + " << mFile.name().asChar() << endl;
-			//if ( mFile.exists() ) {
-			//	//File exists at path entry i
-			//	found_file = mFile.fullName();
-			//	break;
-			//} else {
-			//	out << "File Not Found." << endl;
-			//}
 		}
 	}
 
@@ -94,7 +66,29 @@ MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
 		found_file = file_name.c_str();
 	}
 
-	nodeFn.findPlug( MString("ftn") ).setValue(found_file);
+	return found_file;
+}
+
+
+MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
+{
+	MObject obj;
+
+	string file_name = tw.GetTextureFileName();
+
+	//Warn the user that internal textures are not supported
+	if ( tw.IsTextureExternal() == false ) {
+		MGlobal::displayWarning( "This NIF file contains an internaly stored texture.  This is not currently supported." );
+		return MObject::kNullObj;
+	}
+
+	//create a texture node
+	MFnDependencyNode texture_file_node;
+	obj = texture_file_node.create( MString("file"), MString( file_name.c_str() ) );
+
+	MString found_file = this->GetTextureFilePath(file_name);
+
+	texture_file_node.findPlug( MString("ftn") ).setValue(found_file);
 
 	//Get global texture list
 	MItDependencyNodes nodeIt( MFn::kTextureList );
@@ -118,7 +112,7 @@ MObject NifMaterialImporter::ImportTexture( TextureWrapper & tw )
 		next++;
 	}
 
-	MPlug message = nodeFn.findPlug( MString("message") );
+	MPlug message = texture_file_node.findPlug( MString("message") );
 
 	// Connect '.message' plug of render node to "shaders"/"textures" plug of default*List
 	MDGModifier dgModifier;

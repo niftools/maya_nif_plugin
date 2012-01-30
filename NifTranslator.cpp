@@ -88,16 +88,17 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	MString fileExtension = fileNameParts[(int)(fileNameParts.length()) - 1];
 
 	if(fileExtension == "nif") {
-		NifDefaultImportingFixture importer_fixture(translator_data,translator_options,translator_utils);
+		NifInfo file_info = ReadHeaderInfo(file.name().asChar());
 
-		importer_fixture.ReadNodes(file);
+		if(file_info.version = VER_20_2_0_7 && file_info.userVersion == 12) {
+			NifSkyrimImportingFixtureRef skyrim_importer_fixture = new NifSkyrimImportingFixture(translator_options, translator_data, translator_utils);
 
-		out << "Finished Read" << endl;
+			skyrim_importer_fixture->ReadNodes(file);
+		} else {
+			NifDefaultImportingFixture importer_fixture(translator_data,translator_options,translator_utils);
 
-#ifndef _DEBUG
-		//Clear the stringstream so it doesn't waste a bunch of RAM
-		out.clear();
-#endif
+			importer_fixture.ReadNodes(file);
+		}
 
 		return MStatus::kSuccess;
 	}

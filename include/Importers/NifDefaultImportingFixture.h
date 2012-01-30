@@ -89,8 +89,11 @@
 #include "include/Importers/NifMeshImporter.h"
 #include "include/Importers/NifMaterialImporter.h"
 
-class NifDefaultImportingFixture : public NifImportingFixture {
+class NifDefaultImportingFixture;
 
+typedef Ref<NifDefaultImportingFixture> NifDefaultImportingFixtureRef;
+
+class NifDefaultImportingFixture : public NifImportingFixture {
 public:
 
 	NifNodeImporterRef nodeImporter;

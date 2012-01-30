@@ -135,6 +135,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "include/Importers/NifKFImportingFixture.h"
 #include "include/Exporters/NifKFAnimationExporter.h"
 #include "include/Exporters/NifKFExportingFixture.h"
+#include "include/Importers/NifSkyrimImportingFixture.h"
 
 using namespace Niflib;
 using namespace std;

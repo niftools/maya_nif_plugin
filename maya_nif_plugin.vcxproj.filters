@@ -122,6 +122,9 @@
     <ClInclude Include="include\Importers\NifMeshImporterSkyrim.h">
       <Filter>Header Files\Importers</Filter>
     </ClInclude>
+    <ClInclude Include="include\Importers\NifSkyrimImportingFixture.h">
+      <Filter>Header Files\Importers</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -200,6 +203,9 @@
       <Filter>Source Files\Importers</Filter>
     </ClCompile>
     <ClCompile Include="src\Importers\NifTextureConnector.cpp">
+      <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Importers\NifSkyrimImportingFixture.cpp">
       <Filter>Source Files\Importers</Filter>
     </ClCompile>
   </ItemGroup>
