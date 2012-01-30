@@ -324,15 +324,34 @@ MObject NifMaterialImporter::ImportMaterial( MaterialWrapper & mw )
 
 	NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
 
-	//See if the user wants the ambient color imported
-	if ( !this->translatorOptions->importNoAmbient ) {
-		color = niMatProp->GetAmbientColor();
-		phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
+	if(niMatProp != NULL) {
+		//See if the user wants the ambient color imported
+		if ( !this->translatorOptions->importNoAmbient ) {
+			color = niMatProp->GetAmbientColor();
+			phongFn.setAmbientColor( MColor(color.r, color.g, color.b) );
+		}
+
+		color = niMatProp->GetDiffuseColor();
+		phongFn.setColor( MColor(color.r, color.g, color.b) );
+
+		color = niMatProp->GetEmissiveColor();
+		phongFn.setIncandescence( MColor(color.r, color.g, color.b) );
+
+		if ( color.r > 0.0 || color.g > 0.0 || color.b > 0.0) {
+			phongFn.setGlowIntensity( 0.25 );
+		}
+
+		float glossiness = niMatProp->GetGlossiness();
+		phongFn.setCosPower( glossiness );
+
+		float alpha = niMatProp->GetTransparency();
+		//Maya's concept of alpha is the reverse of the NIF's concept
+		alpha = 1.0f - alpha;
+		phongFn.setTransparency( MColor( alpha, alpha, alpha, alpha) );
+
+		MString name = this->translatorUtils->MakeMayaName( niMatProp->GetName() );
+		phongFn.setName( name );
 	}
-
-	color = niMatProp->GetDiffuseColor();
-	phongFn.setColor( MColor(color.r, color.g, color.b) );
-
 
 	//Set Specular color to 0 unless the mesh has a NiSpecularProperty
 	NiSpecularPropertyRef niSpecProp = mw.GetSpecularInfo();
@@ -344,24 +363,6 @@ MObject NifMaterialImporter::ImportMaterial( MaterialWrapper & mw )
 	} else {
 		phongFn.setSpecularColor( MColor( 0.0f, 0.0f, 0.0f) );
 	}
-
-	color = niMatProp->GetEmissiveColor();
-	phongFn.setIncandescence( MColor(color.r, color.g, color.b) );
-
-	if ( color.r > 0.0 || color.g > 0.0 || color.b > 0.0) {
-		phongFn.setGlowIntensity( 0.25 );
-	}
-
-	float glossiness = niMatProp->GetGlossiness();
-	phongFn.setCosPower( glossiness );
-
-	float alpha = niMatProp->GetTransparency();
-	//Maya's concept of alpha is the reverse of the NIF's concept
-	alpha = 1.0f - alpha;
-	phongFn.setTransparency( MColor( alpha, alpha, alpha, alpha) );
-
-	MString name = this->translatorUtils->MakeMayaName( niMatProp->GetName() );
-	phongFn.setName( name );
 
 	return obj;
 }

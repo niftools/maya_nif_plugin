@@ -46,6 +46,10 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 			valid_properties++;
 		}
 
+		if(valid_properties == 0) {
+			return;
+		}
+
 		MObject found_material;
 
 		for(int i = 0; i < this->property_groups.size(); i++) {

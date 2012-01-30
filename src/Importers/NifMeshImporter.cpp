@@ -386,47 +386,54 @@ MDagPath NifMeshImporter::ImportMesh( NiAVObjectRef root, MObject parent ) {
 
 		vector<NiPropertyRef> property_group = propGroups[i];
 
-		MObject material_object;
+		if(property_group.size() > 0) {
+			MObject material_object;
 
-		for(int x = 0; x < this->translatorData->importedMaterials.size(); x++) {
-			int coincidences = 0;
-			vector<NiPropertyRef> current_property_group = this->translatorData->importedMaterials[x].first;
+			for(int x = 0; x < this->translatorData->importedMaterials.size(); x++) {
+				int coincidences = 0;
+				vector<NiPropertyRef> current_property_group = this->translatorData->importedMaterials[x].first;
 
-			for(int y = 0; y < property_group.size(); y++) {
-				for(int z = 0; z < current_property_group.size(); z++) {
-					if(property_group[y] == current_property_group[z]) {
-						coincidences++;
+				for(int y = 0; y < property_group.size(); y++) {
+					for(int z = 0; z < current_property_group.size(); z++) {
+						if(property_group[y] == current_property_group[z]) {
+							coincidences++;
+						}
+
+						string property_xx = property_group[y]->GetType().GetTypeName();
+						string property_yy = current_property_group[z]->GetType().GetTypeName();
 					}
+
+
+				}
+
+				if(coincidences == property_group.size()) {
+					material_object = this->translatorData->importedMaterials[x].second;
+					break;
 				}
 			}
 
-			if(coincidences == property_group.size()) {
-				material_object = this->translatorData->importedMaterials[x].second;
-				break;
-			}
-		}
+			vector<NifTextureConnectorRef> texture_connectors;
 
-		vector<NifTextureConnectorRef> texture_connectors;
+			for(int x = 0; x < this->translatorData->importedTextureConnectors.size(); x++) {
+				int coincidences = 0;
+				vector<NiPropertyRef> current_property_group = this->translatorData->importedTextureConnectors[x].first;
 
-		for(int x = 0; x < this->translatorData->importedTextureConnectors.size(); x++) {
-			int coincidences = 0;
-			vector<NiPropertyRef> current_property_group = this->translatorData->importedTextureConnectors[x].first;
-
-			for(int y = 0; y < property_group.size(); y++) {
-				for(int z = 0; z < current_property_group.size(); z++) {
-					if(property_group[y] == current_property_group[z]) {
-						coincidences++;
+				for(int y = 0; y < property_group.size(); y++) {
+					for(int z = 0; z < current_property_group.size(); z++) {
+						if(property_group[y] == current_property_group[z]) {
+							coincidences++;
+						}
 					}
+				}
+
+				if(coincidences == property_group.size()) {
+					texture_connectors = this->translatorData->importedTextureConnectors[x].second;
+					break;
 				}
 			}
 
-			if(coincidences == property_group.size()) {
-				texture_connectors = this->translatorData->importedTextureConnectors[x].second;
-				break;
-			}
+			this->translatorUtils->ConnectShader( material_object, texture_connectors, meshPath, sel_lists[i] );
 		}
-
-		this->translatorUtils->ConnectShader( material_object, texture_connectors, meshPath, sel_lists[i] );
 	}
 
 	//out << "Bind skin if any" << endl;
