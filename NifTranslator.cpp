@@ -41,13 +41,20 @@ MStatus initializePlugin( MObject obj ) {
 		NULL, //Default Options
 		false ); //Requires MEL support
 
-	//Execute the command to create the NifTools Menu
-	MGlobal::executeCommand("nifTranslatorMenuCreate");
-
 	if (!status) {
 		status.perror("registerFileTranslator");
 		return status;
 	}
+
+	status = plugin.registerNode("nifDismemberPartition", NifDismemberPartition::id, NifDismemberPartition::creator, NifDismemberPartition::initialize, MPxNode::kDependNode);
+	if (!status) {
+		status.perror("registerNifDismemberPartition");
+		return status;
+	}
+
+	//Execute the command to create the NifTools Menu
+	MGlobal::executeCommand("nifTranslatorMenuCreate");
+
 
 	//out << "Done Initializing." << endl;
 	return status;
@@ -67,8 +74,18 @@ MStatus uninitializePlugin( MObject obj )
 		return status;
 	}
 
+	status = plugin.deregisterNode(NifDismemberPartition::id);
+	if (!status) {
+		status.perror("deregisterFileTranslator");
+		return status;
+	}
+
 	//Execute the command to delete the NifTools Menu
 	MGlobal::executeCommand("nifTranslatorMenuRemove");
+	if (!status) {
+		status.perror("deregisterNifDismemberPartition");
+		return status;
+	}
 
 	return status;
 }

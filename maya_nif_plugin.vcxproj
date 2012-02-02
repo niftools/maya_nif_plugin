@@ -656,6 +656,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClInclude Include="include\Common\NifTranslatorOptions.h" />
     <ClInclude Include="include\Common\NifTranslatorRefObject.h" />
     <ClInclude Include="include\Common\NifTranslatorUtils.h" />
+    <ClInclude Include="include\Custom Nodes\NifDismemberPartition.h" />
     <ClInclude Include="include\Exporters\NifAnimationExporter.h" />
     <ClInclude Include="include\Exporters\NifDefaultExportingFixture.h" />
     <ClInclude Include="include\Exporters\NifExportingFixture.h" />
@@ -686,6 +687,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClCompile Include="src\Common\NifTranslatorOptions.cpp" />
     <ClCompile Include="src\Common\NifTranslatorRefObject.cpp" />
     <ClCompile Include="src\Common\NifTranslatorUtils.cpp" />
+    <ClCompile Include="src\Custom Nodes\NifDismemberPartition.cpp" />
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp" />
     <ClCompile Include="src\Exporters\NifDefaultExportingFixture.cpp" />
     <ClCompile Include="src\Exporters\NifExportingFixture.cpp" />

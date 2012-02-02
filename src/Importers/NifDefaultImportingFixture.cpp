@@ -28,7 +28,7 @@ MStatus NifDefaultImportingFixture::ReadNodes( const MFileObject& file )
 			//Root is a NiNode and may have children
 
 			//Check if the user wants us to try to find the bind pose
-			if ( this->translatorOptions->import_bind_pose ) {
+			if ( this->translatorOptions->importBindPose ) {
 				SendNifTreeToBindPos( root_node );
 			}
 

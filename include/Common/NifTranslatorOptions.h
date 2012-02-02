@@ -72,7 +72,7 @@ class NifTranslatorOptions;
 typedef Ref<NifTranslatorOptions> NifTranslatorOptionsRef;
 
 
-const char PLUGIN_VERSION [] = "0.6.1";	
+const char PLUGIN_VERSION [] = "0.7.0a";	
 const char TRANSLATOR_NAME [] = "NetImmerse Format";
 
 enum TexPathMode {
@@ -89,11 +89,12 @@ public:
 	unsigned int exportVersion; //Version of NIF file to export
 	unsigned int exportUserVersion; //Game-specific user version of NIF file to export
 	unsigned int exportUserVersion2;
-	bool import_bind_pose; //Determines whether or not the bind pose should be searched for
+	bool importBindPose; //Determines whether or not the bind pose should be searched for
 
 	vector<string> exportedShapes; //contains all the names of the shapes that the users selected to export from the scene
 	vector<string> exportedJoints; //contains all the names of the joints that the users selected to export from the scene
 	vector<string> exportedMisc; //contains all the names of the misc things that the user selected to export from the scene
+
 	bool importNormals; //Determines whether normals are imported
 	bool importNoAmbient; //Determines whether ambient color is imported
 	bool importNormalizedWeights; //Determines whether weights are normalized, it truncates all the weights on a vertex to 1.0

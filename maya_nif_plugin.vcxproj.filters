@@ -31,6 +31,12 @@
     <Filter Include="Source Files\Common">
       <UniqueIdentifier>{4b9d58ab-d151-4ffd-a045-f94da0206c65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Header Files\Custom Nodes">
+      <UniqueIdentifier>{cbbbb5c3-4cde-42fa-ad11-1ae91e63eb3f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Custom Nodes">
+      <UniqueIdentifier>{257e7f2a-6fe7-401e-afff-bf1ae32982d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="nifTranslatorOpts.mel">
@@ -125,6 +131,9 @@
     <ClInclude Include="include\Importers\NifSkyrimImportingFixture.h">
       <Filter>Header Files\Importers</Filter>
     </ClInclude>
+    <ClInclude Include="include\Custom Nodes\NifDismemberPartition.h">
+      <Filter>Header Files\Custom Nodes</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -207,6 +216,9 @@
     </ClCompile>
     <ClCompile Include="src\Importers\NifSkyrimImportingFixture.cpp">
       <Filter>Source Files\Importers</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Custom Nodes\NifDismemberPartition.cpp">
+      <Filter>Source Files\Custom Nodes</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

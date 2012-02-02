@@ -5,7 +5,7 @@ NifTranslatorOptions::NifTranslatorOptions()
 {
 	this->exportVersion = VER_4_0_0_2;
 	this->exportUserVersion = 0;
-	this->import_bind_pose = false;
+	this->importBindPose = false;
 	this->importNormals = false;
 	this->importNoAmbient = false;
 	this->exportWhiteAmbient = false;
@@ -24,7 +24,7 @@ void NifTranslatorOptions::Reset()
 {
 	this->exportVersion = VER_4_0_0_2;
 	this->exportUserVersion = 0;
-	this->import_bind_pose = false;
+	this->importBindPose = false;
 	this->importNormals = false;
 	this->importNoAmbient = false;
 	this->exportWhiteAmbient = false;
@@ -78,9 +78,9 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 		}
 		if ( tokens[0] == "importBindPose" ) {
 			if ( tokens[1] == "1" ) {
-				this->import_bind_pose = true;
+				this->importBindPose = true;
 			} else {
-				this->import_bind_pose = false;
+				this->importBindPose = false;
 			}
 			//out << "Import Bind Pose:  " << import_bind_pose << endl;
 		}
@@ -269,7 +269,7 @@ std::string NifTranslatorOptions::asString( bool verbose /*= false */ ) const {
 
 	out<<"Export user version:  "<<this->exportUserVersion<<endl;
 	out<<"Export version:   "<<this->exportVersion<<endl;
-	out<<"Import bind pose:   "<<this->import_bind_pose<<endl;
+	out<<"Import bind pose:   "<<this->importBindPose<<endl;
 	out<<"Import normals:   "<<this->importNormals<<endl;
 	out<<"Import no ambient:   "<<this->importNoAmbient<<endl;
 	out<<"Export white ambient:   "<<this->exportWhiteAmbient<<endl;
