@@ -48,6 +48,9 @@
     <None Include="nifTranslatorMenuRemove.mel">
       <Filter>Miscellaneous Files</Filter>
     </None>
+    <None Include="AEnifDismemberPartitionTemplate.mel">
+      <Filter>Miscellaneous Files</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Exporters\NifAnimationExporter.h">

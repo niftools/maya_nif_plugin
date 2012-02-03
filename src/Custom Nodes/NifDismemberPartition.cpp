@@ -18,24 +18,32 @@ void* NifDismemberPartition::creator() {
 }
 
 MStatus NifDismemberPartition::initialize() {
-	MFnTypedAttribute output_flags_attribute;
-	MFnMessageAttribute input_faces_attribute;
+	MFnTypedAttribute body_parts_flags_attribute;
+	MFnTypedAttribute parts_flags_attribute;
+	MFnMessageAttribute target_faces_attribute;
 	MStatus status;
 
-	input_faces_attribute.setStorable(true);
-	output_flags_attribute.setStorable(true);
+	target_faces_attribute.setStorable(true);
+	target_faces_attribute.setConnectable(true);
+	target_faces_attribute.setWritable(true);
+	body_parts_flags_attribute.setStorable(true);
+	parts_flags_attribute.setStorable(true);
 
-	inputFaces = input_faces_attribute.create("Input Faces", "inputFaces", &status);
-	outputFlags = output_flags_attribute.create("Dismember Flags", "dismemberFlags", MFnData::kStringArray, &status);
+	targetFaces = target_faces_attribute.create("targetFaces", "tF", &status);
+	partsFlags = parts_flags_attribute.create("partsFlags", "pF", MFnData::kStringArray, &status);
+	bodyPartsFlags = body_parts_flags_attribute.create("bodyPartsFlags", "bPF", MFnData::kStringArray, &status);
 
-	status = MPxNode::addAttribute(inputFaces);
-	status = MPxNode::addAttribute(outputFlags);
+	status = MPxNode::addAttribute(targetFaces);
+	status = MPxNode::addAttribute(partsFlags);
+	status = MPxNode::addAttribute(bodyPartsFlags);
 
 	return MStatus::kSuccess;
 }
 
-MObject NifDismemberPartition::inputFaces;
+MObject NifDismemberPartition::targetFaces;
 
-MObject NifDismemberPartition::outputFlags;
+MObject NifDismemberPartition::partsFlags;
+
+MObject NifDismemberPartition::bodyPartsFlags;
 
 MTypeId NifDismemberPartition::id(0x7ff11);

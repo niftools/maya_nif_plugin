@@ -344,7 +344,8 @@
     <PostBuildEvent>
       <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
 copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
-copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
     </PostBuildEvent>
     <CustomBuildStep>
       <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
@@ -645,6 +646,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <None Include="AEnifDismemberPartitionTemplate.mel" />
     <None Include="nifTranslatorMenuCreate.mel" />
     <None Include="nifTranslatorMenuRemove.mel" />
     <None Include="nifTranslatorOpts.mel" />

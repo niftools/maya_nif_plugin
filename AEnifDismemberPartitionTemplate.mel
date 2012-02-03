@@ -1,0 +1,246 @@
+global string $nifBodyPartsFlagsAttr;
+global string $nifPartsFlagsAttr;
+
+global proc AEnifDismemberPartitionTemplate(string $nodeName) {
+	editorTemplate -suppress "input";
+	editorTemplate -suppress "caching";
+	editorTemplate -suppress "nodeState";
+	editorTemplate -suppress "message";
+	editorTemplate -suppress "partsFlags";
+	editorTemplate -suppress "bodyPartsFlags";
+
+	editorTemplate -beginScrollLayout;
+		editorTemplate -addControl "targetFaces";
+
+		editorTemplate -beginLayout "Body Parts Flags";
+			editorTemplate -callCustom "nifBodyPartsFlagsNew" "nifBodyPartsFlagsReplace"
+						   "bodyPartsFlags";			   	
+		editorTemplate -endLayout;
+
+		editorTemplate -beginLayout "Parts Flags";
+			editorTemplate -callCustom "nifPartsFlagsNew" "nifPartsFlagsReplace"
+						   "partsFlags";	
+		editorTemplate -endLayout;
+
+		editorTemplate -addExtraControls;
+	editorTemplate -endScrollLayout;
+}
+
+global proc nifBodyPartsFlagsNew(string $attributeName) {
+	global string $nifBodyPartsFlagsAttr;
+
+	$nifBodyPartsFlagsAttr = $attributeName;
+	string $flags[] = `getAttr $attributeName`;
+
+	textScrollList -height 100
+	               -width 300
+				   nifBodyPartsFlagsTxLs;
+	for($i = 0; $i < size($flags); $i++) {
+		textScrollList -edit -append $flags[$i] nifBodyPartsFlagsTxLs;
+	}
+
+	rowLayout -numberOfColumns 3
+			  -columnWidth3 220 90 90
+			  -columnAttach3 "both" "both" "both";
+			  optionMenu -label "Body part:"
+			             nifBodyPartsOpMen;
+						 menuItem -label "BP_TORSO";
+						 menuItem -label "BP_HEAD";
+						 menuItem -label "BP_HEAD2";
+						 menuItem -label "BP_LEFTARM";
+						 menuItem -label "BP_LEFTARM2";
+						 menuItem -label "BP_RIGHTARM";
+						 menuItem -label "BP_RIGHTARM2";
+						 menuItem -label "BP_LEFTLEG";
+						 menuItem -label "BP_LEFTLEG2";
+						 menuItem -label "BP_LEFTLEG3";
+						 menuItem -label "BP_RIGHTLEG";
+						 menuItem -label "BP_RIGHTLEG2";
+						 menuItem -label "BP_BRAIN";
+						 menuItem -label "BP_SECTIONCAP_HEAD";
+						 menuItem -label "BP_SECTIONCAP_HEAD2";
+						 menuItem -label "BP_SECTIONCAP_LEFTARM";
+						 menuItem -label "BP_SECTIONCAP_LEFTARM2";
+						 menuItem -label "BP_SECTIONCAP_RIGHTARM";
+						 menuItem -label "BP_SECTIONCAP_RIGHTARM2";
+						 menuItem -label "BP_SECTIONCAP_LEFTLEG";
+						 menuItem -label "BP_SECTIONCAP_LEFTLEG2";
+						 menuItem -label "BP_SECTIONCAP_LEFTLEG3";
+						 menuItem -label "BP_SECTIONCAP_RIGHTLEG";
+						 menuItem -label "BP_SECTIONCAP_RIGHTLEG2";
+						 menuItem -label "BP_SECTIONCAP_RIGHTLEG3";
+						 menuItem -label "BP_SECTIONCAP_BRAIN";
+						 menuItem -label "BP_TORSOCAP_HEAD";
+						 menuItem -label "BP_TORSOCAP_HEAD2";
+						 menuItem -label "BP_TORSOCAP_LEFTARM";
+						 menuItem -label "BP_TORSOCAP_RIGHTARM2";
+						 menuItem -label "BP_TORSOCAP_LEFTLEG";
+						 menuItem -label "BP_TORSOCAP_LEFTLEG2";
+						 menuItem -label "BP_TORSOCAP_LEFTLEG3";
+						 menuItem -label "BP_TORSOCAP_RIGHTLEG";
+						 menuItem -label "BP_TORSOCAP_RIGHTLEG2";
+						 menuItem -label "BP_TORSOCAP_RIGHTLEG3";
+						 menuItem -label "BP_TORSOCAP_BRAIN";
+						 menuItem -label "BP_TORSOSECTION_HEAD";
+						 menuItem -label "BP_TORSOSECTION_HEAD2";
+						 menuItem -label "BP_TORSOSECTION_LEFTARM";
+						 menuItem -label "BP_TORSOSECTION_LEFTARM2";
+						 menuItem -label "BP_TORSOSECTION_RIGHTARM";
+						 menuItem -label "BP_TORSOSECTION_RIGHTARM2";
+						 menuItem -label "BP_TORSOSECTION_LEFTLEG";
+						 menuItem -label "BP_TORSOSECTION_LEFTLEG2";
+						 menuItem -label "BP_TORSOSECTION_LEFTLEG3";
+						 menuItem -label "BP_TORSOSECTION_RIGHTLEG";
+						 menuItem -label "BP_TORSOSECTION_RIGHTLEG2";
+						 menuItem -label "BP_TORSOSECTION_RIGHTLEG3";
+						 menuItem -label "BP_TORSOSECTION_BRAIN";
+			  button -label "Add flag" -command "nifAddBodyPartFlag" addBodyPartFlagBt;
+			  button -label "Delete flag" -command "nifDeleteBodyPartFlag" deleteBodyPartFlagBt;
+	connectControl nifBodyPartsFlagsTxLs $attributeName;
+}
+
+global proc nifBodyPartsFlagsReplace(string $attributeName) {
+	global string $nifBodyPartsFlagsAttr;
+
+	$nifBodyPartsFlagsAttr = $attributeName;
+	textScrollList -edit -removeAll nifBodyPartsFlagsTxLs;
+
+	string $flags[] = `getAttr $attributeName`;
+	for($i = 0; $i < size($flags); $i++) {
+		textScrollList -edit -append $flags[$i] nifBodyPartsFlagsTxLs;
+	}
+}
+
+global proc nifPartsFlagsNew(string $attributeName) {
+	global string $nifPartsFlagsAttr;
+
+	$nifPartsFlagsAttr = $attributeName;
+	string $flags[] = `getAttr $attributeName`;
+
+	textScrollList -height 50
+	               -width 300
+				   nifPartsFlagsTxLs;
+
+	for($i = 0; $i < size($flags); $i++) {
+		textScrollList -edit -append $flags[$i] nifPartsFlagsTxLs;
+	}
+
+	rowLayout -numberOfColumns 3
+			  -columnWidth3 220 90 90
+			  -columnAttach3 "both" "both" "both";
+			  optionMenu -label "Nif part:"
+			             nifPartsOpMen;
+						 menuItem -label "PF_EDITOR_VISIBLE";
+						 menuItem -label "PF_START_NET_BONESET";
+			  button -label "Add flag" -command "nifAddPartFlag" addPartFlagBt;
+			  button -label "Delete flag" -command "nifDeletePartFlag" deletePartFlagBt;
+}
+
+global proc nifPartsFlagsReplace(string $attributeName) {
+	global string $nifPartsFlagsAttr;
+
+	$nifPartsFlagsAttr = $attributeName;
+	textScrollList -edit -removeAll nifPartsFlagsTxLs;
+
+	string $flags[] = `getAttr $attributeName`;
+	for($i = 0; $i < size($flags); $i++) {
+		textScrollList -edit -append $flags[$i] nifPartsFlagsTxLs;
+	}
+}
+
+global proc nifAddBodyPartFlag() {
+	global string $nifBodyPartsFlagsAttr;
+
+	string $flag = `optionMenu -query -value nifBodyPartsOpMen`;
+	textScrollList -edit -append $flag nifBodyPartsFlagsTxLs;
+
+	string $flags[] = `getAttr $nifBodyPartsFlagsAttr`;
+	$flags[size($flags)] = $flag;
+	int $size = size($flags);
+
+	string $flags_command_string = "setAttr \"" + $nifBodyPartsFlagsAttr + "\" -type \"stringArray\" " + $size;
+	for($i = 0; $i < size($flags); $i++) {
+		$flags_command_string = $flags_command_string + " \"" + $flags[$i] + "\"";
+	}
+	eval($flags_command_string);
+}
+
+global proc nifDeleteBodyPartFlag() {
+	global string $nifBodyPartsFlagsAttr;
+
+	int $indexes[] = `textScrollList -query -selectIndexedItem nifBodyPartsFlagsTxLs`;
+
+	if(size($indexes) != 0) {
+		int $index = $indexes[0];
+		textScrollList -edit -removeIndexedItem $index nifBodyPartsFlagsTxLs;
+
+		string $flags[] = `getAttr $nifBodyPartsFlagsAttr`;
+		string $new_flags[];
+
+		$index = $index - 1;
+		for($i = 0; $i < $index; $i++) {
+			$new_flags[$i] = $flags[$i];
+		}
+		for($i = $index + 1; $i < size($flags); $i++) {
+			$new_flags[$i - 1] = $flags[$i];
+		}
+
+		int $size = size($new_flags);
+		string $flags_command_string = "setAttr \"" + $nifBodyPartsFlagsAttr + "\" -type \"stringArray\" " + $size;
+		for($i = 0; $i < size($new_flags); $i++) {
+			$flags_command_string = $flags_command_string + " \"" + $new_flags[$i] + "\"";
+		}
+		eval($flags_command_string);
+	}
+}
+
+global proc nifAddPartFlag() {
+	global string $nifPartsFlagsAttr;
+
+	string $flag = `optionMenu -query -value nifPartsOpMen`;
+	textScrollList -edit -append $flag nifPartsFlagsTxLs;
+
+	string $flags[] = `getAttr $nifPartsFlagsAttr`;
+
+	$flags[size($flags)] = $flag;
+	int $size = size($flags);
+
+	string $flags_command_string = "setAttr \"" + $nifPartsFlagsAttr + "\" -type \"stringArray\" " + $size;
+	for($i = 0; $i < size($flags); $i++) {
+		$flags_command_string = $flags_command_string + " \"" + $flags[$i] + "\"";
+	}
+	eval($flags_command_string);
+}
+
+global proc nifDeletePartFlag() {
+	global string $nifPartsFlagsAttr;
+
+	int $indexes[] = `textScrollList -query -selectIndexedItem nifPartsFlagsTxLs`;
+
+	if (size($indexes) > 0) {
+		int $index = $indexes[0];
+		textScrollList -edit -removeIndexedItem $index nifPartsFlagsTxLs;
+
+		string $flags[] = `getAttr $nifPartsFlagsAttr`;
+		string $new_flags[];
+
+		$index = $index - 1;
+		for($i = 0; $i < $index; $i++) {
+			$new_flags[$i] = $flags[$i];
+		}
+		for($i = $index + 1; $i < size($flags); $i++) {
+			$new_flags[$i - 1] = $flags[$i];
+		}
+
+		int $size = size($new_flags);
+		string $flags_command_string = "setAttr \"" + $nifPartsFlagsAttr + "\" -type \"stringArray\" " + $size;
+		for($i = 0; $i < size($new_flags); $i++) {
+			$flags_command_string = $flags_command_string + " \"" + $new_flags[$i] + "\"";
+		}
+		eval($flags_command_string);
+	}
+	
+}
+
+
+

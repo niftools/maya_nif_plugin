@@ -66,9 +66,11 @@ public:
 
 public:
 
-	static MObject inputFaces;
+	static MObject targetFaces;
 
-	static MObject outputFlags;
+	static MObject bodyPartsFlags;
+
+	static MObject partsFlags;
 
 	static MTypeId id;
 };
