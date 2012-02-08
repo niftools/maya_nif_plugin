@@ -17,6 +17,14 @@
       <Configuration>Debug - 8.5</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - Maya 2012 x64|Win32">
+      <Configuration>Debug - Maya 2012 x64</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug - Maya 2012 x64|x64">
+      <Configuration>Debug - Maya 2012 x64</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release - 2009|Win32">
       <Configuration>Release - 2009</Configuration>
       <Platform>Win32</Platform>
@@ -126,10 +134,16 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'" Label="Configuration">
+    <ConfigurationType>DynamicLibrary</ConfigurationType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
@@ -191,6 +205,10 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
@@ -199,17 +217,25 @@
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
     <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="$(VCTargetsPath)Microsoft.CPP.UpgradeFromVC71.props" />
+  </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.40219.1</_ProjectFileVersion>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">..\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">..\Debug\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">..\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">..\Debug\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">..\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">..\Debug\</IntDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">..\Debug\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">..\Debug\</IntDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|Win32'">..\Release\</OutDir>
     <OutDir Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|x64'">..\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 6.5|Win32'">..\Release\</IntDir>
@@ -236,17 +262,22 @@
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">$(Configuration)\</IntDir>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\Autodesk\maya_nif_plugin\niflib\include;D:\Autodesk\maya_nif_plugin\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
+    <IncludePath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">D:\Autodesk\maya_nif_plugin\niflib\include;D:\Autodesk\maya_nif_plugin\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\NifExporter\niflib\x64\Debug - Static;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">D:\Autodesk\maya_nif_plugin\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
+    <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">D:\Autodesk\maya_nif_plugin\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <IncludePath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\maya_nif_plugin\niflib\include;D:\Autodesk\maya_nif_plugin\include;D:\Autodesk\Maya2012\include;$(IncludePath)</IncludePath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2009|x64'">D:\Autodesk\NifExporter\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <LibraryPath Condition="'$(Configuration)|$(Platform)'=='Release - 2012 x64|x64'">D:\Autodesk\maya_nif_plugin\niflib\lib;D:\Autodesk\Maya2012\lib;$(LibraryPath)</LibraryPath>
     <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">Run</CustomBuildBeforeTargets>
+    <CustomBuildBeforeTargets Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">Run</CustomBuildBeforeTargets>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|Win32'">
     <ClCompile>
@@ -294,6 +325,29 @@
       <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|Win32'">
+    <ClCompile>
+      <AdditionalOptions>/Gm /ZI /I "." /D "WIN32" /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>C:\Program Files\Autodesk\Maya8.5\include;C:\NifTools\niflib;C:\NifTools\niflib\bin;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /dll /incremental:yes /debug /machine:I386 /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll_debug.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>bin\Maya8.5\nifTranslator.mll</OutputFile>
+      <AdditionalLibraryDirectories>C:\Program Files\Autodesk\Maya8.5\lib;C:\NifTools\niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>../Debug/maya_nif_plugin.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
+    </Link>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 8.5|x64'">
     <ClCompile>
       <AdditionalOptions>/Gm /ZI /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
@@ -319,6 +373,41 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - 2012|x64'">
+    <ClCompile>
+      <AdditionalOptions>/Gm /Zi /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>..\Maya2012\include;niflib;niflib\bin;niflib\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_AFXDLL;_MBCS;NT_PLUGIN;REQUIRE_IOSTREAM;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeaderOutputFile>
+      </PrecompiledHeaderOutputFile>
+      <WarningLevel>Level3</WarningLevel>
+    </ClCompile>
+    <Link>
+      <AdditionalOptions>/subsystem:windows /dll /incremental:yes /debug /export:initializePlugin /export:uninitializePlugin %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>niflib_dll_debug.lib;Foundation.lib;OpenMaya.lib;OpenMayaAnim.lib;OpenMayaUI.lib;OpenMayaFX.lib;OpenMayaRender.lib;Image.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <OutputFile>..\Maya2012\bin\plug-ins\nifTranslator_debug.mll</OutputFile>
+      <AdditionalLibraryDirectories>..\Maya2012\lib;niflib\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <ProgramDatabaseFile>D:\Autodesk\Maya2012\bin\plug-ins\maya_nif_plugin.pdb</ProgramDatabaseFile>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <DataExecutionPrevention>
+      </DataExecutionPrevention>
+      <ImportLibrary>Debug/NIF Import/Export.lib</ImportLibrary>
+      <TargetMachine>MachineX64</TargetMachine>
+    </Link>
+    <PostBuildEvent>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\AEnifDismemberPartitionTemplate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </PostBuildEvent>
+    <CustomBuildStep>
+      <Command>copy /Y "$(ProjectDir)\nifTranslatorOpts.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuCreate.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"
+copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\maya\2012-x64\scripts"</Command>
+    </CustomBuildStep>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug - Maya 2012 x64|x64'">
     <ClCompile>
       <AdditionalOptions>/Gm /Zi /I "."  /D "_DEBUG" /c %(AdditionalOptions)</AdditionalOptions>
       <Optimization>Disabled</Optimization>

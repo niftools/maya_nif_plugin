@@ -17,6 +17,8 @@ Global
 		Debug - 8.5|x64 = Debug - 8.5|x64
 		Debug - DLL|Win32 = Debug - DLL|Win32
 		Debug - DLL|x64 = Debug - DLL|x64
+		Debug - Maya 2012 x64|Win32 = Debug - Maya 2012 x64|Win32
+		Debug - Maya 2012 x64|x64 = Debug - Maya 2012 x64|x64
 		Debug - Static|Win32 = Debug - Static|Win32
 		Debug - Static|x64 = Debug - Static|x64
 		Release - 2009|Win32 = Release - 2009|Win32
@@ -46,6 +48,10 @@ Global
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - DLL|Win32.Build.0 = Debug - 8.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - DLL|x64.ActiveCfg = Release - 8.5|x64
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - DLL|x64.Build.0 = Release - 8.5|x64
+		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Maya 2012 x64|Win32.ActiveCfg = Debug - Maya 2012 x64|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Maya 2012 x64|Win32.Build.0 = Debug - Maya 2012 x64|Win32
+		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Maya 2012 x64|x64.ActiveCfg = Debug - Maya 2012 x64|x64
+		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Maya 2012 x64|x64.Build.0 = Debug - Maya 2012 x64|x64
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Static|Win32.ActiveCfg = Debug - 8.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Static|Win32.Build.0 = Debug - 8.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Debug - Static|x64.ActiveCfg = Release - 8.5|x64
@@ -70,11 +76,10 @@ Global
 		{DE2F121F-8326-4144-A766-444451895AFA}.Release - Static|Win32.Build.0 = Release - 8.5|Win32
 		{DE2F121F-8326-4144-A766-444451895AFA}.Release - Static|x64.ActiveCfg = Release - 8.5|x64
 		{DE2F121F-8326-4144-A766-444451895AFA}.Release - Static|x64.Build.0 = Release - 8.5|x64
-		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012 x64|Win32.ActiveCfg = Debug - 2012 x64|Win32
-		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012 x64|Win32.Build.0 = Debug - 2012 x64|Win32
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012 x64|Win32.ActiveCfg = Debug - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012 x64|x64.ActiveCfg = Debug - DLL|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012 x64|x64.Build.0 = Debug - DLL|x64
-		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012|Win32.ActiveCfg = Debug - 2012 x64|x64
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012|Win32.ActiveCfg = Debug - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012|x64.ActiveCfg = Debug - DLL|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 2012|x64.Build.0 = Debug - DLL|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - 8.5|Win32.ActiveCfg = Debug - Static|x64
@@ -84,6 +89,10 @@ Global
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - DLL|Win32.Build.0 = Debug - DLL|Win32
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - DLL|x64.ActiveCfg = Release - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - DLL|x64.Build.0 = Release - Static|x64
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Maya 2012 x64|Win32.ActiveCfg = Debug - Maya 2012 x64|Win32
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Maya 2012 x64|Win32.Build.0 = Debug - Maya 2012 x64|Win32
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Maya 2012 x64|x64.ActiveCfg = Debug - Maya 2012 x64|x64
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Maya 2012 x64|x64.Build.0 = Debug - Maya 2012 x64|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Static|Win32.ActiveCfg = Debug - Static|Win32
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Static|Win32.Build.0 = Debug - Static|Win32
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Debug - Static|x64.ActiveCfg = Release - Static|x64
@@ -91,8 +100,7 @@ Global
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2009|Win32.ActiveCfg = Release - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2009|x64.ActiveCfg = Release - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2009|x64.Build.0 = Release - Static|x64
-		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2012 x64|Win32.ActiveCfg = Release - 2012 x64|Win32
-		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2012 x64|Win32.Build.0 = Release - 2012 x64|Win32
+		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2012 x64|Win32.ActiveCfg = Release - Static|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2012 x64|x64.ActiveCfg = Release - DLL|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 2012 x64|x64.Build.0 = Release - DLL|x64
 		{19FD8EE6-79CC-4BAC-9744-D9573BE47C7E}.Release - 8.5|Win32.ActiveCfg = Release - Static|x64
