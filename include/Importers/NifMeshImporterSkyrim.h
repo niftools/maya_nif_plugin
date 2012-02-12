@@ -86,6 +86,7 @@
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
 #include "include/Importers/NifMeshImporter.h"
+#include "include/Custom Nodes/NifDismemberPartition.h"
 
 using namespace Niflib;
 using namespace std;
@@ -100,6 +101,14 @@ public:
 	NifMeshImporterSkyrim();
 
 	NifMeshImporterSkyrim(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
+
+	virtual MDagPath ImportMesh( NiAVObjectRef root, MObject parent );
+
+	virtual string asString( bool verbose = false ) const;
+
+	virtual const Type& GetType() const;
+
+	const static Type TYPE;
 
 };
 

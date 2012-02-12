@@ -90,6 +90,7 @@
 #include "include/Importers/NifMaterialImporter.h"
 #include "include/Importers/NifDefaultImportingFixture.h"
 #include "include/Importers/NifMaterialImporterSkyrim.h"
+#include "include/Importers/NifMeshImporterSkyrim.h"
 
 class NifSkyrimImportingFixture;
 

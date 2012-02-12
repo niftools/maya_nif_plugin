@@ -117,6 +117,10 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include <obj/NiKeyframeData.h>
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
+#include <obj/BSFadeNode.h>
+#include <obj/BSDismemberSkinInstance.h>
+#include <obj/BSShaderTextureSet.h>
+#include <gen/Header.h>
 
 #include "include/Common/NifTranslatorOptions.h"
 #include "include/Common/NifTranslatorData.h"
@@ -136,10 +140,12 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "include/Exporters/NifKFAnimationExporter.h"
 #include "include/Exporters/NifKFExportingFixture.h"
 #include "include/Importers/NifSkyrimImportingFixture.h"
-#include <include/Custom Nodes\NifDismemberPartition.h>
+#include "include/Custom Nodes/NifDismemberPartition.h"
 
 using namespace Niflib;
 using namespace std;
+
+enum ImportType {Default, SkyrimFallout, AnimationKF};
 
 //--NifTranslator Class--//
 

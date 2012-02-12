@@ -86,7 +86,7 @@ using namespace std;
 
 class NifImportingFixture;
 
-typedef Ref<NifImportingFixture> NifImporterFixtureRef;
+typedef Ref<NifImportingFixture> NifImportingFixtureRef;
 
 class NifImportingFixture : public NifTranslatorFixtureItem {
 

@@ -98,37 +98,38 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	NifTranslatorDataRef translator_data(new NifTranslatorData());
 	NifTranslatorOptionsRef translator_options(new NifTranslatorOptions());
 	NifTranslatorUtilsRef translator_utils(new NifTranslatorUtils(translator_data,translator_options));
+	NifImportingFixtureRef importer;
+
+	ImportType import_type = ImportType::Default;
+	Header file_header = ReadHeader(file.name().asChar());
+
+	vector<string> block_types = file_header.getBlockTypes();
+	vector<unsigned short> block_types_index = file_header.getBlockTypeIndex();
 
 	translator_options->ParseOptionsString(optionsString);
-	MStringArray fileNameParts;
-	file.name().toLowerCase().split('.', fileNameParts);
-	MString fileExtension = fileNameParts[(int)(fileNameParts.length()) - 1];
 
-	if(fileExtension == "nif") {
-		NifInfo file_info = ReadHeaderInfo(file.name().asChar());
-
-		if(file_info.version = VER_20_2_0_7 && file_info.userVersion == 12) {
-			NifSkyrimImportingFixtureRef skyrim_importer_fixture = new NifSkyrimImportingFixture(translator_options, translator_data, translator_utils);
-
-			skyrim_importer_fixture->ReadNodes(file);
-		} else {
-			NifDefaultImportingFixture importer_fixture(translator_data,translator_options,translator_utils);
-
-			importer_fixture.ReadNodes(file);
+	if(block_types[block_types_index[0]] == NiControllerSequence::TYPE.GetTypeName()) {
+		import_type = ImportType::AnimationKF;
+	} else if(block_types[block_types_index[0]] == BSFadeNode::TYPE.GetTypeName() ||
+		 file_header.getUserVersion() == 12 || (file_header.getUserVersion() == 11 && file_header.getUserVersion2() == 57) ) {
+		import_type = ImportType::SkyrimFallout;
+	} else {
+		for(int i = 0; i < block_types.size(); i++) {
+			if(block_types[i] == BSDismemberSkinInstance::TYPE.GetTypeName() || block_types[i] == BSShaderTextureSet::TYPE.GetTypeName()) {
+				import_type = ImportType::SkyrimFallout;
+			}
 		}
-
-		return MStatus::kSuccess;
 	}
 
-	if(fileExtension == "kf") {
-		NifKFAnimationImporterRef kf_animation_importer(new NifKFAnimationImporter(translator_options, translator_data, translator_utils));
-
-		NifKFImportingFixtureRef kf_importing_fixture(new NifKFImportingFixture(translator_options, translator_data, translator_utils));
-
-		return kf_importing_fixture->ReadNodes(file);
+	if(import_type == ImportType::AnimationKF) {
+		importer = new NifKFImportingFixture(translator_options, translator_data, translator_utils);
+	} else if (import_type == ImportType::SkyrimFallout) {
+		importer = new NifSkyrimImportingFixture(translator_options, translator_data, translator_utils);
+	} else if (import_type == ImportType::Default) {
+		importer = new NifDefaultImportingFixture(translator_data, translator_options, translator_utils);
 	}
-	
-	return MStatus::kFailure;
+
+	return importer->ReadNodes(file);
 }
 
 //--NifTranslator::writer--//

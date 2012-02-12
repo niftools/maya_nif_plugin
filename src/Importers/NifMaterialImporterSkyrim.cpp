@@ -5,18 +5,15 @@ NifMaterialImporterSkyrim::NifMaterialImporterSkyrim() {
 
 }
 
-
 NifMaterialImporterSkyrim::NifMaterialImporterSkyrim( NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils ) {
 	this->translatorOptions = translatorOptions;
 	this->translatorData = translatorData;
 	this->translatorUtils = translatorUtils;
 }
 
-
 void NifMaterialImporterSkyrim::ImportMaterialsAndTextures( NiAVObjectRef & root ) {
 	this->GatherMaterialsAndTextures(root);
 }
-
 
 void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root ) {
 	if(root->GetType().IsDerivedType(NiGeometry::TYPE)) {
@@ -246,8 +243,6 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 		}
 	}
 }
-
-
 
 string NifMaterialImporterSkyrim::asString( bool verbose /*= false */ ) const {
 	stringstream out;

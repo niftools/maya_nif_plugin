@@ -51,6 +51,10 @@
 #include <maya/MFnMessageAttribute.h>
 #include <maya/MFnTypedAttribute.h>
 
+#include <gen/enums.h>
+
+using namespace Niflib;
+
 class NifDismemberPartition : public MPxNode {
 public:
 
@@ -65,6 +69,10 @@ public:
 	static MStatus initialize();
 
 public:
+
+	static MStringArray bodyPartTypeToStringArray(BSDismemberBodyPartType body_parts);
+
+	static MStringArray partToStringArray(BSPartFlag parts);
 
 	static MObject targetFaces;
 

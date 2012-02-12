@@ -10,7 +10,7 @@ NifSkyrimImportingFixture::NifSkyrimImportingFixture( NifTranslatorOptionsRef tr
 	this->translatorData = translatorData;
 	this->translatorUtils = translatorUtils;
 	this->nodeImporter = new NifNodeImporter(translatorOptions, translatorData, translatorUtils);
-	this->meshImporter = new NifMeshImporter(translatorOptions, translatorData, translatorUtils);
+	this->meshImporter = new NifMeshImporterSkyrim(translatorOptions, translatorData, translatorUtils);
 	this->materialImporter = new NifMaterialImporterSkyrim(translatorOptions, translatorData, translatorUtils);
 	this->animationImporter = new NifAnimationImporter(translatorOptions, translatorData, translatorUtils);
 }
