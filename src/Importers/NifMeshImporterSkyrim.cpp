@@ -604,12 +604,18 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 			MGlobal::setActiveSelectionList(selected_faces);
 			status = MGlobal::executeCommand(mel_command);
 
+			MDGModifier dg_modifier;
 			MFnDependencyNode dismember_node;
 			dismember_node.create("nifDismemberPartition");
 
 			MPlug input_message_dismember = dismember_node.findPlug("targetFaces");
+			MPlug input_message_shape = dismember_node.findPlug("targetShape");
 			MPlug body_parts_flags = dismember_node.findPlug("bodyPartsFlags");
 			MPlug parts_flags = dismember_node.findPlug("partsFlags");
+
+			MPlug mesh_out_message = blind_data_mesh.findPlug("message");
+			dg_modifier.connect(mesh_out_message, input_message_shape);
+			dg_modifier.doIt();
 
 			MStringArray body_parts_strings = NifDismemberPartition::bodyPartTypeToStringArray(cs.GetDismemberPartitionsBodyParts().at(x).bodyPart);
 			MStringArray parts_strings = NifDismemberPartition::partToStringArray(cs.GetDismemberPartitionsBodyParts().at(x).partFlag);
@@ -632,7 +638,6 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 			}
 			MGlobal::executeCommand(mel_command);
 
-			MDGModifier dg_modifier;
 			MPlugArray connections;
 			MPlug input_mesh = blind_data_mesh.findPlug("inMesh");
 			MPlug out_mesh;

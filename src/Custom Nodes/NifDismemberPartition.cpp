@@ -21,19 +21,27 @@ MStatus NifDismemberPartition::initialize() {
 	MFnTypedAttribute body_parts_flags_attribute;
 	MFnTypedAttribute parts_flags_attribute;
 	MFnMessageAttribute target_faces_attribute;
+	MFnMessageAttribute target_shape_attribute;
+
 	MStatus status;
 
 	target_faces_attribute.setStorable(true);
 	target_faces_attribute.setConnectable(true);
 	target_faces_attribute.setWritable(true);
+	target_shape_attribute.setWritable(true);
+	target_shape_attribute.setConnectable(true);
+	target_shape_attribute.setStorable(true);
+
 	body_parts_flags_attribute.setStorable(true);
 	parts_flags_attribute.setStorable(true);
 
 	targetFaces = target_faces_attribute.create("targetFaces", "tF", &status);
+	targetShape = target_shape_attribute.create("targetShape", "tS", &status);
 	partsFlags = parts_flags_attribute.create("partsFlags", "pF", MFnData::kStringArray, &status);
 	bodyPartsFlags = body_parts_flags_attribute.create("bodyPartsFlags", "bPF", MFnData::kStringArray, &status);
 
 	status = MPxNode::addAttribute(targetFaces);
+	status = MPxNode::addAttribute(targetShape);
 	status = MPxNode::addAttribute(partsFlags);
 	status = MPxNode::addAttribute(bodyPartsFlags);
 
@@ -337,6 +345,8 @@ MStringArray NifDismemberPartition::partToStringArray( BSPartFlag parts ) {
 }
 
 MObject NifDismemberPartition::targetFaces;
+
+MObject NifDismemberPartition::targetShape;
 
 MObject NifDismemberPartition::partsFlags;
 

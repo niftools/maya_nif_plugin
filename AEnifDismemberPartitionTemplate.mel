@@ -11,7 +11,8 @@ global proc AEnifDismemberPartitionTemplate(string $nodeName) {
 
 	editorTemplate -beginScrollLayout;
 		editorTemplate -addControl "targetFaces";
-
+		editorTemplate -addControl "targetShape";
+		
 		editorTemplate -beginLayout "Body Parts Flags";
 			editorTemplate -callCustom "nifBodyPartsFlagsNew" "nifBodyPartsFlagsReplace"
 						   "bodyPartsFlags";			   	
@@ -97,7 +98,6 @@ global proc nifBodyPartsFlagsNew(string $attributeName) {
 						 menuItem -label "UNKNOWN_FLAG_32";
 			  button -label "Add flag" -command "nifAddBodyPartFlag" addBodyPartFlagBt;
 			  button -label "Delete flag" -command "nifDeleteBodyPartFlag" deleteBodyPartFlagBt;
-	connectControl nifBodyPartsFlagsTxLs $attributeName;
 }
 
 global proc nifBodyPartsFlagsReplace(string $attributeName) {
@@ -110,6 +110,7 @@ global proc nifBodyPartsFlagsReplace(string $attributeName) {
 	for($i = 0; $i < size($flags); $i++) {
 		textScrollList -edit -append $flags[$i] nifBodyPartsFlagsTxLs;
 	}
+
 }
 
 global proc nifPartsFlagsNew(string $attributeName) {

@@ -76,6 +76,8 @@ public:
 
 	static MObject targetFaces;
 
+	static MObject targetShape;
+
 	static MObject bodyPartsFlags;
 
 	static MObject partsFlags;
