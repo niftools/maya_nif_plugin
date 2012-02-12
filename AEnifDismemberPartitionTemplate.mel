@@ -94,6 +94,7 @@ global proc nifBodyPartsFlagsNew(string $attributeName) {
 						 menuItem -label "BP_TORSOSECTION_RIGHTLEG2";
 						 menuItem -label "BP_TORSOSECTION_RIGHTLEG3";
 						 menuItem -label "BP_TORSOSECTION_BRAIN";
+						 menuItem -label "UNKNOWN_FLAG_32";
 			  button -label "Add flag" -command "nifAddBodyPartFlag" addBodyPartFlagBt;
 			  button -label "Delete flag" -command "nifDeleteBodyPartFlag" deleteBodyPartFlagBt;
 	connectControl nifBodyPartsFlagsTxLs $attributeName;

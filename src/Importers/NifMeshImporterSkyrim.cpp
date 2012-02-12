@@ -598,11 +598,11 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 				}
 			}
 
-			MString command = "polyBlindData -id ";
-			command += blind_data_id;
-			command += " -associationType \"face\" -ldn \"dismemberValue\" -ind 1";
+			MString mel_command = "polyBlindData -id ";
+			mel_command += blind_data_id;
+			mel_command += " -associationType \"face\" -ldn \"dismemberValue\" -ind 1";
 			MGlobal::setActiveSelectionList(selected_faces);
-			status = MGlobal::executeCommand(command);
+			status = MGlobal::executeCommand(mel_command);
 
 			MFnDependencyNode dismember_node;
 			dismember_node.create("nifDismemberPartition");
@@ -614,15 +614,23 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 			MStringArray body_parts_strings = NifDismemberPartition::bodyPartTypeToStringArray(cs.GetDismemberPartitionsBodyParts().at(x).bodyPart);
 			MStringArray parts_strings = NifDismemberPartition::partToStringArray(cs.GetDismemberPartitionsBodyParts().at(x).partFlag);
 
+			mel_command = "setAttr ";
+			mel_command += (dismember_node.name() + ".bodyPartsFlags");
+			mel_command += " -type \"stringArray\" ";
+			mel_command += body_parts_strings.length();
 			for(int z = 0; z < body_parts_strings.length(); z++) {
-				MPlug current_flag = body_parts_flags.elementByLogicalIndex(z);
-				current_flag.setString(body_parts_strings[z]);
+				mel_command += (" \"" + body_parts_strings[z] + "\"");
 			}
+			MGlobal::executeCommand(mel_command);
 
+			mel_command = "setAttr ";
+			mel_command += (dismember_node.name() + ".partsFlags");
+			mel_command += " -type \"stringArray\" ";
+			mel_command += parts_strings.length();
 			for(int z = 0; z < parts_strings.length(); z++) {
-				MPlug current_flag = parts_flags.elementByLogicalIndex(z);
-				current_flag.setString(parts_strings[z]);
+				mel_command += (" \"" + parts_strings[z] + "\"");
 			}
+			MGlobal::executeCommand(mel_command);
 
 			MDGModifier dg_modifier;
 			MPlugArray connections;

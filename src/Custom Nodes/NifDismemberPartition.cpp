@@ -42,272 +42,278 @@ MStatus NifDismemberPartition::initialize() {
 
 MStringArray NifDismemberPartition::bodyPartTypeToStringArray( BSDismemberBodyPartType body_parts ) {
 	MStringArray ret;
+
+	if(body_parts == 0) {
+		ret.append("BP_TORSO");
+		return ret;
+	}
+
 	bool is_done = false;
 	while(is_done == false) {
 		is_done = true;
 
-		if(BP_SECTIONCAP_HEAD & body_parts == BP_SECTIONCAP_HEAD) {
+		if((BP_SECTIONCAP_HEAD & body_parts) == BP_SECTIONCAP_HEAD) {
 			/*!< Section Cap | Head */
 			ret.append("BP_SECTIONCAP_HEAD");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD);
 			is_done = false;
-		} else if(BP_SECTIONCAP_HEAD2 & body_parts == BP_SECTIONCAP_HEAD2) {
+		} else if((BP_SECTIONCAP_HEAD2 & body_parts) == BP_SECTIONCAP_HEAD2) {
 			ret.append("BP_SECTIONCAP_HEAD2");
 			/*!< Section Cap | Head 2 */
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD2);
 			is_done = false;
-		} else if(BP_SECTIONCAP_LEFTARM & body_parts == BP_SECTIONCAP_LEFTARM) {
+		} else if((BP_SECTIONCAP_LEFTARM & body_parts) == BP_SECTIONCAP_LEFTARM) {
 			/*!< Section Cap | Left Arm */
 			ret.append("BP_SECTIONCAP_LEFTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM);
 			is_done = false;
-		} else if(BP_SECTIONCAP_LEFTARM2 & body_parts == BP_SECTIONCAP_LEFTARM2) {
+		} else if((BP_SECTIONCAP_LEFTARM2 & body_parts) == BP_SECTIONCAP_LEFTARM2) {
 			/*!< Section Cap | Left Arm 2 */
 			ret.append("BP_SECTIONCAP_LEFTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM2);
 			is_done = false;
-		} else if(BP_SECTIONCAP_RIGHTARM & body_parts == BP_SECTIONCAP_RIGHTARM) {
+		} else if((BP_SECTIONCAP_RIGHTARM & body_parts) == BP_SECTIONCAP_RIGHTARM) {
 			/*!< Section Cap | Right Arm */
 			ret.append("BP_SECTIONCAP_RIGHTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM);
 			is_done = false;
-		} else if(BP_SECTIONCAP_RIGHTARM2 & body_parts == BP_SECTIONCAP_RIGHTARM2) {
+		} else if((BP_SECTIONCAP_RIGHTARM2 & body_parts) == BP_SECTIONCAP_RIGHTARM2) {
 			/*!< Section Cap | Right Arm 2 */
 			ret.append("BP_SECTIONCAP_RIGHTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM2);
 			is_done = false;
-		} else if(BP_SECTIONCAP_LEFTLEG & body_parts == BP_SECTIONCAP_LEFTLEG) {
+		} else if((BP_SECTIONCAP_LEFTLEG & body_parts) == BP_SECTIONCAP_LEFTLEG) {
 			/*!< Section Cap | Left Leg */ 
 			ret.append("BP_SECTIONCAP_LEFTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG);
 			is_done = false;
-		} else if(BP_SECTIONCAP_LEFTLEG2 & body_parts == BP_SECTIONCAP_LEFTLEG2) {
+		} else if((BP_SECTIONCAP_LEFTLEG2 & body_parts) == BP_SECTIONCAP_LEFTLEG2) {
 			/*!< Section Cap | Left Leg 2 */
 			ret.append("BP_SECTIONCAP_LEFTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG2);
 			is_done = false;
-		} else if(BP_SECTIONCAP_LEFTLEG3 & body_parts == BP_SECTIONCAP_LEFTLEG3) {
+		} else if((BP_SECTIONCAP_LEFTLEG3 & body_parts) == BP_SECTIONCAP_LEFTLEG3) {
 			/*!< Section Cap | Left Leg 3 */
 			ret.append("BP_SECTIONCAP_LEFTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG3);
 			is_done = false;
-		} else if(BP_SECTIONCAP_RIGHTLEG & body_parts == BP_SECTIONCAP_RIGHTLEG) {
+		} else if((BP_SECTIONCAP_RIGHTLEG & body_parts) == BP_SECTIONCAP_RIGHTLEG) {
 			/*!< Section Cap | Right Leg */
 			ret.append("BP_SECTIONCAP_RIGHTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG);
 			is_done = false;
-		} else if(BP_SECTIONCAP_RIGHTLEG2 & body_parts == BP_SECTIONCAP_RIGHTLEG2) {
+		} else if((BP_SECTIONCAP_RIGHTLEG2 & body_parts) == BP_SECTIONCAP_RIGHTLEG2) {
 			/*!< Section Cap | Right Leg 2 */
 			ret.append("BP_SECTIONCAP_RIGHTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG2);
 			is_done = false;
-		} else if(BP_SECTIONCAP_RIGHTLEG3 & body_parts == BP_SECTIONCAP_RIGHTLEG3) {
+		} else if((BP_SECTIONCAP_RIGHTLEG3 & body_parts) == BP_SECTIONCAP_RIGHTLEG3) {
 			/*!< Section Cap | Right Leg 3 */
 			ret.append("BP_SECTIONCAP_RIGHTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG3);
 			is_done = false;
-		} else if(BP_SECTIONCAP_BRAIN & body_parts == BP_SECTIONCAP_BRAIN) {
+		} else if((BP_SECTIONCAP_BRAIN & body_parts) == BP_SECTIONCAP_BRAIN) {
 			/*!< Section Cap | Brain */
 			ret.append("BP_SECTIONCAP_BRAIN");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_BRAIN);
 			is_done = false;
-		} else if(BP_TORSOCAP_HEAD & body_parts == BP_TORSOCAP_HEAD) {
+		} else if((BP_TORSOCAP_HEAD & body_parts) == BP_TORSOCAP_HEAD) {
 			/*!< Torso Cap | Head */
 			ret.append("BP_TORSOCAP_HEAD");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD);
 			is_done = false;
-		} else if(BP_TORSOCAP_HEAD2 & body_parts == BP_TORSOCAP_HEAD2) {
+		} else if((BP_TORSOCAP_HEAD2 & body_parts) == BP_TORSOCAP_HEAD2) {
 			/*!< Torso Cap | Head 2 */
 			ret.append("BP_TORSOCAP_HEAD2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD2);
 			is_done = false;
-		} else if(BP_TORSOCAP_LEFTARM & body_parts == BP_TORSOCAP_LEFTARM) {
+		} else if((BP_TORSOCAP_LEFTARM & body_parts) == BP_TORSOCAP_LEFTARM) {
 			/*!< Torso Cap | Left Arm */
 			ret.append("BP_TORSOCAP_LEFTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM);
 			is_done = false;
-		} else if(BP_TORSOCAP_LEFTARM2 & body_parts == BP_TORSOCAP_LEFTARM2) {
+		} else if((BP_TORSOCAP_LEFTARM2 & body_parts) == BP_TORSOCAP_LEFTARM2) {
 			/*!< Torso Cap | Left Arm 2 */
 			ret.append("BP_TORSOCAP_LEFTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM2);
 			is_done = false;
-		} else if(BP_TORSOCAP_RIGHTARM & body_parts == BP_TORSOCAP_RIGHTARM) {
+		} else if((BP_TORSOCAP_RIGHTARM & body_parts) == BP_TORSOCAP_RIGHTARM) {
 			/*!< Torso Cap | Right Arm */
 			ret.append("BP_TORSOCAP_RIGHTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM);
 			is_done = false;
-		} else if(BP_TORSOCAP_RIGHTARM2 & body_parts == BP_TORSOCAP_RIGHTARM2) {
+		} else if((BP_TORSOCAP_RIGHTARM2 & body_parts) == BP_TORSOCAP_RIGHTARM2) {
 			/*!< Torso Cap | Right Arm 2 */
 			ret.append("BP_TORSOCAP_RIGHTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM2);
 			is_done = false;
-		} else if(BP_TORSOCAP_LEFTLEG & body_parts == BP_TORSOCAP_LEFTLEG) {
+		} else if((BP_TORSOCAP_LEFTLEG & body_parts) == BP_TORSOCAP_LEFTLEG) {
 			/*!< Torso Cap | Left Leg */
 			ret.append("BP_TORSOCAP_LEFTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG);
 			is_done = false;
-		} else if(BP_TORSOCAP_LEFTLEG2 & body_parts == BP_TORSOCAP_LEFTLEG2) {
+		} else if((BP_TORSOCAP_LEFTLEG2 & body_parts) == BP_TORSOCAP_LEFTLEG2) {
 			/*!< Torso Cap | Left Leg 2 */
 			ret.append("BP_TORSOCAP_LEFTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG2);
 			is_done = false;
-		} else if(BP_TORSOCAP_LEFTLEG3 & body_parts == BP_TORSOCAP_LEFTLEG3) {
+		} else if((BP_TORSOCAP_LEFTLEG3 & body_parts) == BP_TORSOCAP_LEFTLEG3) {
 			/*!< Torso Cap | Left Leg 3 */
 			ret.append("BP_TORSOCAP_LEFTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG3);
 			is_done = false;
-		} else if(BP_TORSOCAP_RIGHTLEG & body_parts == BP_TORSOCAP_RIGHTLEG) {
+		} else if((BP_TORSOCAP_RIGHTLEG & body_parts) == BP_TORSOCAP_RIGHTLEG) {
 			/*!< Torso Cap | Right Leg */
 			ret.append("BP_TORSOCAP_RIGHTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG);
 			is_done = false;
-		} else if(BP_TORSOCAP_RIGHTLEG2 & body_parts == BP_TORSOCAP_RIGHTLEG2) {
+		} else if((BP_TORSOCAP_RIGHTLEG2 & body_parts) == BP_TORSOCAP_RIGHTLEG2) {
 			/*!< Torso Cap | Right Leg 2 */
 			ret.append("BP_TORSOCAP_RIGHTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG2);
 			is_done = false;
-		} else if(BP_TORSOCAP_RIGHTLEG3 & body_parts == BP_TORSOCAP_RIGHTLEG3) {
+		} else if((BP_TORSOCAP_RIGHTLEG3 & body_parts) == BP_TORSOCAP_RIGHTLEG3) {
 			/*!< Torso Cap | Right Leg 3 */
 			ret.append("BP_TORSOCAP_RIGHTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG3);
 			is_done = false;
-		} else if(BP_TORSOCAP_BRAIN & body_parts == BP_TORSOCAP_BRAIN) {
+		} else if((BP_TORSOCAP_BRAIN & body_parts) == BP_TORSOCAP_BRAIN) {
 			/*!< Torso Cap | Brain */
 			ret.append("BP_TORSOCAP_BRAIN");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_BRAIN);
 			is_done = false;
-		} else if(BP_TORSOSECTION_HEAD & body_parts == BP_TORSOSECTION_HEAD) {
+		} else if((BP_TORSOSECTION_HEAD & body_parts) == BP_TORSOSECTION_HEAD) {
 			/*!< Torso Section | Head */
 			ret.append("BP_TORSOSECTION_HEAD");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD);
 			is_done = false;
-		} else if(BP_TORSOSECTION_HEAD2 & body_parts == BP_TORSOSECTION_HEAD2) {
+		} else if((BP_TORSOSECTION_HEAD2 & body_parts) == BP_TORSOSECTION_HEAD2) {
 			/*!< Torso Section | Head 2 */
 			ret.append("BP_TORSOSECTION_HEAD2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD2);
 			is_done = false;
-		} else if(BP_TORSOSECTION_LEFTARM & body_parts == BP_TORSOSECTION_LEFTARM) {
+		} else if((BP_TORSOSECTION_LEFTARM & body_parts) == BP_TORSOSECTION_LEFTARM) {
 			/*!< Torso Section | Left Arm */
 			ret.append("BP_TORSOSECTION_LEFTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM);
 			is_done = false;
-		} else if(BP_TORSOSECTION_LEFTARM2 & body_parts == BP_TORSOSECTION_LEFTARM2) {
+		} else if((BP_TORSOSECTION_LEFTARM2 & body_parts) == BP_TORSOSECTION_LEFTARM2) {
 			/*!< Torso Section | Left Arm 2 */
 			ret.append("BP_TORSOSECTION_LEFTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM2);
 			is_done = false;
-		} else if(BP_TORSOSECTION_RIGHTARM & body_parts == BP_TORSOSECTION_RIGHTARM) {
+		} else if((BP_TORSOSECTION_RIGHTARM & body_parts) == BP_TORSOSECTION_RIGHTARM) {
 			/*!< Torso Section | Right Arm */
 			ret.append("BP_TORSOSECTION_RIGHTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM);
 			is_done = false;
-		} else if(BP_TORSOSECTION_RIGHTARM2 & body_parts == BP_TORSOSECTION_RIGHTARM2) {
+		} else if((BP_TORSOSECTION_RIGHTARM2 & body_parts) == BP_TORSOSECTION_RIGHTARM2) {
 			/*!< Torso Section | Right Arm 2 */
 			ret.append("BP_TORSOSECTION_RIGHTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM2);
 			is_done = false;
-		} else if(BP_TORSOSECTION_LEFTLEG & body_parts == BP_TORSOSECTION_LEFTLEG) {
+		} else if((BP_TORSOSECTION_LEFTLEG & body_parts) == BP_TORSOSECTION_LEFTLEG) {
 			/*!< Torso Section | Left Leg */
 			ret.append("BP_TORSOSECTION_LEFTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG);
-		} else if(BP_TORSOSECTION_LEFTLEG2 & body_parts == BP_TORSOSECTION_LEFTLEG2) {
+		} else if((BP_TORSOSECTION_LEFTLEG2 & body_parts) == BP_TORSOSECTION_LEFTLEG2) {
 			/*!< Torso Section | Left Leg 2 */
 			ret.append("BP_TORSOSECTION_LEFTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG2);
 			is_done = false;
-		} else if(BP_TORSOSECTION_LEFTLEG3 & body_parts == BP_TORSOSECTION_LEFTLEG3) {
+		} else if((BP_TORSOSECTION_LEFTLEG3 & body_parts) == BP_TORSOSECTION_LEFTLEG3) {
 			/*!< Torso Section | Left Leg 3 */
 			ret.append("BP_TORSOSECTION_LEFTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG2);
 			is_done = false;
-		} else if(BP_TORSOSECTION_RIGHTLEG & body_parts == BP_TORSOSECTION_RIGHTLEG) {
+		} else if((BP_TORSOSECTION_RIGHTLEG & body_parts) == BP_TORSOSECTION_RIGHTLEG) {
 			/*!< Torso Section | Right Leg */
 			ret.append("BP_TORSOSECTION_RIGHTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG);
 			is_done = false;
-		} else if(BP_TORSOSECTION_RIGHTLEG2 & body_parts == BP_TORSOSECTION_RIGHTLEG2) {
+		} else if((BP_TORSOSECTION_RIGHTLEG2 & body_parts) == BP_TORSOSECTION_RIGHTLEG2) {
 			/*!< Torso Section | Right Leg 2 */
 			ret.append("BP_TORSOSECTION_RIGHTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG2);
 			is_done = false;
-		} else if(BP_TORSOSECTION_RIGHTLEG3 & body_parts == BP_TORSOSECTION_RIGHTLEG3) {
+		} else if((BP_TORSOSECTION_RIGHTLEG3 & body_parts) == BP_TORSOSECTION_RIGHTLEG3) {
 			/*!< Torso Section | Right Leg 3 */
 			ret.append("BP_TORSOSECTION_RIGHTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG3);
 			is_done = false;
-		} else if(BP_TORSOSECTION_BRAIN & body_parts == BP_TORSOSECTION_BRAIN) {
+		} else if((BP_TORSOSECTION_BRAIN & body_parts) == BP_TORSOSECTION_BRAIN) {
 			/*!< Torso Section | Brain */
 			ret.append("BP_TORSOSECTION_BRAIN");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_BRAIN);
 			is_done = false;
-		} else if(BP_TORSO & body_parts == BP_TORSO) {
-			ret.append("BP_TORSO");
-			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_TORSO);
-			is_done = false;
-		} else if(BP_HEAD & body_parts == BP_HEAD) {
+		} else if((BP_HEAD & body_parts) == BP_HEAD) {
 			/*!< Head */
 			ret.append("BP_HEAD");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD);
 			is_done = false;
-		} else if(BP_HEAD2 & body_parts == BP_HEAD2) {
+		} else if((BP_HEAD2 & body_parts) == BP_HEAD2) {
 			/*!< Head 2 */
 			ret.append("BP_HEAD2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_HEAD2);
 			is_done = false;
-		} else if(BP_LEFTARM & body_parts == BP_LEFTARM) {
+		} else if((BP_LEFTARM & body_parts) == BP_LEFTARM) {
 			/*!< Left Arm */
 			ret.append("BP_LEFTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM);
 			is_done = false;
-		} else if(BP_LEFTARM2 & body_parts == BP_LEFTARM2) {
+		} else if((BP_LEFTARM2 & body_parts) == BP_LEFTARM2) {
 			/*!< Left Arm 2 */
 			ret.append("BP_LEFTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTARM2);
 			is_done = false;
-		} else if(BP_RIGHTARM & body_parts == BP_RIGHTARM) {
+		} else if((BP_RIGHTARM & body_parts) == BP_RIGHTARM) {
 			/*!< Right Arm */
 			ret.append("BP_RIGHTARM");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM);
 			is_done = false;
-		} else if(BP_RIGHTARM2 & body_parts == BP_RIGHTARM2) {
+		} else if((BP_RIGHTARM2 & body_parts) == BP_RIGHTARM2) {
 			/*!< Right Arm 2 */ 
 			ret.append("BP_RIGHTARM2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTARM2);
 			is_done = false;
-		} else if(BP_LEFTLEG & body_parts == BP_LEFTLEG) {
+		} else if((BP_LEFTLEG & body_parts) == BP_LEFTLEG) {
 			/*!< Left Leg */
 			ret.append("BP_LEFTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG);
 			is_done = false;
-		} else if(BP_LEFTLEG2 & body_parts == BP_LEFTLEG2) {
+		} else if((BP_LEFTLEG2 & body_parts) == BP_LEFTLEG2) {
 			/*!< Left Leg 2 */
 			ret.append("BP_LEFTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG2);
 			is_done = false;
-		} else if(BP_LEFTLEG3 & body_parts == BP_LEFTLEG3) {
+		} else if((BP_LEFTLEG3 & body_parts) == BP_LEFTLEG3) {
 			/*!< Left Leg 3 */
 			ret.append("BP_LEFTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_LEFTLEG3);
 			is_done = false;
-		} else if(BP_RIGHTLEG & body_parts == BP_RIGHTLEG) {
+		} else if((BP_RIGHTLEG & body_parts) == BP_RIGHTLEG) {
 			/*!< Right Leg */
 			ret.append("BP_RIGHTLEG");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG);
 			is_done = false;
-		} else if(BP_RIGHTLEG2 & body_parts == BP_RIGHTLEG2) {
+		} else if((BP_RIGHTLEG2 & body_parts) == BP_RIGHTLEG2) {
 			/*!< Right Leg 2 */
 			ret.append("BP_RIGHTLEG2");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG2);
 			is_done = false;
-		} else if(BP_RIGHTLEG3 & body_parts == BP_RIGHTLEG3) {
+		} else if((BP_RIGHTLEG3 & body_parts) == BP_RIGHTLEG3) {
 			/*!< Right Leg 3 */
 			ret.append("BP_RIGHTLEG3");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_RIGHTLEG3);
 			is_done = false;
-		} else if(BP_BRAIN & body_parts == BP_BRAIN) {
+		} else if((BP_BRAIN & body_parts) == BP_BRAIN) {
 			/*!< Brain */
 			ret.append("BP_BRAIN");
 			body_parts = (BSDismemberBodyPartType)(body_parts & ~BP_BRAIN);
+			is_done = false;
+		} else if((32 & body_parts) == 32) {
+			ret.append("UNKNOWN_FLAG_32");
+			body_parts = (BSDismemberBodyPartType)(body_parts & ~32);
 			is_done = false;
 		}
 	}
@@ -318,11 +324,11 @@ MStringArray NifDismemberPartition::bodyPartTypeToStringArray( BSDismemberBodyPa
 MStringArray NifDismemberPartition::partToStringArray( BSPartFlag parts ) {
 	MStringArray ret;
 
-	if(PF_EDITOR_VISIBLE & parts == PF_EDITOR_VISIBLE) {
+	if((PF_EDITOR_VISIBLE & parts) == PF_EDITOR_VISIBLE) {
 		/*!< Visible in Editor */
 		ret.append("PF_EDITOR_VISIBLE");
 	}
-	if(PF_START_NET_BONESET & parts == PF_START_NET_BONESET) {
+	if((PF_START_NET_BONESET & parts) == PF_START_NET_BONESET) {
 		/*!< Start a new shared boneset.  It is expected this BoneSet and the following sets in the Skin Partition will have the same bones. */
 		ret.append("PF_START_NET_BONESET");
 	}
