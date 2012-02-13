@@ -234,7 +234,7 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 		return;
 	}
 
-	if(root->GetType().IsSameType(NiNode::TYPE)) {
+	if(root->GetType().IsDerivedType(NiNode::TYPE)) {
 		NiNodeRef node = DynamicCast<NiNode>(root);
 		vector<NiAVObjectRef> children = node->GetChildren();
 
