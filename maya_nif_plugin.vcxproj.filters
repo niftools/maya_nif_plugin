@@ -137,6 +137,12 @@
     <ClInclude Include="include\Custom Nodes\NifDismemberPartition.h">
       <Filter>Header Files\Custom Nodes</Filter>
     </ClInclude>
+    <ClInclude Include="include\Exporters\NifMaterialExporterSkyrim.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -222,6 +228,12 @@
     </ClCompile>
     <ClCompile Include="src\Custom Nodes\NifDismemberPartition.cpp">
       <Filter>Source Files\Custom Nodes</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifMeshExporterSkyrim.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifMaterialExporterSkyrim.cpp">
+      <Filter>Source Files\Exporters</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>
