@@ -126,8 +126,8 @@ void NifMaterialExporter::ExportShaders()
 		}
 
 		//Create a NIF Material Wrapper and put the collected values into it
-		unsigned int mat_index = this->translatorData->materialCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, this->translatorOptions->exportVersion );
-		MaterialWrapper mw = this->translatorData->materialCollection.GetMaterial( mat_index );
+		unsigned int mat_index = this->materialCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, this->translatorOptions->exportVersion );
+		MaterialWrapper mw = this->materialCollection.GetMaterial( mat_index );
 
 		NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
 
@@ -159,8 +159,8 @@ void NifMaterialExporter::ExportShaders()
 				string texname = depFn.name().asChar();
 				//out << "Base texture found:  " << texname << endl;
 
-				if ( this->translatorData->textures.find( texname ) != this->translatorData->textures.end() ) {
-					mw.SetTextureIndex( BASE_MAP, this->translatorData->textures[texname] );
+				if ( this->textures.find( texname ) != this->textures.end() ) {
+					mw.SetTextureIndex( BASE_MAP, this->textures[texname] );
 				}
 			}
 
@@ -196,8 +196,8 @@ void NifMaterialExporter::ExportShaders()
 				string texname = depFn.name().asChar();
 				//out << "Glow texture found:  " << texname << endl;
 
-				if ( this->translatorData->textures.find( texname ) != this->translatorData->textures.end() ) {
-					mw.SetTextureIndex( GLOW_MAP, this->translatorData->textures[texname] );
+				if ( this->textures.find( texname ) != this->textures.end() ) {
+					mw.SetTextureIndex( GLOW_MAP, this->textures[texname] );
 				}
 			}
 		}
@@ -341,8 +341,8 @@ void NifMaterialExporter::ExportTextures()
 		}
 
 		//Create a NIF texture wrapper
-		unsigned int tex_index = this->translatorData->materialCollection.CreateTexture( this->translatorOptions->exportVersion );
-		TextureWrapper tw = this->translatorData->materialCollection.GetTexture( tex_index );
+		unsigned int tex_index = this->materialCollection.CreateTexture( this->translatorOptions->exportVersion );
+		TextureWrapper tw = this->materialCollection.GetTexture( tex_index );
 
 		//Get Node Name
 		tw.SetObjectName( this->translatorUtils->MakeNifName( fn.name() ) );
@@ -412,7 +412,7 @@ void NifMaterialExporter::ExportTextures()
 
 		//Associate NIF texture index with fileTexture DagPath
 		string path = fn.name().asChar();
-		this->translatorData->textures[path] = tex_index;
+		this->textures[path] = tex_index;
 
 		// get next fileTexture
 		it.next();

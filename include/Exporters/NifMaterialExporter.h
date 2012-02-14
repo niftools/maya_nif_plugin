@@ -90,6 +90,11 @@ class NifMaterialExporter;
 typedef Ref<NifMaterialExporter> NifMaterialExporterRef;
 
 class NifMaterialExporter : public NifTranslatorFixtureItem {
+protected:
+
+	MatTexCollection materialCollection;
+
+	map<string, unsigned int> textures;
 
 public:
 

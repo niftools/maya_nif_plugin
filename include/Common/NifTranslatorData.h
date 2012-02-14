@@ -114,11 +114,7 @@ public:
 	//and to execute other misc operations on connections between maya meshes and maya materials
 	vector< pair<vector<NiPropertyRef>, vector<NifTextureConnectorRef>>> importedTextureConnectors;
 
-	MatTexCollection materialCollection;
-
 	MFileObject importFile; //The file currently being imported
-
-	map<string, unsigned int> textures;
 
 	NiNodeRef exportedSceneRoot;
 
