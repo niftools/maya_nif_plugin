@@ -143,9 +143,8 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	NifTranslatorUtilsRef translator_utils(new NifTranslatorUtils(translator_data, translator_options));
 
 	translator_options->ParseOptionsString(optionsString);
-	MStringArray fileNameParts;
-	file.name().toLowerCase().split('.', fileNameParts);
-	MString file_extension = fileNameParts[(int)(fileNameParts.length()) - 1];
+
+	NifExportingFixtureRef exporting_fixture;
 
 	string export_type = "geometry";
 	if(translator_options->exportType.length() > 1) {
@@ -153,14 +152,19 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 	}
 
 	if(export_type == "geometry") {
-		NifDefaultExportingFixtureRef exportingFixture(new NifDefaultExportingFixture(translator_data, translator_options, translator_utils));
-
-		return exportingFixture->WriteNodes(file);
+		if(translator_options->exportMaterialType == "standardmaterial") {
+			exporting_fixture = new NifDefaultExportingFixture(translator_data, translator_options, translator_utils);
+		}
+		if(translator_options->exportMaterialType == "skyrimmaterial") {
+			exporting_fixture = new NifSkyrimExportingFixture(translator_options, translator_data, translator_utils);
+		}
 	}
 
 	if(export_type == "animation") {
-		NifKFExportingFixtureRef exporting_fixture(new NifKFExportingFixture(translator_options, translator_data, translator_utils));
+		exporting_fixture = new NifKFExportingFixture(translator_options, translator_data, translator_utils);
+	}
 
+	if(exporting_fixture != NULL) {
 		return exporting_fixture->WriteNodes(file);
 	}
 	

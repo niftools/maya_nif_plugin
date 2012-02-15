@@ -86,6 +86,7 @@ class NifTranslatorOptions : public NifTranslatorRefObject {
 public:
 	
 	string texturePath; // Path to textures gotten from option string
+	string exportMaterialType; // Type of material to generate for the exported nif, skyrim specific material, fallout specific material or standard
 	unsigned int exportVersion; //Version of NIF file to export
 	unsigned int exportUserVersion; //Game-specific user version of NIF file to export
 	unsigned int exportUserVersion2;

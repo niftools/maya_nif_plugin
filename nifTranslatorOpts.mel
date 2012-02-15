@@ -623,7 +623,7 @@ global proc int nifTranslatorOpts ( string $parent,
 		string $materialType = $defaultMaterialType;
 		if(`radioButton -query -select nifTranslatorStandardMaterialRd` == true) {
 			$materialType = "standardmaterial;";
-		} else if (`radioButton -query -select nifTranslatorFallout3MaterialRd` == true) {
+		} else if (`radioButton -query -select nifTranslatorFalloutMaterialRd` == true) {
 			$materialType = "falloutmaterial;";
 		} else if(`radioButton -query -select nifTranslatorSkyrimMaterialRd` == true) {
 			$materialType = "skyrimmaterial";

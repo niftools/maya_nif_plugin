@@ -4,10 +4,11 @@ NifMeshExporterSkyrim::NifMeshExporterSkyrim() {
 
 }
 
-NifMeshExporterSkyrim::NifMeshExporterSkyrim( NifTranslatorOptionsRef translator_options, NifTranslatorDataRef translator_data, NifTranslatorUtilsRef translator_utils ) {
+NifMeshExporterSkyrim::NifMeshExporterSkyrim( NifNodeExporterRef node_exporter, NifTranslatorOptionsRef translator_options, NifTranslatorDataRef translator_data, NifTranslatorUtilsRef translator_utils ) {
 	this->translatorOptions = translator_options;
 	this->translatorData = translator_data;
 	this->translatorUtils = translator_utils;
+	this->nodeExporter = node_exporter;
 }
 
 void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
@@ -54,61 +55,6 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 
 	//For now always use the visible mesh
 	meshFn.setObject(mesh);
-
-
-
-	//			// get the mesh coming into the clusterFn.  This
-	//			// is the mesh before being deformed but after
-	//			// being edited/tweaked/etc.
-
-	//			out << "Get input plug" << endl;
-	//			inputPlug = clusterFn.findPlug("input", &stat);
-	//			if ( stat != MS::kSuccess ) {
-	//				out << stat.errorString().asChar() << endl;
-	//				throw runtime_error("Unable to find input plug");
-	//			}
-
-	//			unsigned int meshIndex = clusterFn.indexForOutputShape( visibleMeshFn.object(),&stat );
-	//			if ( stat != MS::kSuccess ) {
-	//				out << stat.errorString().asChar() << endl;
-	//				throw runtime_error("Failed to get index for output shape");
-	//			}
-
-	//			childPlug = inputPlug.elementByLogicalIndex( meshIndex, &stat ); 
-	//			if ( stat != MS::kSuccess ) {
-	//				out << stat.errorString().asChar() << endl;
-	//				throw runtime_error("Failed to get element by logical index");
-	//			}
-	//			geomPlug = childPlug.child(0,&stat); 
-	//			if ( stat != MS::kSuccess ) {
-	//				out << stat.errorString().asChar() << endl;
-	//				throw runtime_error("failed to get geomPlug");
-	//			}
-
-	//			stat = geomPlug.getValue(dataObj);
-	//			if ( stat != MS::kSuccess ) {
-	//				out << stat.errorString().asChar() << endl;
-	//				throw runtime_error("Failed to get value from geomPlug.");
-	//			}
-
-	//			out << "Use input mesh instead of the visible one." << endl;
-	//			// let use this mesh instead of the visible one
-	//			if ( dataObj.hasFn( MFn::kMesh ) == true ) {
-	//				out << "Data has MeshFN function set." << endl;
-	//				//stat = meshFn.setObject(dataObj);
-	//				if ( stat != MS::kSuccess ) {
-	//					out << stat.errorString().asChar() << endl;
-	//					throw runtime_error("Failed to set new object");
-	//				}
-	//				
-	//				//use_visible_mesh = false;
-	//			} else {
-	//				out << "Data does not have meshFn function set" << endl;
-	//			}
-	//		}
-	//	//}
-	//	out << "Loop Complete" << endl;
-	////}
 
 	//out << "Use the function set to get the points" << endl;
 	// use the function set to get the points
@@ -370,7 +316,6 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 	//Look up any skin clusters
 	if ( this->translatorData->meshClusters.find( visibleMeshFn.fullPathName().asChar() ) != this->translatorData->meshClusters.end() ) {
 		const vector<MObject> & clusters = this->translatorData->meshClusters[ visibleMeshFn.fullPathName().asChar() ];
-		//for ( vector<MObject>::const_iterator cluster = clusters.begin(); cluster != clusters.end(); ++cluster ) {
 		if ( clusters.size() > 1 ) {
 			throw runtime_error("Objects with multiple skin clusters affecting them are not currently supported.  Try deleting the history and re-binding them.");
 		}
@@ -447,7 +392,58 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 				}
 			}
 		}
-		//}
+
+		MPlugArray connected_dismember_plugs;
+		MObjectArray dismember_nodes;
+		meshFn.findPlug("message").connectedTo(connected_dismember_plugs, false, true);
+
+		bool has_valid_dismemember_partitions = true;
+		int faces_count = cs.GetFaces().size();
+		int current_face_index;
+		vector<BodyPartList> body_parts_list;
+		vector<int> dismember_faces(faces_count, 0);
+
+		for(int x = 0; x < connected_dismember_plugs.length(); x++) {
+			MFnDependencyNode dependency_node(connected_dismember_plugs[x].node());
+			if(dependency_node.typeName() == "nifDismemberPartition") {
+				dismember_nodes.append(dependency_node.object());
+			}
+		}
+
+		if(dismember_nodes.length() == 0) {
+
+		}
+
+		int blind_data_id;
+		int blind_data_value;
+		MPlug target_faces_plug;
+		MItMeshPolygon it_polygons(meshFn.object());
+		MFnDependencyNode current_dismember_node;
+		MFnDependencyNode current_blind_data_node;
+		
+		for(int x = 0; x < dismember_nodes.length(); x++) {
+			current_dismember_node.setObject(dismember_nodes[x]);
+			target_faces_plug = current_dismember_node.findPlug("targetFaces");
+			connected_dismember_plugs.clear();
+			target_faces_plug.connectedTo(connected_dismember_plugs, true, false);
+			if(connected_dismember_plugs.length() > 0) {
+				current_blind_data_node.setObject(connected_dismember_plugs[0].node());
+				current_face_index = 0;
+				blind_data_id = current_blind_data_node.findPlug("typeId").asInt();
+				for(it_polygons.reset(); !it_polygons.isDone(); it_polygons.next()) {
+					if(it_polygons.polygonVertexCount() >= 3) {
+						meshFn.getIntBlindData(it_polygons.index(), MFn::Type::kMeshPolygonComponent, blind_data_id, "dismemberValue", blind_data_value);
+						if(blind_data_value == 1) {
+							dismember_faces[current_face_index] = x;
+						}
+						current_face_index++;
+					}
+				}
+			} else {
+				has_valid_dismemember_partitions = false;
+				break;
+			}
+		}
 	}
 
 	//out << "Setting vertex info" << endl;

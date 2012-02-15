@@ -100,7 +100,7 @@ public:
 
 	NifMeshExporterSkyrim();
 
-	NifMeshExporterSkyrim(NifTranslatorOptionsRef translator_options, NifTranslatorDataRef translator_data, NifTranslatorUtilsRef translator_utils);
+	NifMeshExporterSkyrim(NifNodeExporterRef node_exporter, NifTranslatorOptionsRef translator_options, NifTranslatorDataRef translator_data, NifTranslatorUtilsRef translator_utils);
 
 	virtual void ExportMesh( MObject dagNode );
 

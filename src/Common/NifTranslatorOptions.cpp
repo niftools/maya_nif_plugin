@@ -107,6 +107,10 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			}
 			//out << "Import Normals:  " << import_normals << endl;
 		}
+		if( tokens[0] == "materialType") {
+			this->exportMaterialType = tokens[1].asChar();
+			//out << "Material type: " << this->exportMaterialType << endl;
+		}
 		if ( tokens[0] == "importNoAmbient" ) {
 			if ( tokens[1] == "1" ) {
 				this->importNoAmbient = true;

@@ -143,6 +143,9 @@
     <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h">
       <Filter>Header Files\Exporters</Filter>
     </ClInclude>
+    <ClInclude Include="include\Exporters\NifSkyrimExportingfixture.h">
+      <Filter>Header Files\Exporters</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\Exporters\NifAnimationExporter.cpp">
@@ -233,6 +236,9 @@
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
     <ClCompile Include="src\Exporters\NifMaterialExporterSkyrim.cpp">
+      <Filter>Source Files\Exporters</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp">
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
   </ItemGroup>

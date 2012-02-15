@@ -758,6 +758,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClInclude Include="include\Exporters\NifMeshExporter.h" />
     <ClInclude Include="include\Exporters\NifMeshExporterSkyrim.h" />
     <ClInclude Include="include\Exporters\NifNodeExporter.h" />
+    <ClInclude Include="include\Exporters\NifSkyrimExportingfixture.h" />
     <ClInclude Include="include\Importers\NifAnimationImporter.h" />
     <ClInclude Include="include\Importers\NifDefaultImportingFixture.h" />
     <ClInclude Include="include\Importers\NifImportingFixture.h" />
@@ -791,6 +792,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
     <ClCompile Include="src\Exporters\NifMeshExporter.cpp" />
     <ClCompile Include="src\Exporters\NifMeshExporterSkyrim.cpp" />
     <ClCompile Include="src\Exporters\NifNodeExporter.cpp" />
+    <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifAnimationImporter.cpp" />
     <ClCompile Include="src\Importers\NifDefaultImportingFixture.cpp" />
     <ClCompile Include="src\Importers\NifImportingFixture.cpp" />
