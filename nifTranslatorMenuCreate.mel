@@ -43,6 +43,14 @@ global proc nifTranslatorMenuCreate() {
 
 		setParent -menu $nifToolsMenu;
 
+		menuItem -label "Rigging" -subMenu true riggingMenu;
+			menuItem -label "NifDismemberPartition" -subMenu true nifDismemberPartitionMenu;
+				menuItem -label "Create nifDismemberPartition Node" -command "nifTranslatorCreateNifDismemberPartition";
+				menuItem -label "Connect nifDismemberPartition Node" -command "nifTranslatorConnectNifDismemberPartition";
+				menuItem -label "Create and Connect nifDismemberPartition Node" -command "nifTranslatorCreateConnecNifDismemberPartition";
+			setParent -menu riggingMenu;
+		setParent -menu $nifToolsMenu;
+
 		menuItem -label "Texture" -subMenu true textureMenu;
 			menuItem -label "Set texturing mode to Apply Modular";
 			menuItem -label "Set texturing mode to Apply Highlight";
@@ -501,4 +509,50 @@ global proc nifToolsQueueClear() {
 	global string $nifToolsStackHeapArray[];
 
 	clear($nifToolsStackHeapArray);
+}
+
+global proc nifTranslatorCreateNifDismemberPartition() {
+	eval ("createNode \"nifDismemberPartition\"");
+}
+
+global proc nifTranslatorConnectNifDismemberPartition() {
+	string $nifDismemberNode[] = `ls -type "nifDismemberPartition" -selection`;
+	string $blindDataNode[] = `ls -type "polyBlindData" -selection`;
+	string $shapeNode[] = `ls -type "shape" -selection`;
+
+	if(size($nifDismemberNode) != 1) {
+		error "Please select exactly one nifDismemberPartition node to connect it to a shape node and a polyBlindDataNode";
+		return;
+	}
+	if(size($blindDataNode) != 1) {
+		error "Please select exactly one polyBlindData node to connect it to a nifDismemberPartitionNode";
+		return;
+	}
+	if(size($shapeNode) != 1) {
+		error "Please select exactly one shape node to connect it to a nifDismemberPartitionNode";
+		return;
+	}
+
+	eval("connectAttr -force " + $blindDataNode[0] + "\.message " + $nifDismemberNode[0] + "\.targetFaces");
+	eval("connectAttr -force " + $shapeNode[0] + "\.message " + $nifDismemberNode[0] + "\.targetShape");
+}
+
+global proc nifTranslatorCreateConnecNifDismemberPartition() {
+	string $blindDataNode[] = `ls -type "polyBlindData" -selection`;
+	string $shapeNode[] = `ls -type "shape" -selection`;
+	string $nifDismemberNode;
+
+	if(size($blindDataNode) != 1) {
+		error "Please select exactly one polyBlindData node to connect it to a nifDismemberPartitionNode";
+		return;
+	}
+	if(size($shapeNode) != 1) {
+		error "Please select exactly one shape node to connect it to a nifDismemberPartitionNode";
+		return;
+	}
+
+	$nifDismemberNode = `createNode "nifDismemberPartition"`;
+
+	eval("connectAttr -force " + $blindDataNode[0] + "\.message " + $nifDismemberNode + "\.targetFaces");
+	eval("connectAttr -force " + $shapeNode[0] + "\.message " + $nifDismemberNode + "\.targetShape");
 }

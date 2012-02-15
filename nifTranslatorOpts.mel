@@ -59,6 +59,7 @@ global proc int nifTranslatorOpts ( string $parent,
 		"C:/Program Files/Firaxis Games/Sid Meier's Civilization 4/Assets/Art/shared"
 	};
 	string $defaultNumberOfKeysToSample = "20";
+	string $defaultMaterialType = "standardmaterial";
 	
 	
 	if ($action == "post") {
@@ -270,6 +271,13 @@ global proc int nifTranslatorOpts ( string $parent,
 								-annotation "Another optional game-specific version number extention.  Oblivion: 10 or 11  All Others: 0"
 								expUserVersion2Tx;
 			setParent exportColumnLayout;
+
+			text -label "Nif material type:" -align "left";
+			radioCollection;
+				radioButton -label "Standard NiMaterial with standard NiTexture properties" -select nifTranslatorStandardMaterialRd;
+				radioButton -label "Standard NiMaterial with BSShaderTextureSet for fallout" nifTranslatorFalloutMaterialRd;
+				radioButton -label "BSShaderLightningSet material for Skyrim with BSShaderTextureSet" nifTranslatorSkyrimMaterialRd;
+			setParent exportColumnLayout;
 			
 			checkBox -label "Export White Ambient if Texture is Present" 
 					      -value 1
@@ -425,6 +433,15 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value true impNormalsCk;
 					} else {
 						checkBox -edit -value false impNormalsCk;
+					}
+				}
+				if ($optionBreakDown[0] == "materialType") {
+					if ($optionBreakDown[1] == "standardmaterial") {
+						radioButton -edit -select nifTranslatorStandardMaterialRd;
+					} else if($optionBreakDown[1] == "falloutmaterial") {
+						radioButton -edit -select nifTranslatorFalloutMaterialRd;
+					} else if($optionBreakDown[1] == "skyrimmaterial") {
+						radioButton -edit -select nifTranslatorSkyrimMaterialRd;
 					}
 				}
 				if ($optionBreakDown[0] == "importNoAmbient") {
@@ -602,6 +619,16 @@ global proc int nifTranslatorOpts ( string $parent,
 		} else {
 			$currentOptions = $currentOptions + "animationTarget=" + $animationTarget + ";";
 		}
+
+		string $materialType = $defaultMaterialType;
+		if(`radioButton -query -select nifTranslatorStandardMaterialRd` == true) {
+			$materialType = "standardmaterial;";
+		} else if (`radioButton -query -select nifTranslatorFallout3MaterialRd` == true) {
+			$materialType = "falloutmaterial;";
+		} else if(`radioButton -query -select nifTranslatorSkyrimMaterialRd` == true) {
+			$materialType = "skyrimmaterial";
+		}
+		$currentOptions = $currentOptions + "materialType=" + $materialType + ";";
 
 		string $numberOfKeysToSample = "";
 		$numberOfKeysToSample = `textField -query -text numberOfKeysToSampleTx`;
