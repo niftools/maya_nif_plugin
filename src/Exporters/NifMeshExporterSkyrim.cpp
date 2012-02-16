@@ -499,8 +499,19 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 		if(has_valid_dismemember_partitions == false) {
 			MGlobal::displayWarning("No proper dismember partitions, generating default ones for " + meshFn.name());
 
+			for(int x = 0; x < dismember_faces.size(); x++) {
+				dismember_faces[x] = 0;
+			}
 
+			BodyPartList body_part;
+			body_part.bodyPart = (BSDismemberBodyPartType)0;
+			body_part.partFlag = (BSPartFlag)(PF_EDITOR_VISIBLE | PF_START_NET_BONESET);
+			body_parts_list.clear();
+			body_parts_list.push_back(body_part);
 		}
+
+		cs.SetDismemberPartitionsBodyParts(body_parts_list);
+		cs.SetDismemberPartitionsFaces(dismember_faces);
 	}
 
 	//out << "Setting vertex info" << endl;
