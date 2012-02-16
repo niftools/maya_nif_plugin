@@ -72,7 +72,11 @@ public:
 
 	static MStringArray bodyPartTypeToStringArray(BSDismemberBodyPartType body_parts);
 
+	static BSDismemberBodyPartType stringArrayToBodyPartType(const MStringArray& string_array);
+
 	static MStringArray partToStringArray(BSPartFlag parts);
+
+	static BSPartFlag stringArrayToPart(const MStringArray& string_array);
 
 	static MObject targetFaces;
 

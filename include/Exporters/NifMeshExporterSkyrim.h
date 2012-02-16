@@ -90,6 +90,7 @@
 #include "include/Common/NifTranslatorUtils.h"
 #include "include/Common/NifTranslatorFixtureItem.h"
 #include "include/Exporters/NifMeshExporter.h"
+#include "include/Custom Nodes/NifDismemberPartition.h"
 
 class NifMeshExporterSkyrim;
 

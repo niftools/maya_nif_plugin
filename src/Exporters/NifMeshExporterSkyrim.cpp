@@ -411,38 +411,95 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 		}
 
 		if(dismember_nodes.length() == 0) {
+			has_valid_dismemember_partitions = false;
+		} else {
+			int blind_data_id;
+			int blind_data_value;
+			MStatus status;
+			MPlug target_faces_plug;
+			MItMeshPolygon it_polygons(meshFn.object());
+			MString mel_command;
+			MStringArray current_body_parts_flags;
+			MFnDependencyNode current_dismember_node;
+			MFnDependencyNode current_blind_data_node;
 
-		}
-
-		int blind_data_id;
-		int blind_data_value;
-		MPlug target_faces_plug;
-		MItMeshPolygon it_polygons(meshFn.object());
-		MFnDependencyNode current_dismember_node;
-		MFnDependencyNode current_blind_data_node;
-		
-		for(int x = 0; x < dismember_nodes.length(); x++) {
-			current_dismember_node.setObject(dismember_nodes[x]);
-			target_faces_plug = current_dismember_node.findPlug("targetFaces");
-			connected_dismember_plugs.clear();
-			target_faces_plug.connectedTo(connected_dismember_plugs, true, false);
-			if(connected_dismember_plugs.length() > 0) {
-				current_blind_data_node.setObject(connected_dismember_plugs[0].node());
-				current_face_index = 0;
-				blind_data_id = current_blind_data_node.findPlug("typeId").asInt();
-				for(it_polygons.reset(); !it_polygons.isDone(); it_polygons.next()) {
-					if(it_polygons.polygonVertexCount() >= 3) {
-						meshFn.getIntBlindData(it_polygons.index(), MFn::Type::kMeshPolygonComponent, blind_data_id, "dismemberValue", blind_data_value);
-						if(blind_data_value == 1) {
-							dismember_faces[current_face_index] = x;
-						}
-						current_face_index++;
+			//Naive sort here, there is no reason and is extremely undesirable and not recommended to have more
+			//than 10-20 dismember partitions out of many reasons, so it's okay here
+			//as it makes the code easier to understand
+			vector<int> dismember_nodes_id(dismember_nodes.length(),-1);
+			for(int x = 0; x < dismember_nodes.length(); x++) {
+				 current_dismember_node.setObject(dismember_nodes[x]);
+				 connected_dismember_plugs.clear();
+				 current_dismember_node.findPlug("targetFaces").connectedTo(connected_dismember_plugs, true, false);
+				 if(connected_dismember_plugs.length() == 0) {
+					 has_valid_dismemember_partitions = false;
+					 break;
+				 }
+				 current_blind_data_node.setObject(connected_dismember_plugs[0].node());
+				 dismember_nodes_id[x] = current_blind_data_node.findPlug("typeId").asInt();
+			}
+			for(int x = 0; x < dismember_nodes.length() - 1; x++) {
+				for(int y = x + 1; y < dismember_nodes.length(); y++) {
+					if (dismember_nodes_id[x] > dismember_nodes_id[y]) {
+						MObject aux = dismember_nodes[x];
+						blind_data_id = dismember_nodes_id[x]; 
+						dismember_nodes[x] = dismember_nodes[y];
+						dismember_nodes_id[x] = dismember_nodes_id[y];
+						dismember_nodes[y] = aux;
+						dismember_nodes_id[y] = blind_data_id;
 					}
 				}
-			} else {
-				has_valid_dismemember_partitions = false;
-				break;
 			}
+
+			for(int x = 0; x < dismember_nodes.length(); x++) {
+				current_dismember_node.setObject(dismember_nodes[x]);
+				target_faces_plug = current_dismember_node.findPlug("targetFaces");
+				connected_dismember_plugs.clear();
+				target_faces_plug.connectedTo(connected_dismember_plugs, true, false);
+				if(connected_dismember_plugs.length() > 0) {
+					current_blind_data_node.setObject(connected_dismember_plugs[0].node());
+					current_face_index = 0;
+					blind_data_id = current_blind_data_node.findPlug("typeId").asInt();
+					for(it_polygons.reset(); !it_polygons.isDone(); it_polygons.next()) {
+						if(it_polygons.polygonVertexCount() >= 3) {
+							status = meshFn.getIntBlindData(it_polygons.index(), MFn::Type::kMeshPolygonComponent, blind_data_id, "dismemberValue", blind_data_value);
+							if(status == MStatus::kSuccess && blind_data_value == 1 && 
+								meshFn.hasBlindDataComponentId(it_polygons.index(), MFn::Type::kMeshPolygonComponent, blind_data_id) ) {
+									dismember_faces[current_face_index] = x;
+							}
+							current_face_index++;
+						}
+					}
+				} else {
+					has_valid_dismemember_partitions = false;
+					break;
+				}
+
+				mel_command = "getAttr ";
+				mel_command += current_dismember_node.name();
+				mel_command += ".bodyPartsFlags";
+				status = MGlobal::executeCommand(mel_command, current_body_parts_flags);
+				BSDismemberBodyPartType body_part_type = NifDismemberPartition::stringArrayToBodyPartType(current_body_parts_flags);
+				current_body_parts_flags.clear();
+
+				mel_command = "getAttr ";
+				mel_command += current_dismember_node.name();
+				mel_command += ".partsFlags";
+				status = MGlobal::executeCommand(mel_command, current_body_parts_flags);
+				BSPartFlag part_type = NifDismemberPartition::stringArrayToPart(current_body_parts_flags);
+				current_body_parts_flags.clear();
+
+				BodyPartList body_part;
+				body_part.bodyPart = body_part_type;
+				body_part.partFlag = part_type;
+				body_parts_list.push_back(body_part);
+			}
+		}
+
+		if(has_valid_dismemember_partitions == false) {
+			MGlobal::displayWarning("No proper dismember partitions, generating default ones for " + meshFn.name());
+
+
 		}
 	}
 
