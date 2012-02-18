@@ -736,6 +736,7 @@ copy /Y "$(ProjectDir)\nifTranslatorMenuRemove.mel" "$(USERPROFILE)\Documents\ma
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="AEnifDismemberPartitionTemplate.mel" />
+    <None Include="ClassDiagram1.cd" />
     <None Include="nifTranslatorMenuCreate.mel" />
     <None Include="nifTranslatorMenuRemove.mel" />
     <None Include="nifTranslatorOpts.mel" />

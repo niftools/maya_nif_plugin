@@ -92,20 +92,14 @@ typedef Ref<NifMaterialExporter> NifMaterialExporterRef;
 class NifMaterialExporter : public NifTranslatorFixtureItem {
 protected:
 
-	MatTexCollection materialCollection;
-
-	map<string, unsigned int> textures;
-
 public:
 
 	NifMaterialExporter();
 
 	NifMaterialExporter(NifTranslatorOptionsRef translatorOptions, NifTranslatorDataRef translatorData, NifTranslatorUtilsRef translatorUtils);
 
-	virtual void ExportShaders();
-
-	//--Iterate through all file textures, creating NiSourceTexture blocks for each one--//
-	virtual void ExportTextures();
+	//--Iterate through all the textures and materials and create nif properties from them
+	virtual void ExportMaterials();
 
 	void GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ); 
 

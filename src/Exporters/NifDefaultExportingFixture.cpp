@@ -22,14 +22,11 @@ MStatus NifDefaultExportingFixture::WriteNodes( const MFileObject& file ) {
 	this->translatorData->exportedSceneRoot->SetName( "Scene Root" );
 	//out << sceneRoot << endl;
 
-	//Export file textures and get back a map of DAG path to Nif block
-	this->materialExporter->ExportTextures();
-
 
 	//out << "Exporting shaders..." << endl;
 	this->translatorData->shaders.clear();
-	//Export shaders
-	this->materialExporter->ExportShaders();
+	//Export shaders and textures
+	this->materialExporter->ExportMaterials();
 
 	//out << "Clearing Nodes" << endl;
 	this->translatorData->nodes.clear();

@@ -9,11 +9,125 @@ NifMaterialExporter::NifMaterialExporter( NifTranslatorOptionsRef translatorOpti
 
 }
 
+void NifMaterialExporter::ExportMaterials() {
+	MatTexCollection materialCollection;
 
-void NifMaterialExporter::ExportShaders()
-{
+	map<string, unsigned int> textures;
+
+	// first export all the textures
+	// create an iterator to go through all file textures
+	MItDependencyNodes it(MFn::kFileTexture);
+
+	//iterate through all textures
+	while(!it.isDone())
+	{
+		// attach a dependency node to the file node
+		MFnDependencyNode fn(it.item());
+
+		// get the attribute for the full texture path and size
+		MPlug ftn = fn.findPlug("fileTextureName");
+		MPlug osx = fn.findPlug("outSizeX");
+		MPlug osy = fn.findPlug("outSizeY");
+
+		// get the filename from the attribute
+		MString filename;
+		ftn.getValue(filename);
+
+		//Get image size
+		float x, y;
+		osx.getValue(x);
+		osy.getValue(y);
+
+		//Determine whether the dimentions of the texture are powers of two
+		if ( ((int(x) & (int(x) - 1)) != 0 ) || ((int(y) & (int(y) - 1)) != 0 ) ) {
+
+			//Print the value for now:
+			stringstream ss;
+
+			ss << "File texture " << filename.asChar() << " has dimensions that are not powers of 2.  Non-power of 2 dimentions will not work in most games.";
+			MGlobal::displayWarning( ss.str().c_str() );
+		}
+
+		//Create a NIF texture wrapper
+		unsigned int tex_index = materialCollection.CreateTexture( this->translatorOptions->exportVersion );
+		TextureWrapper tw = materialCollection.GetTexture( tex_index );
+
+		//Get Node Name
+		tw.SetObjectName( this->translatorUtils->MakeNifName( fn.name() ) );
+
+		MString fname;
+		ftn.getValue(fname);
+		string fileName = fname.asChar();
+
+		//Replace back slash with forward slash to match with paths
+		for ( unsigned i = 0; i < fileName.size(); ++i ) {
+			if ( fileName[i] == '\\' ) {
+				fileName[i] = '/';
+			}
+		}
+
+		//out << "Full Texture Path:  " << fname.asChar() << endl;
+
+		//Figure fixed file name
+		string::size_type index;
+		MStringArray paths;
+		MString(this->translatorOptions->texturePath.c_str()).split( '|', paths );
+		switch( this->translatorOptions->texturePathMode ) {
+		case PATH_MODE_AUTO:
+			for ( unsigned p = 0; p < paths.length(); ++p ) {
+				unsigned len = paths[p].length();
+				if ( len >= fileName.size() ) {
+					continue;
+				}
+				if ( fileName.substr( 0, len ) == paths[p].asChar() ) {
+					//Found a matching path, cut matching part out
+					fileName = fileName.substr( len + 1 );
+					break;
+				}
+			}
+			break;
+		case PATH_MODE_PREFIX:
+		case PATH_MODE_NAME:
+			index = fileName.rfind( "/" );
+			if ( index != string::npos ) { 
+				//We don't want the slash itself
+				if ( index + 1 < fileName.size() ) {
+					fileName = fileName.substr( index + 1 );
+				}
+			}
+			if ( this->translatorOptions->texturePathMode == PATH_MODE_NAME ) {
+				break;
+			}
+			//Now we're doing the prefix case
+			fileName = this->translatorOptions->texturePathPrefix + fileName;
+			break;
+
+			//Do nothing for full path since the full path is already
+			//set in file name
+		case PATH_MODE_FULL: break;
+		}
+
+		//Now make all slashes back slashes since some games require this
+		for ( unsigned i = 0; i < fileName.size(); ++i ) {
+			if ( fileName[i] == '/' ) {
+				fileName[i] = '\\';
+			}
+		}
+
+		//out << "File Name:  " << fileName << endl;
+
+		tw.SetExternalTexture( fileName );
+
+		//Associate NIF texture index with fileTexture DagPath
+		string path = fn.name().asChar();
+		textures[path] = tex_index;
+
+		// get next fileTexture
+		it.next();
+	}
+
 	//out << "NifTranslator::ExportShaders {" << endl;
-	// iterate through the shaders in the scene
+	// iterate through the shaders in the scene and export them
 	MItDependencyNodes itDep(MFn::kLambert);
 
 	//out << "Iterating through all shaders in scehe..." << endl;
@@ -126,8 +240,8 @@ void NifMaterialExporter::ExportShaders()
 		}
 
 		//Create a NIF Material Wrapper and put the collected values into it
-		unsigned int mat_index = this->materialCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, this->translatorOptions->exportVersion );
-		MaterialWrapper mw = this->materialCollection.GetMaterial( mat_index );
+		unsigned int mat_index = materialCollection.CreateMaterial( true, base_texture, multi_texture, use_spec, use_alpha, this->translatorOptions->exportVersion );
+		MaterialWrapper mw = materialCollection.GetMaterial( mat_index );
 
 		NiMaterialPropertyRef niMatProp = mw.GetColorInfo();
 
@@ -159,8 +273,8 @@ void NifMaterialExporter::ExportShaders()
 				string texname = depFn.name().asChar();
 				//out << "Base texture found:  " << texname << endl;
 
-				if ( this->textures.find( texname ) != this->textures.end() ) {
-					mw.SetTextureIndex( BASE_MAP, this->textures[texname] );
+				if ( textures.find( texname ) != textures.end() ) {
+					mw.SetTextureIndex( BASE_MAP, textures[texname] );
 				}
 			}
 
@@ -196,8 +310,8 @@ void NifMaterialExporter::ExportShaders()
 				string texname = depFn.name().asChar();
 				//out << "Glow texture found:  " << texname << endl;
 
-				if ( this->textures.find( texname ) != this->textures.end() ) {
-					mw.SetTextureIndex( GLOW_MAP, this->textures[texname] );
+				if ( textures.find( texname ) != textures.end() ) {
+					mw.SetTextureIndex( GLOW_MAP, textures[texname] );
 				}
 			}
 		}
@@ -252,7 +366,6 @@ void NifMaterialExporter::ExportShaders()
 	//out << "}" << endl;
 }
 
-
 void NifMaterialExporter::GetColor( MFnDependencyNode& fn, MString name, MColor & color, MObject & texture ) {
 	//out << "NifTranslator::GetColor( " << fn.name().asChar() << ", " << name.asChar() << ", (" << color.r << ", " << color.g << ", " << color.b << ", " << color.a << "), " << texture.apiType() << " ) {" << endl;
 	MPlug p;
@@ -303,120 +416,6 @@ void NifMaterialExporter::GetColor( MFnDependencyNode& fn, MString name, MColor 
 	//	<< color.a << ")" << endl;
 
 	//out << "}" << endl;
-}
-
-void NifMaterialExporter::ExportTextures()
-{
-	// create an iterator to go through all file textures
-	MItDependencyNodes it(MFn::kFileTexture);
-
-	//iterate through all textures
-	while(!it.isDone())
-	{
-		// attach a dependency node to the file node
-		MFnDependencyNode fn(it.item());
-
-		// get the attribute for the full texture path and size
-		MPlug ftn = fn.findPlug("fileTextureName");
-		MPlug osx = fn.findPlug("outSizeX");
-		MPlug osy = fn.findPlug("outSizeY");
-
-		// get the filename from the attribute
-		MString filename;
-		ftn.getValue(filename);
-
-		//Get image size
-		float x, y;
-		osx.getValue(x);
-		osy.getValue(y);
-
-		//Determine whether the dimentions of the texture are powers of two
-		if ( ((int(x) & (int(x) - 1)) != 0 ) || ((int(y) & (int(y) - 1)) != 0 ) ) {
-
-			//Print the value for now:
-			stringstream ss;
-
-			ss << "File texture " << filename.asChar() << " has dimentions that are not powers of 2.  Non-power of 2 dimentions will not work in most games.";
-			MGlobal::displayWarning( ss.str().c_str() );
-		}
-
-		//Create a NIF texture wrapper
-		unsigned int tex_index = this->materialCollection.CreateTexture( this->translatorOptions->exportVersion );
-		TextureWrapper tw = this->materialCollection.GetTexture( tex_index );
-
-		//Get Node Name
-		tw.SetObjectName( this->translatorUtils->MakeNifName( fn.name() ) );
-
-		MString fname;
-		ftn.getValue(fname);
-		string fileName = fname.asChar();
-
-		//Replace back slash with forward slash to match with paths
-		for ( unsigned i = 0; i < fileName.size(); ++i ) {
-			if ( fileName[i] == '\\' ) {
-				fileName[i] = '/';
-			}
-		}
-
-		//out << "Full Texture Path:  " << fname.asChar() << endl;
-
-		//Figure fixed file name
-		string::size_type index;
-		MStringArray paths;
-		MString(this->translatorOptions->texturePath.c_str()).split( '|', paths );
-		switch( this->translatorOptions->texturePathMode ) {
-		case PATH_MODE_AUTO:
-			for ( unsigned p = 0; p < paths.length(); ++p ) {
-				unsigned len = paths[p].length();
-				if ( len >= fileName.size() ) {
-					continue;
-				}
-				if ( fileName.substr( 0, len ) == paths[p].asChar() ) {
-					//Found a matching path, cut matching part out
-					fileName = fileName.substr( len + 1 );
-					break;
-				}
-			}
-			break;
-		case PATH_MODE_PREFIX:
-		case PATH_MODE_NAME:
-			index = fileName.rfind( "/" );
-			if ( index != string::npos ) { 
-				//We don't want the slash itself
-				if ( index + 1 < fileName.size() ) {
-					fileName = fileName.substr( index + 1 );
-				}
-			}
-			if ( this->translatorOptions->texturePathMode == PATH_MODE_NAME ) {
-				break;
-			}
-			//Now we're doing the prefix case
-			fileName = this->translatorOptions->texturePathPrefix + fileName;
-			break;
-
-			//Do nothing for full path since the full path is already
-			//set in file name
-		case PATH_MODE_FULL: break;
-		}
-
-		//Now make all slashes back slashes since some games require this
-		for ( unsigned i = 0; i < fileName.size(); ++i ) {
-			if ( fileName[i] == '/' ) {
-				fileName[i] = '\\';
-			}
-		}
-
-		//out << "File Name:  " << fileName << endl;
-
-		tw.SetExternalTexture( fileName );
-
-		//Associate NIF texture index with fileTexture DagPath
-		string path = fn.name().asChar();
-		this->textures[path] = tex_index;
-
-		// get next fileTexture
-		it.next();
-	}
 }
 
 string NifMaterialExporter::asString( bool verbose /*= false */ ) const {

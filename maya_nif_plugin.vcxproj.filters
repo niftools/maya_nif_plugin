@@ -51,6 +51,7 @@
     <None Include="AEnifDismemberPartitionTemplate.mel">
       <Filter>Miscellaneous Files</Filter>
     </None>
+    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Exporters\NifAnimationExporter.h">
