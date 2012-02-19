@@ -545,9 +545,16 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 	NiAVObjectRef tempAV = new NiAVObject;
 	this->nodeExporter->ExportAV(tempAV, dagNode );
 
-	//out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
-	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, 
-		this->translatorOptions->exportAsTriStrips, this->translatorOptions->exportTangentSpace, this->translatorOptions->exportMinimumVertexWeight );
+	NiAVObjectRef avObj;
+	if(this->translatorOptions->exportTangentSpace == "falloutskyrimtangentspace") {
+		//out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
+		avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, 
+			this->translatorOptions->exportAsTriStrips, true, this->translatorOptions->exportMinimumVertexWeight, 16 );
+	} else {
+		avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, 
+			this->translatorOptions->exportAsTriStrips, false, this->translatorOptions->exportMinimumVertexWeight );
+	}
+
 
 	//out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split

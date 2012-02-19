@@ -87,6 +87,7 @@ public:
 	
 	string texturePath; // Path to textures gotten from option string
 	string exportMaterialType; // Type of material to generate for the exported nif, skyrim specific material, fallout specific material or standard
+	string exportTangentSpace; //Determines whether tangent space data is generated for meshes on export
 	unsigned int exportVersion; //Version of NIF file to export
 	unsigned int exportUserVersion; //Game-specific user version of NIF file to export
 	unsigned int exportUserVersion2;
@@ -105,7 +106,6 @@ public:
 	bool useNameMangling;  //Determines whether to replace characters that are invalid for Maya (along with _ so that spaces can use that character) with hex representations
 	bool exportAsTriStrips;  //Determines whether to export NiTriShape objects or NiTriStrip objects
 	int exportBonesPerSkinPartition; //Determines the maximum number of bones per skin partition.
-	bool exportTangentSpace; //Determines whether Oblivion tangent space data is generated for meshes on export
 	bool exportMorrowindRename; //Determines whether NiTriShapes tagged with materials that have Morrowind body parts are renamed to match those body parts
 	float exportMinimumVertexWeight; //Determines the minimum bone weight for a vertices that will be exported for each individual vertex
 

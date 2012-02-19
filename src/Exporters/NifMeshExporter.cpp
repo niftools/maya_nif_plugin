@@ -545,9 +545,10 @@ void NifMeshExporter::ExportMesh( MObject dagNode )
 	NiAVObjectRef tempAV = new NiAVObject;
 	this->nodeExporter->ExportAV(tempAV, dagNode );
 
+	bool tangent_space = (this->translatorOptions->exportTangentSpace == "obliviontangentspace");
 	//out << "Split ComplexShape from " << meshFn.name().asChar() << endl;
 	NiAVObjectRef avObj = cs.Split( parNode, tempAV->GetLocalTransform() * transform, this->translatorOptions->exportBonesPerSkinPartition, 
-		this->translatorOptions->exportAsTriStrips, this->translatorOptions->exportTangentSpace, this->translatorOptions->exportMinimumVertexWeight );
+		this->translatorOptions->exportAsTriStrips, tangent_space, this->translatorOptions->exportMinimumVertexWeight );
 
 	//out << "Get the NiAVObject portion of the root of the split" <<endl;
 	//Get the NiAVObject portion of the root of the split

@@ -45,6 +45,10 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			MPlugArray connections;
 			MObject current_texture;
 
+			for(int i = 0; i < 9; i++) {
+				shader_textures->setTexture(i, "");
+			}
+
 			this->GetColor(shader_node, "color", color, current_texture);
 			if(!current_texture.isNull()) {
 				string file_name = this->ExportTexture(current_texture);
@@ -55,10 +59,6 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 					alpha_property = new NiAlphaProperty();
 					alpha_property->SetFlags(237);
 				}
-			}
-
-			for(int i = 0; i < 9; i++) {
-				shader_textures->setTexture(i, "");
 			}
 
 			connections.clear();

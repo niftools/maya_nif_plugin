@@ -76,9 +76,18 @@ global proc int nifTranslatorOpts ( string $parent,
 						 -annotation "Determines where the importer will search for textures specified in the NIF file."
 						 -font boldLabelFont;;
 				setParent commonColumnLayout;
-				rowLayout -numberOfColumns 3
-						  -columnWidth3 300 50 50
-						  -columnAttach3 "both" "left" "left";
+				textScrollList -width 450 
+				               -numberOfRows 8
+							   -annotation "The paths that the plug-in will search for textures in in addition to NIF location.  Delete Key:  Removes an item.  Double-click:  Copies an item to text field."
+							   -doubleClickCommand "SelectPath()"
+							   -deleteKeyCommand "DeletePath()"
+							   nifPathList;
+				for ( $i = 0; $i < size($defaultPaths); $i++ ) {
+					textScrollList -edit -append $defaultPaths[$i] -width 400 nifPathList;
+				}
+				rowLayout -numberOfColumns 4
+						  -columnWidth4 250 50 50 50
+						  -columnAttach4 "both" "left" "left" "left";
 					  textField -editable true
 					  			-text ""
 								-annotation "Type a path here and press 'Add' to add it to the texture search path list.  './' is current NIF file folder, '../' is parent folder."
@@ -90,16 +99,10 @@ global proc int nifTranslatorOpts ( string $parent,
 					button -label "Add"
 					       -width 50
 					       -command "AddPath()";
+					button -label "Delete"
+						   -width 50
+						   -command "DeletePath()";
 				setParent commonColumnLayout;
-				textScrollList -width 400 
-				               -numberOfRows 8
-							   -annotation "The paths that the plug-in will search for textures in in addition to NIF location.  Delete Key:  Removes an item.  Double-click:  Copies an item to text field."
-							   -doubleClickCommand "SelectPath()"
-							   -deleteKeyCommand "DeletePath()"
-							   nifPathList;
-				for ( $i = 0; $i < size($defaultPaths); $i++ ) {
-					textScrollList -edit -append $defaultPaths[$i] -width 400 nifPathList;
-				}
 				setParent $parent;
 		frameLayout -label "Import" -marginWidth 20 -marginHeight 5 -borderStyle "etchedIn" -collapsable true;
 			columnLayout importColumnLayout;
@@ -278,6 +281,13 @@ global proc int nifTranslatorOpts ( string $parent,
 				radioButton -label "Standard NiMaterial with BSShaderTextureSet for fallout" nifTranslatorFalloutMaterialRd;
 				radioButton -label "BSShaderLightningSet material for Skyrim with BSShaderTextureSet" nifTranslatorSkyrimMaterialRd;
 			setParent exportColumnLayout;
+
+			text -label "Generate Tangent Space Data";
+			radioCollection;
+				radioButton -label "Don't generate tangent space data" -select nifTranslatorNoTangentSpaceDataRd;
+				radioButton -label "Generate oblivion specific tangent space data" nifTranslatorOblivionTangentSpaceDataRd;
+				radioButton -label "Generate fallout/skyrim specific tangent space data" nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+			setParent exportColumnLayout;
 			
 			checkBox -label "Export White Ambient if Texture is Present" 
 					      -value 1
@@ -291,10 +301,6 @@ global proc int nifTranslatorOpts ( string $parent,
 					      -value 0
 						  -annotation "Used for automatically splitting apart a single mesh into multiple meshes for each body part by material assignment."
 						  expMorRenameCk;
-			checkBox -label "Generate Oblivion Tangent Space Data" 
-					      -value 0
-						  -annotation "Check this option if you are exporting for Oblivion.  Otherwise it will just inflate your NIF file."
-						  expTanSpaceCk;
 			setParent exportColumnLayout;
 			rowLayout -numberOfColumns 2
 					  -columnWidth2 220 50
@@ -444,6 +450,15 @@ global proc int nifTranslatorOpts ( string $parent,
 						radioButton -edit -select nifTranslatorSkyrimMaterialRd;
 					}
 				}
+				if ($optionBreakDown[0] == "tangentSpace") {
+					if($optionBreakDown[1] == "notangentspace") {
+						radioButton -edit -select nifTranslatorNoTangentSpaceDataRd;
+					} else if ($optionBreakDown[1] == "obliviontangentspace") {
+						radioButton -edit -select nifTranslatorOblivionTangentSpaceDataRd;
+					} else if ($optionBreakDown[1] == "falloutskyrimtangentspace") {
+						radioButton -edit -select nifTranslatorFalloutSkyrimTangentSpaceDataRd;
+					}
+				}
 				if ($optionBreakDown[0] == "importNoAmbient") {
 					if ($optionBreakDown[1] == "1" ) {
 						checkBox -edit -value true impNoAmbientCk;
@@ -466,13 +481,6 @@ global proc int nifTranslatorOpts ( string $parent,
 						checkBox -edit -value true expTriStripsCk;
 					} else {
 						checkBox -edit -value false expTriStripsCk;
-					}
-				}
-				if ($optionBreakDown[0] == "exportTanSpace") {
-					if ($optionBreakDown[1] == "1" ) {
-						checkBox -edit -value true expTanSpaceCk;
-					} else {
-						checkBox -edit -value false expTanSpaceCk;
 					}
 				}
 				if ($optionBreakDown[0] == "exportMorRename") {
@@ -557,6 +565,16 @@ global proc int nifTranslatorOpts ( string $parent,
 		} else {
 			$currentOptions = $currentOptions + "exportUserVersion2=" + $defaultUserVersion2 + ";";
 		}
+
+		string $tangentSpace = "notangentspace";
+		if(`radioButton -query -select nifTranslatorNoTangentSpaceDataRd` == true) {
+			$tangentSpace = "notangentspace";
+		} else if (`radioButton -query -select nifTranslatorOblivionTangentSpaceDataRd` == true) {
+			$tangentSpace = "obliviontangentspace";
+		} else if (`radioButton -query -select nifTranslatorFalloutSkyrimTangentSpaceDataRd` == true) {
+			$tangentSpace = "falloutskyrimtangentspace";
+		}
+		$currentOptions = $currentOptions + "tangentSpace=" + $tangentSpace + ";";	
 		
 		global string $gNifExportedObjects[];
 		global int $gNifExportedObjectsValues[];
@@ -669,9 +687,6 @@ global proc int nifTranslatorOpts ( string $parent,
 		$ckVal = `checkBox -query -value expTriStripsCk`;
 		$currentOptions = $currentOptions + "exportTriStrips=" + $ckVal + ";";
 		
-		$ckVal = `checkBox -query -value expTanSpaceCk`;
-		$currentOptions = $currentOptions + "exportTanSpace=" + $ckVal + ";";
-		
 		$ckVal = `checkBox -query -value expMorRenameCk`;
 		$currentOptions = $currentOptions + "exportMorRename=" + $ckVal + ";";
 		
@@ -722,6 +737,13 @@ global proc AddPath() {
 		}
 		textScrollList -edit -appendPosition 1 $texturePath -width 400 nifPathList;
 		textField -edit -text "" nifTxPath;
+	}
+}
+
+global proc DeletePath() {
+	int $selectedItem[] = `textScrollList -query -selectIndexedItem nifPathList`;
+	if(size($selectedItem) > 0) {
+		textScrollList -edit -removeIndexedItem $selectedItem[0] nifPathList;
 	}
 }
 

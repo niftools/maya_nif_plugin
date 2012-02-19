@@ -14,7 +14,6 @@ NifTranslatorOptions::NifTranslatorOptions()
 	this->useNameMangling = false;
 	this->exportAsTriStrips = false;
 	this->exportBonesPerSkinPartition = 0;
-	this->exportTangentSpace = false;
 	this->exportMorrowindRename = false;
 	this->texturePathMode = PATH_MODE_AUTO;
 }
@@ -33,7 +32,7 @@ void NifTranslatorOptions::Reset()
 	this->useNameMangling = false;
 	this->exportAsTriStrips = false;
 	this->exportBonesPerSkinPartition = 0;
-	this->exportTangentSpace = false;
+	this->exportTangentSpace = "";
 	this->exportMorrowindRename = false;
 	this->texturePathMode = PATH_MODE_AUTO;
 }
@@ -111,6 +110,10 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 			this->exportMaterialType = tokens[1].asChar();
 			//out << "Material type: " << this->exportMaterialType << endl;
 		}
+		if( tokens[0] == "tangentSpace") {
+			this->exportTangentSpace = tokens[1].asChar();
+			//out << "Tangent space: " << this->exportTangentSpace << endl;
+		}
 		if ( tokens[0] == "importNoAmbient" ) {
 			if ( tokens[1] == "1" ) {
 				this->importNoAmbient = true;
@@ -134,14 +137,6 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 				this->exportAsTriStrips = false;
 			}
 			//out << "Export Triangle Strips:  " << export_tri_strips << endl;
-		}
-		if ( tokens[0] == "exportTanSpace" ) {
-			if ( tokens[1] == "1" ) {
-				this->exportTangentSpace = true;
-			} else {
-				this->exportTangentSpace = false;
-			}
-			//out << "Export Tangent Space:  " << export_tan_space << endl;
 		}
 		if ( tokens[0] == "exportMorRename" ) {
 			if ( tokens[1] == "1" ) {
