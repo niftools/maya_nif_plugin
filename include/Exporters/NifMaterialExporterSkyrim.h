@@ -102,7 +102,9 @@ public:
 
 	NifMaterialExporterSkyrim(NifTranslatorOptionsRef translator_options, NifTranslatorDataRef translator_data, NifTranslatorUtilsRef translator_utils);
 
-	virtual void ExportShaders();
+	virtual void ExportMaterials();
+
+	string ExportTexture(MObject texture);
 
 	virtual string asString( bool verbose = false ) const;
 
