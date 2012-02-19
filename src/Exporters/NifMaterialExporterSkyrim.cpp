@@ -42,6 +42,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			TexCoord texture_repeat(1, 1);
 
 			MColor color;
+			MPlugArray connections;
 			MObject current_texture;
 
 			this->GetColor(shader_node, "color", color, current_texture);
@@ -49,14 +50,19 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 				string file_name = this->ExportTexture(current_texture);
 				shader_textures->setTexture(0, file_name);
 				MFnDependencyNode texture_node(current_texture);
-				if(texture_node.findPlug("fileHasAlpha").asBool() == 1) {
+				texture_node.findPlug("outAlpha").connectedTo(connections, false, true);
+				if(connections.length() > 0 && connections[0].node() == shader_node.object()) {
 					alpha_property = new NiAlphaProperty();
 					alpha_property->SetFlags(237);
 				}
 			}
 
+			for(int i = 0; i < 9; i++) {
+				shader_textures->setTexture(i, "");
+			}
+
+			connections.clear();
 			MPlug in_normal = shader_node.findPlug("normalCamera");
-			MPlugArray connections;
 			in_normal.connectedTo(connections, true, false);
 			if(connections.length() > 0) {
 				MPlug bump_plug = connections[0];
@@ -111,6 +117,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			MGlobal::displayWarning("Warning! Unsupported shader type found");
 		}
 
+		it_nodes.next();
 	}
 }
 
