@@ -51,6 +51,103 @@ global proc nifTranslatorMenuCreate() {
 			setParent -menu riggingMenu;
 		setParent -menu $nifToolsMenu;
 
+		menuItem -label "Materials" -subMenu true materialsMenu;
+			menuItem -label "Skyrim shader flags1" -subMenu true skyrimShaderFlags1Menu;
+
+				menuItem -label "Shader flags 1-8" -subMenu true skyrimShaderFlags118Menu;
+					menuItem -label "SLSF1_Specular";
+					menuItem -label "SLSF1_Skinned";
+					menuItem -label "SLSF1_Temp_Refraction";
+					menuItem -label "SLSF1_Vertex_Alpha";
+					menuItem -label "SLSF1_Greyscale_To_PaletteColor";
+					menuItem -label "SLSF1_Greyscale_To_PaletteAlpha";
+					menuItem -label "SLSF1_Use_Falloff";
+					menuItem -label "SLSF1_Environment_Mapping";
+				setParent -menu skyrimShaderFlags1Menu;
+
+				menuItem -label "Shader flags 8-16" -subMenu true skyrimShaderFlags1816Menu;
+					menuItem -label "SLSF1_Recieve_Shadows";
+					menuItem -label "SLSF1_Cast_Shadows";
+					menuItem -label "SLSF1_Facegen_Detail_Map";
+					menuItem -label "SLSF1_Parallax";
+					menuItem -label "SLSF1_Model_Space_Normals";
+					menuItem -label "SLSF1_Non-Projective_Shadows";
+					menuItem -label "SLSF1_Landscape";
+					menuItem -label "SLSF1_Refraction";
+				setParent -menu skyrimShaderFlags1Menu;
+
+				menuItem -label "Shader flags 16-24" -subMenu true skyrimShaderFlags11624Menu;
+					menuItem -label "SLSF1_Fire_Refraction";
+					menuItem -label "SLSF1_Eye_Environment_Mapping";
+					menuItem -label "SLSF1_Hair_Soft_Lighting";
+					menuItem -label "SLSF1_Screendoor_Alpha_Fade";
+					menuItem -label "SLSF1_Localmap_Hide_Secret";
+					menuItem -label "SLSF1_FaceGen_RGB_Tint";
+					menuItem -label "SLSF1_Own_Emit";
+					menuItem -label "SLSF1_Projected_UV";
+				setParent -menu skyrimShaderFlags1Menu;
+
+				menuItem -label "Shader flags 24-32" -subMenu true skyrimShaderFlags12432Menu;
+					menuItem -label "SLSF1_Multiple_Textures";
+					menuItem -label "SLSF1_Remappable_Textures";
+					menuItem -label "SLSF1_Decal";
+					menuItem -label "SLSF1_Dynamic_Decal";
+					menuItem -label "SLSF1_Parallax_Occlusion";
+					menuItem -label "SLSF1_External_Emittance";
+					menuItem -label "SLSF1_Soft_Effect";
+					menuItem -label "SLSF1_ZBuffer_Test";
+				setParent -menu skyrimShaderFlags1Menu;
+
+			setParent -menu materialsMenu;
+
+			menuItem -label "Skyrim shader flags2" -subMenu true skyrimShaderFlags2Menu;
+
+				menuItem -label "Shader flags 1-8" -subMenu true skyrimShaderFlags218Menu;
+					menuItem -label "SLSF2_ZBuffer_Write";
+					menuItem -label "SLSF2_LOD_Landscape";
+					menuItem -label "SLSF2_LOD_Objects";
+					menuItem -label "SLSF2_No_Fade";
+					menuItem -label "SLSF2_Double_Sided";
+					menuItem -label "SLSF2_Vertex_Colors";
+					menuItem -label "SLSF2_Glow_Map";
+					menuItem -label "SLSF2_Assume_Shadowmask";
+				setParent -menu skyrimShaderFlags2Menu;
+
+				menuItem -label "Shader flags 8-16" -subMenu true skyrimShaderFlags2816Menu;
+					menuItem -label "SLSF2_Packed_Tangent";
+					menuItem -label "SLSF2_Multi_Index_Snow";
+					menuItem -label "SLSF2_Vertex_Lighting";
+					menuItem -label "SLSF2_Uniform_Scale";
+					menuItem -label "SLSF2_Fit_Slope";
+					menuItem -label "SLSF2_Billboard";
+					menuItem -label "SLSF2_No_LOD_Land_Blend";
+					menuItem -label "SLSF2_EnvMap_Light_Fade";
+				setParent -menu skyrimShaderFlags2Menu;
+
+				menuItem -label "Shader flags 16-24" -subMenu true skyrimShaderFlags21624Menu;
+					menuItem -label "SLSF2_Wireframe";
+					menuItem -label "SLSF2_Weapon_Blood";
+					menuItem -label "SLSF2_Hide_On_Local_Map";
+					menuItem -label "SLSF2_Premult_Alpha";
+					menuItem -label "SLSF2_Cloud_LOD";
+					menuItem -label "SLSF2_Anisotropic_Lighting";
+					menuItem -label "SLSF2_No_Transparency_Multisampling";
+					menuItem -label "SLSF2_Unused01";
+				setParent -menu skyrimShaderFlags2Menu;
+
+				menuItem -label "Shader flags 24-32" -subMenu true skyrimShaderFlags22432Menu;
+					menuItem -label "SLSF2_Multi_Layer_Parallax";
+					menuItem -label "SLSF2_Soft_Lighting";
+					menuItem -label "SLSF2_Rim_Lighting";
+					menuItem -label "SLSF2_Back_Lighting";
+					menuItem -label "SLSF2_Unused02";
+					menuItem -label "SLSF2_Tree_Anim";
+					menuItem -label "SLSF2_Effect_Lighting";
+					menuItem -label "SLSF2_HD_LOD_Objects";
+				setParent -menu skyrimShaderFlags2Menu;
+
+		setParent -menu $nifToolsMenu;
+
 		menuItem -label "Texture" -subMenu true textureMenu;
 			menuItem -label "Set texturing mode to Apply Modular";
 			menuItem -label "Set texturing mode to Apply Highlight";
