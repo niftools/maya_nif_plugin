@@ -115,6 +115,10 @@ public:
 
 	virtual void GatherMaterialsAndTextures( NiAVObjectRef & root);
 
+	virtual MString skyrimShaderFlags1ToString( unsigned int shader_flags);
+
+	virtual MString skyrimShaderFlags2ToString( unsigned int shader_flags);
+
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& GetType() const;
