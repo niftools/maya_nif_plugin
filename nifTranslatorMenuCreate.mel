@@ -55,47 +55,47 @@ global proc nifTranslatorMenuCreate() {
 			menuItem -label "Skyrim shader flags1" -subMenu true skyrimShaderFlags1Menu;
 
 				menuItem -label "Shader flags 1-8" -subMenu true skyrimShaderFlags118Menu;
-					menuItem -label "SLSF1_Specular";
-					menuItem -label "SLSF1_Skinned";
-					menuItem -label "SLSF1_Temp_Refraction";
-					menuItem -label "SLSF1_Vertex_Alpha";
-					menuItem -label "SLSF1_Greyscale_To_PaletteColor";
-					menuItem -label "SLSF1_Greyscale_To_PaletteAlpha";
-					menuItem -label "SLSF1_Use_Falloff";
-					menuItem -label "SLSF1_Environment_Mapping";
+					menuItem -label "SLSF1_Specular" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Specular\", 1)";
+					menuItem -label "SLSF1_Skinned" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Skinned\", 1)";
+					menuItem -label "SLSF1_Temp_Refraction" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Temp_Refraction\", 1)";
+					menuItem -label "SLSF1_Vertex_Alpha" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Vertex_Alpha\", 1)";
+					menuItem -label "SLSF1_Greyscale_To_PaletteColor" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Greyscale_To_PaletteColor\", 1)";
+					menuItem -label "SLSF1_Greyscale_To_PaletteAlpha" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Greyscale_To_PaletteAlpha\", 1)";
+					menuItem -label "SLSF1_Use_Falloff" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Use_Falloff\", 1)";
+					menuItem -label "SLSF1_Environment_Mapping" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Environment_Mapping\", 1)";
 				setParent -menu skyrimShaderFlags1Menu;
 
-				menuItem -label "Shader flags 8-16" -subMenu true skyrimShaderFlags1816Menu;
-					menuItem -label "SLSF1_Recieve_Shadows";
-					menuItem -label "SLSF1_Cast_Shadows";
-					menuItem -label "SLSF1_Facegen_Detail_Map";
-					menuItem -label "SLSF1_Parallax";
-					menuItem -label "SLSF1_Model_Space_Normals";
-					menuItem -label "SLSF1_Non-Projective_Shadows";
-					menuItem -label "SLSF1_Landscape";
-					menuItem -label "SLSF1_Refraction";
+				menuItem -label "Shader flags 9-16" -subMenu true skyrimShaderFlags1816Menu;
+					menuItem -label "SLSF1_Recieve_Shadows" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Recieve_Shadows\", 1)";
+					menuItem -label "SLSF1_Cast_Shadows" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Cast_Shadows\", 1)";
+					menuItem -label "SLSF1_Facegen_Detail_Map" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Facegen_Detail_Map\", 1)";
+					menuItem -label "SLSF1_Parallax" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Parallax\", 1)";
+					menuItem -label "SLSF1_Model_Space_Normals" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Model_Space_Normals\", 1)";
+					menuItem -label "SLSF1_Non-Projective_Shadows" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Non-Projective_Shadows\", 1)";
+					menuItem -label "SLSF1_Landscape" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Landscape\", 1)";
+					menuItem -label "SLSF1_Refraction" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Refraction\", 1)";
 				setParent -menu skyrimShaderFlags1Menu;
 
-				menuItem -label "Shader flags 16-24" -subMenu true skyrimShaderFlags11624Menu;
-					menuItem -label "SLSF1_Fire_Refraction";
-					menuItem -label "SLSF1_Eye_Environment_Mapping";
-					menuItem -label "SLSF1_Hair_Soft_Lighting";
-					menuItem -label "SLSF1_Screendoor_Alpha_Fade";
-					menuItem -label "SLSF1_Localmap_Hide_Secret";
-					menuItem -label "SLSF1_FaceGen_RGB_Tint";
-					menuItem -label "SLSF1_Own_Emit";
-					menuItem -label "SLSF1_Projected_UV";
+				menuItem -label "Shader flags 17-24" -subMenu true skyrimShaderFlags11624Menu;
+					menuItem -label "SLSF1_Fire_Refraction" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Fire_Refraction\", 1)";
+					menuItem -label "SLSF1_Eye_Environment_Mapping" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Eye_Environment_Mapping\", 1)";
+					menuItem -label "SLSF1_Hair_Soft_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Hair_Soft_Lighting\", 1)";
+					menuItem -label "SLSF1_Screendoor_Alpha_Fade" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Screendoor_Alpha_Fade\", 1)";
+					menuItem -label "SLSF1_Localmap_Hide_Secret" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Localmap_Hide_Secret\", 1)";
+					menuItem -label "SLSF1_FaceGen_RGB_Tint" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_FaceGen_RGB_Tint\", 1)";
+					menuItem -label "SLSF1_Own_Emit" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Own_Emit\", 1)";
+					menuItem -label "SLSF1_Projected_UV" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Projected_UV\", 1)";
 				setParent -menu skyrimShaderFlags1Menu;
 
-				menuItem -label "Shader flags 24-32" -subMenu true skyrimShaderFlags12432Menu;
-					menuItem -label "SLSF1_Multiple_Textures";
-					menuItem -label "SLSF1_Remappable_Textures";
-					menuItem -label "SLSF1_Decal";
-					menuItem -label "SLSF1_Dynamic_Decal";
-					menuItem -label "SLSF1_Parallax_Occlusion";
-					menuItem -label "SLSF1_External_Emittance";
-					menuItem -label "SLSF1_Soft_Effect";
-					menuItem -label "SLSF1_ZBuffer_Test";
+				menuItem -label "Shader flags 25-32" -subMenu true skyrimShaderFlags12432Menu;
+					menuItem -label "SLSF1_Multiple_Textures" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Multiple_Textures\", 1)";
+					menuItem -label "SLSF1_Remappable_Textures" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Remappable_Textures\", 1)";
+					menuItem -label "SLSF1_Decal" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Decal\", 1)";
+					menuItem -label "SLSF1_Dynamic_Decal" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Dynamic_Decal\", 1)";
+					menuItem -label "SLSF1_Parallax_Occlusion" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Parallax_Occlusion\", 1)";
+					menuItem -label "SLSF1_External_Emittance" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_External_Emittance\", 1)";
+					menuItem -label "SLSF1_Soft_Effect" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_Soft_Effect\", 1)";
+					menuItem -label "SLSF1_ZBuffer_Test" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF1_ZBuffer_Test\", 1)";
 				setParent -menu skyrimShaderFlags1Menu;
 
 			setParent -menu materialsMenu;
@@ -103,47 +103,47 @@ global proc nifTranslatorMenuCreate() {
 			menuItem -label "Skyrim shader flags2" -subMenu true skyrimShaderFlags2Menu;
 
 				menuItem -label "Shader flags 1-8" -subMenu true skyrimShaderFlags218Menu;
-					menuItem -label "SLSF2_ZBuffer_Write";
-					menuItem -label "SLSF2_LOD_Landscape";
-					menuItem -label "SLSF2_LOD_Objects";
-					menuItem -label "SLSF2_No_Fade";
-					menuItem -label "SLSF2_Double_Sided";
-					menuItem -label "SLSF2_Vertex_Colors";
-					menuItem -label "SLSF2_Glow_Map";
-					menuItem -label "SLSF2_Assume_Shadowmask";
+					menuItem -label "SLSF2_ZBuffer_Write" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_ZBuffer_Write\", 2)";
+					menuItem -label "SLSF2_LOD_Landscape" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_LOD_Landscape\", 2)";
+					menuItem -label "SLSF2_LOD_Objects" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_LOD_Objects\", 2)";
+					menuItem -label "SLSF2_No_Fade" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_No_Fade\", 2)";
+					menuItem -label "SLSF2_Double_Sided" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Double_Sided\", 2)";
+					menuItem -label "SLSF2_Vertex_Colors" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Vertex_Colors\", 2)";
+					menuItem -label "SLSF2_Glow_Map" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Glow_Map\", 2)";
+					menuItem -label "SLSF2_Assume_Shadowmask" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Assume_Shadowmask\", 2)";
 				setParent -menu skyrimShaderFlags2Menu;
 
-				menuItem -label "Shader flags 8-16" -subMenu true skyrimShaderFlags2816Menu;
-					menuItem -label "SLSF2_Packed_Tangent";
-					menuItem -label "SLSF2_Multi_Index_Snow";
-					menuItem -label "SLSF2_Vertex_Lighting";
-					menuItem -label "SLSF2_Uniform_Scale";
-					menuItem -label "SLSF2_Fit_Slope";
-					menuItem -label "SLSF2_Billboard";
-					menuItem -label "SLSF2_No_LOD_Land_Blend";
-					menuItem -label "SLSF2_EnvMap_Light_Fade";
+				menuItem -label "Shader flags 9-16" -subMenu true skyrimShaderFlags2816Menu;
+					menuItem -label "SLSF2_Packed_Tangent" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Packed_Tangent\", 2)";
+					menuItem -label "SLSF2_Multi_Index_Snow" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Multi_Index_Snow\", 2)";
+					menuItem -label "SLSF2_Vertex_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Vertex_Lighting\", 2)";
+					menuItem -label "SLSF2_Uniform_Scale" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Uniform_Scale\", 2)";
+					menuItem -label "SLSF2_Fit_Slope" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Fit_Slope\", 2)";
+					menuItem -label "SLSF2_Billboard" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Billboard\", 2)";
+					menuItem -label "SLSF2_No_LOD_Land_Blend" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_No_LOD_Land_Blend\", 2)";
+					menuItem -label "SLSF2_EnvMap_Light_Fade" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_EnvMap_Light_Fade\", 2)";
 				setParent -menu skyrimShaderFlags2Menu;
 
-				menuItem -label "Shader flags 16-24" -subMenu true skyrimShaderFlags21624Menu;
-					menuItem -label "SLSF2_Wireframe";
-					menuItem -label "SLSF2_Weapon_Blood";
-					menuItem -label "SLSF2_Hide_On_Local_Map";
-					menuItem -label "SLSF2_Premult_Alpha";
-					menuItem -label "SLSF2_Cloud_LOD";
-					menuItem -label "SLSF2_Anisotropic_Lighting";
-					menuItem -label "SLSF2_No_Transparency_Multisampling";
-					menuItem -label "SLSF2_Unused01";
+				menuItem -label "Shader flags 17-24" -subMenu true skyrimShaderFlags21624Menu;
+					menuItem -label "SLSF2_Wireframe" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Wireframe\", 2)";
+					menuItem -label "SLSF2_Weapon_Blood" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Weapon_Blood\", 2)";
+					menuItem -label "SLSF2_Hide_On_Local_Map" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Hide_On_Local_Map\", 2)";
+					menuItem -label "SLSF2_Premult_Alpha" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Premult_Alpha\", 2)";
+					menuItem -label "SLSF2_Cloud_LOD" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Cloud_LOD\", 2)";
+					menuItem -label "SLSF2_Anisotropic_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Anisotropic_Lighting\", 2)";
+					menuItem -label "SLSF2_No_Transparency_Multisampling" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_No_Transparency_Multisampling\", 2)";
+					menuItem -label "SLSF2_Unused01" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Unused01\", 2)";
 				setParent -menu skyrimShaderFlags2Menu;
 
-				menuItem -label "Shader flags 24-32" -subMenu true skyrimShaderFlags22432Menu;
-					menuItem -label "SLSF2_Multi_Layer_Parallax";
-					menuItem -label "SLSF2_Soft_Lighting";
-					menuItem -label "SLSF2_Rim_Lighting";
-					menuItem -label "SLSF2_Back_Lighting";
-					menuItem -label "SLSF2_Unused02";
-					menuItem -label "SLSF2_Tree_Anim";
-					menuItem -label "SLSF2_Effect_Lighting";
-					menuItem -label "SLSF2_HD_LOD_Objects";
+				menuItem -label "Shader flags 25-32" -subMenu true skyrimShaderFlags22432Menu;
+					menuItem -label "SLSF2_Multi_Layer_Parallax" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Multi_Layer_Parallax\", 2)";
+					menuItem -label "SLSF2_Soft_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Soft_Lighting\", 2)";
+					menuItem -label "SLSF2_Rim_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Rim_Lighting\", 2)";
+					menuItem -label "SLSF2_Back_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Back_Lighting\", 2)";
+					menuItem -label "SLSF2_Unused02" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Unused02\", 2)";
+					menuItem -label "SLSF2_Tree_Anim" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Tree_Anim\", 2)";
+					menuItem -label "SLSF2_Effect_Lighting" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_Effect_Lighting\", 2)";
+					menuItem -label "SLSF2_HD_LOD_Objects" -command "nifTranslatorAddSkyrimShaderFlags(\"SLSF2_HD_LOD_Objects\", 2)";
 				setParent -menu skyrimShaderFlags2Menu;
 
 		setParent -menu $nifToolsMenu;
@@ -652,4 +652,30 @@ global proc nifTranslatorCreateConnecNifDismemberPartition() {
 
 	eval("connectAttr -force " + $blindDataNode[0] + "\.message " + $nifDismemberNode + "\.targetFaces");
 	eval("connectAttr -force " + $shapeNode[0] + "\.message " + $nifDismemberNode + "\.targetShape");
+}
+
+global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
+	string $selection[] = `ls -materials -selection`;
+
+	for($i = 0; $i < size($selection); $i++) {
+		string $current = $selection[$i];
+		string $attributes[] = eval("listAttr -shortNames "+ $current);
+		int $has_attr = 0;
+		for($j = 0; $j < size($attributes); $j++) {
+			if($attributes[$j] == ("skyrimShaderFlags" + $type)) {
+				$has_attr = 1;
+				break;
+			}
+		}
+		if($has_attr == 0) {
+			eval("addAttr -dataType \"string\" -shortName skyrimShaderFlags" + $type + " " + $current);
+		}
+		string $flags_string = eval("getAttr " + $current + "\.skyrimShaderFlags" + $type);
+		if(size($flags_string) <= 1) {
+			$flags_string = $flag;
+		} else {
+			$flags_string = $flags_string + "|" + $flag;
+		}
+		eval("setAttr -type \"string\" " + $current + "\.skyrimShaderFlags" + $type + "\"" + $flags_string + "\"");
+	}
 }
