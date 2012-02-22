@@ -118,7 +118,7 @@ string NifTranslatorUtils::MakeNifName( const MString & mayaName )
 
 	if ( this->translatorOptions->useNameMangling ) {
 		for ( unsigned int i = 0; i < str.size(); ++i ) {
-			if ( i + 5 < str.size() ) {
+			if ( i + 4 < str.size() ) {
 				string sub = str.substr( i, 3);
 				//out << "Sub string:  " << sub << endl;
 				if ( sub == "_0x" ) {
