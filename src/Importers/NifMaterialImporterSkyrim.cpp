@@ -81,13 +81,15 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 			if(shader_property != NULL) {
 				MColor reflective_color(shader_property->getSpecularColor().r, shader_property->getSpecularColor().g, shader_property->getSpecularColor().b);
 				MColor incadescence_color(shader_property->getEmissiveColor().r, shader_property->getEmissiveColor().g, shader_property->getEmissiveColor().b);
+				float glow_intensity = shader_property->getEmissiveSaturation() / 1000;
 				float reflective_strength = shader_property->getSpecularStrength() / 1000;
 				float cosine_power = shader_property->getGlossiness();
 				float transparency = 1.0f - shader_property->getAlpha();
 
 				new_shader.setReflectedColor(reflective_color);
-				new_shader.setReflectivity(0.750f);
+				new_shader.findPlug("reflectivity").setFloat(reflective_strength);
 				new_shader.setIncandescence(incadescence_color);
+				new_shader.setGlowIntensity(glow_intensity);
 				new_shader.setCosPower(cosine_power);
 				new_shader.setTransparency(transparency);
 

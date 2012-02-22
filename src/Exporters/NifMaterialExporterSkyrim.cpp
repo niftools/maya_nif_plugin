@@ -32,6 +32,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			Color3 emissive_color(0.0, 0.0, 0.0);
 			Color3 specular_color(0.0, 0.0, 0.0);
 
+			float alpha = 0;
 			float glossiness = 12.5;
 			float specular_strength = 1;
 			float lightning_effect1 = 0.3;
@@ -47,6 +48,19 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 
 			for(int i = 0; i < 9; i++) {
 				shader_textures->setTexture(i, "");
+			}
+
+			MPlug shader_flags_plug = shader_node.findPlug("skyrimShaderFlags1");
+			if(!shader_flags_plug.isNull()) {
+				shader_flags1 = this->stringToSkyrimShaderFlags1(shader_flags_plug.asString());
+			}
+			shader_flags_plug = shader_node.findPlug("skyrimShaderFlags2");
+			if(!shader_flags_plug.isNull()) {
+				shader_flags2 = this->stringToSkyrimShaderFlags2(shader_flags_plug.asString());
+			}
+			MPlug transparency_plug = shader_node.findPlug("transparency");
+			if(!transparency_plug.isNull()) {
+				alpha = 1 - transparency_plug.asFloat();
 			}
 
 			this->GetColor(shader_node, "color", color, current_texture);
@@ -92,8 +106,8 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 				specular_color.g = specular_color_m.g;
 				specular_color.r = specular_color_m.r;
 
-				specular_strength = phong_node.reflectivity();
-				emissive_saturation = phong_node.glowIntensity();
+				specular_strength = phong_node.reflectivity() * 1000;
+				emissive_saturation = phong_node.glowIntensity() * 1000;
 			} else {
 				MGlobal::displayWarning("Warning! Shader types besides phong aren't supported too well");
 			}
@@ -105,6 +119,11 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			shader_property->setTextureTranslation1(texture_translation1);
 			shader_property->setTextureRepeat(texture_repeat);
 			shader_property->setEmissiveSaturation(emissive_saturation);
+			shader_property->setShaderFlags1(shader_flags1);
+			shader_property->setShaderFlags2(shader_flags2);
+			shader_property->setUnknownInt7(3);
+			shader_property->setAlpha(alpha);
+			
 
 			vector<NiPropertyRef> properties;
 			properties.push_back(DynamicCast<NiProperty>(shader_property));
