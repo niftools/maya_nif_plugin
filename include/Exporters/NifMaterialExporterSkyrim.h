@@ -106,6 +106,10 @@ public:
 
 	string ExportTexture(MObject texture);
 
+	unsigned int stringToSkyrimShaderFlags1(MString flags_string);
+
+	unsigned int stringToSkyrimShaderFlags2(MString flags_string);
+
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& GetType() const;

@@ -196,6 +196,159 @@ string NifMaterialExporterSkyrim::ExportTexture( MObject texture ) {
 	return file_name;
 }
 
+unsigned int NifMaterialExporterSkyrim::stringToSkyrimShaderFlags1( MString flags_string ) {
+	unsigned int shader_flags = 0;
+	
+	MStringArray flags;
+	flags_string.split('|', flags);
+	for(int i = 0; i < flags.length(); i++) {
+		MString flag = flags[i];
+		if (flag == "SLSF1_Specular") {
+			shader_flags = (shader_flags | 1);
+		} else if (flag == "SLSF1_Skinned") {
+			shader_flags = (shader_flags | 2);
+		} else if (flag == "SLSF1_Temp_Refraction") {
+			shader_flags = (shader_flags | 4);
+		} else if (flag == "SLSF1_Vertex_Alpha") {
+			shader_flags = (shader_flags | 8);
+		} else if (flag == "SLSF1_Greyscale_To_PaletteColor") {
+			shader_flags = (shader_flags | 16);
+		} else if (flag == "SLSF1_Greyscale_To_PaletteAlpha") {
+			shader_flags = (shader_flags | 32);
+		} else if (flag == "SLSF1_Use_Falloff") {
+			shader_flags = (shader_flags | 64);
+		} else if (flag == "SLSF1_Environment_Mapping") {
+			shader_flags = (shader_flags | 128);
+		} else if (flag == "SLSF1_Recieve_Shadows") {
+			shader_flags = (shader_flags | 256);
+		} else if (flag == "SLSF1_Cast_Shadows") {
+			shader_flags = (shader_flags | 512);
+		} else if (flag == "SLSF1_Facegen_Detail_Map") {
+			shader_flags = (shader_flags | 1024);
+		} else if (flag == "SLSF1_Parallax") {
+			shader_flags = (shader_flags | 2048);
+		} else if (flag == "SLSF1_Model_Space_Normals") {
+			shader_flags = (shader_flags | 4096);
+		} else if (flag == "SLSF1_Non-Projective_Shadows") {
+			shader_flags = (shader_flags | 8192);
+		} else if (flag == "SLSF1_Landscape") {
+			shader_flags = (shader_flags | 16384);
+		} else if (flag == "SLSF1_Refraction") {
+			shader_flags = (shader_flags | 32768);
+		} else if (flag == "SLSF1_Fire_Refraction") {
+			shader_flags = (shader_flags | 65536);
+		} else if (flag == "SLSF1_Eye_Environment_Mapping") {
+			shader_flags = (shader_flags | 131072);
+		} else if (flag == "SLSF1_Hair_Soft_Lighting") {
+			shader_flags = (shader_flags | 262144);
+		} else if (flag == "SLSF1_Screendoor_Alpha_Fade") {
+			shader_flags = (shader_flags | 524288);
+		} else if (flag == "SLSF1_Localmap_Hide_Secret") {
+			shader_flags = (shader_flags | 1048576);
+		} else if (flag == "SLSF1_FaceGen_RGB_Tint") {
+			shader_flags = (shader_flags | 2097152);
+		} else if (flag == "SLSF1_Own_Emit") {
+			shader_flags = (shader_flags | 4194304);
+		} else if (flag == "SLSF1_Projected_UV") {
+			shader_flags = (shader_flags | 8388608);
+		} else if (flag == "SLSF1_Multiple_Textures") {
+			shader_flags = (shader_flags | 16777216);
+		} else if (flag == "SLSF1_Remappable_Textures") {
+			shader_flags = (shader_flags | 33554432);
+		} else if (flag == "SLSF1_Decal") {
+			shader_flags = (shader_flags | 67108864);
+		} else if (flag == "SLSF1_Dynamic_Decal") {
+			shader_flags = (shader_flags | 134217728);
+		} else if (flag == "SLSF1_Parallax_Occlusion") {
+			shader_flags = (shader_flags | 268435456);
+		} else if (flag == "SLSF1_External_Emittance") {
+			shader_flags = (shader_flags | 536870912);
+		} else if (flag == "SLSF1_Soft_Effect") {
+			shader_flags = (shader_flags | 1073741824);
+		} else if (flag == "SLSF1_ZBuffer_Test") {
+			shader_flags = (shader_flags | 2147483648);
+		}
+	}
+
+	return shader_flags;
+}
+
+unsigned int NifMaterialExporterSkyrim::stringToSkyrimShaderFlags2( MString flags_string ) {
+	unsigned int shader_flags = 0;
+
+	MStringArray flags;
+	flags_string.split('|', flags);
+	for(int i = 0; i < flags.length(); i++) {
+		MString flag = flags[i];
+		if (flag == "SLSF2_ZBuffer_Write") {
+			shader_flags = (shader_flags | 1);
+		} else if (flag == "SLSF2_LOD_Landscape") {
+			shader_flags = (shader_flags | 2);
+		} else if (flag == "SLSF2_LOD_Objects") {
+			shader_flags = (shader_flags | 4);
+		} else if (flag == "SLSF2_No_Fade") {
+			shader_flags = (shader_flags | 8);
+		} else if (flag == "SLSF2_Double_Sided") {
+			shader_flags = (shader_flags | 16);
+		} else if (flag == "SLSF2_Vertex_Colors") {
+			shader_flags = (shader_flags | 32);
+		} else if (flag == "SLSF2_Glow_Map") {
+			shader_flags = (shader_flags | 64);
+		} else if (flag == "SLSF2_Assume_Shadowmask") {
+			shader_flags = (shader_flags | 128);
+		} else if (flag == "SLSF2_Packed_Tangent") {
+			shader_flags = (shader_flags | 256);
+		} else if (flag == "SLSF2_Multi_Index_Snow") {
+			shader_flags = (shader_flags | 512);
+		} else if (flag == "SLSF2_Vertex_Lighting") {
+			shader_flags = (shader_flags | 1024);
+		} else if (flag == "SLSF2_Uniform_Scale") {
+			shader_flags = (shader_flags | 2048);
+		} else if (flag == "SLSF2_Fit_Slope") {
+			shader_flags = (shader_flags | 4096);
+		} else if (flag == "SLSF2_Billboard") {
+			shader_flags = (shader_flags | 8192);
+		} else if (flag == "SLSF2_No_LOD_Land_Blend") {
+			shader_flags = (shader_flags | 16384);
+		} else if (flag == "SLSF2_EnvMap_Light_Fade") {
+			shader_flags = (shader_flags | 32768);
+		} else if (flag == "SLSF2_Wireframe") {
+			shader_flags = (shader_flags | 65536);
+		} else if (flag == "SLSF2_Weapon_Blood") {
+			shader_flags = (shader_flags | 131072);
+		} else if (flag == "SLSF2_Hide_On_Local_Map") {
+			shader_flags = (shader_flags | 262144);
+		} else if (flag == "SLSF2_Premult_Alpha") {
+			shader_flags = (shader_flags | 524288);
+		} else if (flag == "SLSF2_Cloud_LOD") {
+			shader_flags = (shader_flags | 1048576);
+		} else if (flag == "SLSF2_Anisotropic_Lighting") {
+			shader_flags = (shader_flags | 2097152);
+		} else if (flag == "SLSF2_No_Transparency_Multisampling") {
+			shader_flags = (shader_flags | 4194304);
+		} else if (flag == "SLSF2_Unused01") {
+			shader_flags = (shader_flags | 8388608);
+		} else if (flag == "SLSF2_Multi_Layer_Parallax") {
+			shader_flags = (shader_flags | 16777216);
+		} else if (flag == "SLSF2_Soft_Lighting") {
+			shader_flags = (shader_flags | 33554432);
+		} else if (flag == "SLSF2_Rim_Lighting") {
+			shader_flags = (shader_flags | 67108864);
+		} else if (flag == "SLSF2_Back_Lighting") {
+			shader_flags = (shader_flags | 134217728);
+		} else if (flag == "SLSF2_Unused02") {
+			shader_flags = (shader_flags | 268435456);
+		} else if (flag == "SLSF2_Tree_Anim") {
+			shader_flags = (shader_flags | 536870912);
+		} else if (flag == "SLSF2_Effect_Lighting") {
+			shader_flags = (shader_flags | 1073741824);
+		} else if (flag == "SLSF2_HD_LOD_Objects") {
+			shader_flags = (shader_flags | 2147483648);
+		}
+	}
+
+	return shader_flags;
+}
 
 string NifMaterialExporterSkyrim::asString( bool verbose /*= false */ ) const {
 	stringstream out;

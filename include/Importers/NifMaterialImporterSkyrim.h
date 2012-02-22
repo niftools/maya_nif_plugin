@@ -113,11 +113,11 @@ public:
 
 	virtual void ImportMaterialsAndTextures( NiAVObjectRef & root );
 
-	virtual void GatherMaterialsAndTextures( NiAVObjectRef & root);
+	void GatherMaterialsAndTextures( NiAVObjectRef & root);
 
-	virtual MString skyrimShaderFlags1ToString( unsigned int shader_flags);
+	MString skyrimShaderFlags1ToString( unsigned int shader_flags);
 
-	virtual MString skyrimShaderFlags2ToString( unsigned int shader_flags);
+	MString skyrimShaderFlags2ToString( unsigned int shader_flags);
 
 	virtual string asString( bool verbose = false ) const;
 
