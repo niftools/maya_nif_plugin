@@ -655,10 +655,33 @@ global proc nifTranslatorCreateConnecNifDismemberPartition() {
 }
 
 global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
-	string $selection[] = `ls -materials -selection`;
+	string $selection[] = `ls -selection`;
 
 	for($i = 0; $i < size($selection); $i++) {
 		string $current = $selection[$i];
+		if(`objectType -isAType "material" $current` == false) {
+			string $relatives[] = `listRelatives -shapes $current`;
+			if(size($relatives) > 0) {
+				string $shape = $relatives[0];
+				string $shading_engine[] = `listConnections -destination true -source false -plugs false -type "shadingEngine" $shape`;
+				if(size($shading_engine) > 0) {
+					if(size($shading_engine) > 0) {
+						string $shader[] = `listConnections -destination false -source true -plugs false -type "lambert" $shading_engine[0]`;
+						if(size($shader) > 0) {
+							$current = $shader[0];
+						} else {
+							break;
+						}
+					} else {
+						break;
+					}
+				} else {
+					break;
+				}
+			} else {
+				break;
+			}
+		}
 		string $attributes[] = eval("listAttr -shortNames "+ $current);
 		int $has_attr = 0;
 		for($j = 0; $j < size($attributes); $j++) {
