@@ -106,6 +106,8 @@ public:
 
 	string ExportTexture(MObject texture);
 
+	string ExportTexture(MString texture);
+
 	unsigned int stringToSkyrimShaderFlags1(MString flags_string);
 
 	unsigned int stringToSkyrimShaderFlags2(MString flags_string);

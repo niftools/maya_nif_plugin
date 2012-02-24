@@ -92,6 +92,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 				}
 			}
 
+
 			if(shader_node.object().hasFn(MFn::Type::kPhong)) {
 				MFnPhongShader phong_node(shader_node.object());
 				glossiness = phong_node.findPlug("cosinePower").asFloat();
@@ -112,6 +113,32 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 				MGlobal::displayWarning("Warning! Shader types besides phong aren't supported too well");
 			}
 
+
+			MPlug additional_texture = shader_node.findPlug("cubeMapTexture");
+			string a_texture;
+			if(!additional_texture.isNull()) {
+				a_texture = this->ExportTexture(additional_texture.asString());
+				shader_textures->setTexture(4, a_texture);
+			}
+
+			additional_texture = shader_node.findPlug("evironmentMaskTexture");
+			if(!additional_texture.isNull()) {
+				a_texture = this->ExportTexture(additional_texture.asString());
+				shader_textures->setTexture(5, a_texture);
+			}
+
+			additional_texture = shader_node.findPlug("glowMapTexture");
+			if(!additional_texture.isNull()) {
+				a_texture = this->ExportTexture(additional_texture.asString());
+				shader_textures->setTexture(2, a_texture);
+			}
+
+			additional_texture = shader_node.findPlug("skinTexture");
+			if(!additional_texture.isNull()) {
+				a_texture = this->ExportTexture(additional_texture.asString());
+				shader_textures->setTexture(2, a_texture);
+			}
+
 			shader_property->setTextureSet(shader_textures);
 			shader_property->setGlossiness(glossiness);
 			shader_property->setEmissiveColor(emissive_color);
@@ -123,7 +150,6 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			shader_property->setShaderFlags2(shader_flags2);
 			shader_property->setUnknownInt7(3);
 			shader_property->setAlpha(alpha);
-			
 
 			vector<NiPropertyRef> properties;
 			properties.push_back(DynamicCast<NiProperty>(shader_property));
@@ -165,7 +191,11 @@ string NifMaterialExporterSkyrim::ExportTexture( MObject texture ) {
 		MGlobal::displayWarning( ss.str().c_str() );
 	}
 
-	string file_name = texture_name.asChar();
+	return this->ExportTexture(texture_name);
+}
+
+string NifMaterialExporterSkyrim::ExportTexture( MString texture ) {
+	string file_name = texture.asChar();
 	//Figure fixed file name
 	string::size_type index;
 	MStringArray paths;

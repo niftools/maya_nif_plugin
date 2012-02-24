@@ -52,6 +52,16 @@ global proc nifTranslatorMenuCreate() {
 		setParent -menu $nifToolsMenu;
 
 		menuItem -label "Materials" -subMenu true materialsMenu;
+
+			menuItem -label "Skyrim shader type" -subMenu true skyrimShaderTypeMenu;
+				menuItem -label "EnvMap shader" -command "nifTranslatorSetSkyrimShaderType(\"Default\")";
+				menuItem -label "Skin shader" -command "nifTranslatorSetSkyrimShaderType(\"EnvMap\")";
+				menuItem -label "Glow shader" -command "nifTranslatorSetSkyrimShaderType(\"Skin\")";
+				menuItem -label "Hair shader" -command "nifTranslatorSetSkyrimShaderType(\"Hair\")";
+				menuItem -label "Ice/Parallax shader" -command "nifTranslatorSetSkyrimShaderType(\"Ice/Parallax\")";
+				menuItem -label "Eye shader" -command "nifTranslatorSetSkyrimShaderType(\"Eye\")";
+			setParent -menu materialsMenu;
+
 			menuItem -label "Skyrim shader flags1" -subMenu true skyrimShaderFlags1Menu;
 
 				menuItem -label "Shader flags 1-8" -subMenu true skyrimShaderFlags118Menu;
@@ -148,10 +158,15 @@ global proc nifTranslatorMenuCreate() {
 
 		setParent -menu $nifToolsMenu;
 
-		menuItem -label "Texture" -subMenu true textureMenu;
-			menuItem -label "Set texturing mode to Apply Modular";
-			menuItem -label "Set texturing mode to Apply Highlight";
-			menuItem -label "Set texturing mode to Apply Highlight2";
+		menuItem -label "Texturing" -subMenu true textureMenu;
+
+			menuItem -label "BSShaderTextureSet" -subMenu true bsShaderTextureSetMenu;
+				menuItem -label "Add additional skin texture(fake)" -command "nifTranslatorAddAdditionalTexture(\"skinTexture\")";
+				menuItem -label "Add additional glow map texture(fake)" -command "nifTranslatorAddAdditionalTexture(\"glowMapTexture\")";
+				menuItem -label "Add additional cube map texture(fake)" -command "nifTranslatorAddAdditionalTexture(\"cubeMapTexture\")";
+				menuItem -label "Add additional environment mask texture(fake)" -command "nifTranslatorAddAdditionalTexture(\"environmenMaskTexture\")";
+			setParent -menu textureMenu;
+
 		setParent -menu $nifToolsMenu;
 
 	setParent $gMainWindow;
@@ -715,7 +730,7 @@ global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
 
 	for($i = 0; $i < size($selection); $i++) {
 		string $current = $selection[$i];
-		if(`objectType -isAType "material" $current` == false) {
+		if(`objectType -isAType "lambert" $current` == false) {
 			string $current_shaders[]  = nifTranslatorGetConnectedShaders($current);
 			for($j = 0; $j < size($current_shaders); $j++) {
 				$shaders[size($shaders)] = $current_shaders[$j];
@@ -745,5 +760,78 @@ global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
 			$flags_string = $flags_string + "|" + $flag;
 		}
 		eval("setAttr -type \"string\" " + $current + "\.skyrimShaderFlags" + $type + "\"" + $flags_string + "\"");
+	}
+}
+
+global proc nifTranslatorAddAdditionalTexture(string $textureName) {
+	string $selection[] = `ls -selection`;
+	string $shaders[];
+	
+	for($i = 0; $i < size($selection); $i++) {
+		string $current = $selection[$i];
+		if(`objectType -isAType "lambert" $current` == false) {
+			string $current_shaders[]  = nifTranslatorGetConnectedShaders($current);
+			for($j = 0; $j < size($current_shaders); $j++) {
+				$shaders[size($shaders)] = $current_shaders[$j];
+			}
+		} else {
+			$shaders[size($shaders)] = $current;
+		}
+	}
+
+	string $fileName = `fileDialog -mode 0 -directoryMask "*.dds"`;
+
+	if(size($fileName) > 0) {
+		for($i = 0; $i < size($shaders); $i++) {
+			string $current = $shaders[$i];
+			int $has_attr = 0;
+			string $attributes[] = `listAttr -shortNames $shaders[$i]`;
+			for($j = 0; $j < size($attributes); $j++) {
+				if($attributes[$j] == $textureName) {
+					$has_attr = 1;
+					break;
+				}
+			} 
+
+			if($has_attr == 0) {
+				eval("addAttr -dataType \"string\" -shortName " + $textureName + "  " + $current);
+			}
+
+			eval("setAttr -type \"string\" " + $current + "\." + $textureName + " \"" + $fileName + "\"");
+		}
+	}
+}
+
+global proc nifTranslatorSetSkyrimShaderType(string $shaderType) {
+	string $selection[] = `ls -selection`;
+	string $shaders[];
+	
+	for($i = 0; $i < size($selection); $i++) {
+		string $current = $selection[$i];
+		if(`objectType -isAType "lambert" $current` == false) {
+			string $current_shaders[]  = nifTranslatorGetConnectedShaders($current);
+			for($j = 0; $j < size($current_shaders); $j++) {
+				$shaders[size($shaders)] = $current_shaders[$j];
+			}
+		} else {
+			$shaders[size($shaders)] = $current;
+		}
+	}
+
+	for($i = 0; $i < size($shaders); $i++) {
+		string $current = $shaders[$i];
+		int $has_attr = 0;
+		string $attributes[] = `listAttr -shortNames $shaders[$i]`;
+		for($j = 0; $j < size($attributes); $j++) {
+			if($attributes[$j] == "skyrimShaderType") {
+				$has_attr = 1;
+				break;
+			}
+		} 
+
+		if($has_attr == 0) {
+			eval("addAttr -dataType \"string\" -shortName skyrimShderType " + $current);
+		}
+		eval("setAttr -type \"string\" " + $current + "\.skyrimShaderType" + "\"$shaderType\"");
 	}
 }
