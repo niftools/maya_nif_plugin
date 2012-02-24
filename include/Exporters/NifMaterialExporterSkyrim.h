@@ -110,6 +110,8 @@ public:
 
 	unsigned int stringToSkyrimShaderFlags2(MString flags_string);
 
+	unsigned int stringToSkyrimShaderType(MString shader_type);
+
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& GetType() const;

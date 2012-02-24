@@ -369,6 +369,28 @@ unsigned int NifMaterialExporterSkyrim::stringToSkyrimShaderFlags2( MString flag
 	return shader_flags;
 }
 
+unsigned int NifMaterialExporterSkyrim::stringToSkyrimShaderType( MString shader_type ) {
+	unsigned int ret;
+
+	if(shader_type == "Default") {
+		ret = 0;
+	} else if(shader_type == "EnvMap") {
+		ret = 1;
+	} else if(shader_type == "Skin") {
+		ret = 5;
+	} else if(shader_type == "Glow") {
+		ret = 2;
+	} else if(shader_type == "Hair") {
+		ret = 6;
+	} else if(shader_type == "Ice/Parallax") {
+		ret = 11;
+	} else if(shader_type == "Eye") {
+		ret = 15;
+	}
+	
+	return ret;
+}
+
 string NifMaterialExporterSkyrim::asString( bool verbose /*= false */ ) const {
 	stringstream out;
 

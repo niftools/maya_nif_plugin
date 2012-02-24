@@ -219,18 +219,48 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 					dg_modifier.doIt();
 				}
 
+				MString shader_Type = this->skyrimShaderTypeToString(shader_property->GetSkyrimShaderType());
 				MString shader_flags1 = this->skyrimShaderFlags1ToString(shader_property->getShaderFlags1());
 				MString shader_flags2 = this->skyrimShaderFlags2ToString(shader_property->getShaderFlags2());
 
 				MString mel_command = "addAttr -dt \"string\" -shortName skyrimShaderFlags1 ";
 				MGlobal::executeCommand(mel_command + new_shader.name());
-
 				mel_command = "addAttr -dt \"string\" -shortName skyrimShaderFlags2 ";
+				MGlobal::executeCommand(mel_command + new_shader.name());
+				mel_command = "addAttr -dt \"string\" -shortName skyrimShaderType ";
 				MGlobal::executeCommand(mel_command + new_shader.name());
 
 				mel_command = "setAttr -type \"string\" ";
 				MGlobal::executeCommand(mel_command + new_shader.name() + "\.skyrimShaderFlags1 \"" + shader_flags1 + "\"");
 				MGlobal::executeCommand(mel_command + new_shader.name() + "\.skyrimShaderFlags2 \"" + shader_flags2 + "\"");
+				MGlobal::executeCommand(mel_command + new_shader.name() + "\.skyrimShaderType \"" + shader_Type + "\"");
+
+				unsigned int shader_type2 = shader_property->GetSkyrimShaderType();
+				if(texture_set != NULL) {
+					if(shader_type2 == 1) {
+						mel_command = "addAttr -dt \"string\" -shortName cubeMapTexture ";
+						MGlobal::executeCommand(mel_command + new_shader.name());
+						mel_command = "addAttr -dt \"string\" -shortName evironmentMaskTexture ";
+						MGlobal::executeCommand(mel_command + new_shader.name());
+
+						mel_command = "setAttr -type \"string\" ";
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.cubeMapTexture \"" + this->GetTextureFilePath(texture_set->getTexture(4)) + "\"");
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.evironmentMaskTexture \"" + this->GetTextureFilePath(texture_set->getTexture(5)) + "\"");
+					} else if(shader_type2 == 2) {
+						mel_command = "addAttr -dt \"string\" -shortName glowMapTexture ";
+						MGlobal::executeCommand(mel_command + new_shader.name());
+						
+						mel_command = "setAttr -type \"string\" ";
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.glowMapTexture \"" + this->GetTextureFilePath(texture_set->getTexture(2)) + "\"");
+					} else if(shader_type2 == 5) {
+						mel_command = "addAttr -dt \"string\" -shortName glowMapTexture ";
+						MGlobal::executeCommand(mel_command + new_shader.name());
+
+						mel_command = "setAttr -type \"string\" ";
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.skinTexture \"" + this->GetTextureFilePath(texture_set->getTexture(2)) + "\"");
+
+					}
+				}
 			}
 
 			vector<NiPropertyRef> property_group;
@@ -257,20 +287,6 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 			this->GatherMaterialsAndTextures(children[i]);
 		}
 	}
-}
-
-string NifMaterialImporterSkyrim::asString( bool verbose /*= false */ ) const {
-	stringstream out;
-
-	out<<NifMaterialImporter::asString(verbose)<<endl;
-	out<<"NifMaterialExporterSkyrim"<<endl;
-
-	return out.str();
-}
-
-
-const Type& NifMaterialImporterSkyrim::GetType() const {
-	return TYPE;
 }
 
 MString NifMaterialImporterSkyrim::skyrimShaderFlags1ToString( unsigned int shader_flags ) {
@@ -559,6 +575,41 @@ MString NifMaterialImporterSkyrim::skyrimShaderFlags2ToString( unsigned int shad
 	}
 
 	return ret;
+}
+
+MString NifMaterialImporterSkyrim::skyrimShaderTypeToString( unsigned int shader_type ) {
+	MString ret;
+
+	if(shader_type == 0) {
+		ret = "Default";
+	} else if(shader_type == 1) {
+		ret = "EnvMap";
+	} else if(shader_type == 5) {
+		ret = "Skin";
+	} else if(shader_type == 2) {
+		ret = "Glow";
+	} else if(shader_type == 6) {
+		ret = "Hair";
+	} else if(shader_type == 11) {
+		ret = "Ice/Parallax";
+	} else if(shader_type == 15) {
+		ret = "Eye";
+	}
+
+	return ret;
+}
+
+string NifMaterialImporterSkyrim::asString( bool verbose /*= false */ ) const {
+	stringstream out;
+
+	out<<NifMaterialImporter::asString(verbose)<<endl;
+	out<<"NifMaterialExporterSkyrim"<<endl;
+
+	return out.str();
+}
+
+const Type& NifMaterialImporterSkyrim::GetType() const {
+	return TYPE;
 }
 
 const Type NifMaterialImporterSkyrim::TYPE("NifMaterialImporterSkyrim",&NifMaterialImporter::TYPE);

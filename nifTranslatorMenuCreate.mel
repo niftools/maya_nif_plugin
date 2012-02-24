@@ -612,76 +612,121 @@ global proc nifTranslatorCreateNifDismemberPartition() {
 	eval ("createNode \"nifDismemberPartition\"");
 }
 
-global proc nifTranslatorConnectNifDismemberPartition() {
-	string $nifDismemberNode[] = `ls -type "nifDismemberPartition" -selection`;
-	string $blindDataNode[] = `ls -type "polyBlindData" -selection`;
-	string $shapeNode[] = `ls -type "shape" -selection`;
+global proc nifTranslatorConnectNifDismemberPartitionToList(string $nifDismemberNode, string $nodes[]) {
+	string $blindDataNode = "";
+	string $shapeNode = "";
 
-	if(size($nifDismemberNode) != 1) {
-		error "Please select exactly one nifDismemberPartition node to connect it to a shape node and a polyBlindDataNode";
-		return;
-	}
-	if(size($blindDataNode) != 1) {
-		error "Please select exactly one polyBlindData node to connect it to a nifDismemberPartitionNode";
-		return;
-	}
-	if(size($shapeNode) != 1) {
-		error "Please select exactly one shape node to connect it to a nifDismemberPartitionNode";
-		return;
+	for($i = 0; $i < size($nodes); $i++) {
+		if(`objectType -isType "shape" $nodes[$i]` == true) {
+			$shapeNode = $nodes[$i];
+		} else if(`objectType -isAType "polyBlindData" $nodes[$i]` == true) {
+			$blindDataNode = $nodes[$i];
+		}
 	}
 
-	eval("connectAttr -force " + $blindDataNode[0] + "\.message " + $nifDismemberNode[0] + "\.targetFaces");
-	eval("connectAttr -force " + $shapeNode[0] + "\.message " + $nifDismemberNode[0] + "\.targetShape");
-}
+	if($shapeNode == "" || $blindDataNode == "") {
+		if($shapeNode == "") {
+			for($i = 0; $i < size($nodes); $i++) {
+				string $relatives[] = `listRelatives -shapes $nodes[$i]`;
+				if(size($relatives) > 0) {
+					$shapeNode = $relatives[0];
+					break;
+				}
+			}
+		}
 
-global proc nifTranslatorCreateConnecNifDismemberPartition() {
-	string $blindDataNode[] = `ls -type "polyBlindData" -selection`;
-	string $shapeNode[] = `ls -type "shape" -selection`;
-	string $nifDismemberNode;
-
-	if(size($blindDataNode) != 1) {
-		error "Please select exactly one polyBlindData node to connect it to a nifDismemberPartitionNode";
-		return;
-	}
-	if(size($shapeNode) != 1) {
-		error "Please select exactly one shape node to connect it to a nifDismemberPartitionNode";
-		return;
-	}
-
-	$nifDismemberNode = `createNode "nifDismemberPartition"`;
-
-	eval("connectAttr -force " + $blindDataNode[0] + "\.message " + $nifDismemberNode + "\.targetFaces");
-	eval("connectAttr -force " + $shapeNode[0] + "\.message " + $nifDismemberNode + "\.targetShape");
-}
-
-global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
-	string $selection[] = `ls -selection`;
-
-	for($i = 0; $i < size($selection); $i++) {
-		string $current = $selection[$i];
-		if(`objectType -isAType "material" $current` == false) {
-			string $relatives[] = `listRelatives -shapes $current`;
-			if(size($relatives) > 0) {
-				string $shape = $relatives[0];
-				string $shading_engine[] = `listConnections -destination true -source false -plugs false -type "shadingEngine" $shape`;
-				if(size($shading_engine) > 0) {
-					if(size($shading_engine) > 0) {
-						string $shader[] = `listConnections -destination false -source true -plugs false -type "lambert" $shading_engine[0]`;
-						if(size($shader) > 0) {
-							$current = $shader[0];
-						} else {
-							break;
-						}
-					} else {
-						break;
+		if($shapeNode != "" && $blindDataNode == "") {
+			string $current_nodes[];
+			$current_nodes[0] = $shapeNode;
+			do {
+				$current_nodes = `listConnections -destination false -source true -plugs false -type "polyBlindData" $current_nodes[0]`;
+				if(size($current_nodes) > 0) {
+					string $current_partitions[] = `listConnections -destination true -source false -plugs false -type "nifDismemberPartition" $current_nodes[0]`;
+					if(size($current_partitions) == 0) {
+						$blindDataNode = $current_nodes[0];
 					}
 				} else {
 					break;
 				}
-			} else {
-				break;
+			} while($blindDataNode == ""); 
+		} 
+	}
+
+	if($shapeNode != "" && $blindDataNode != "") {
+		eval("connectAttr -force " + $blindDataNode + "\.message " + $nifDismemberNode + "\.targetFaces");
+		eval("connectAttr -force " + $shapeNode + "\.message " + $nifDismemberNode + "\.targetShape");
+	}  else {
+		print "\nPlease select an unconnected nifDismemberPartition and a shape, or a shape, an unconnected nifDismemberPartition and a polyBlindData"; 
+	}
+}
+
+global proc nifTranslatorConnectNifDismemberPartition() {
+	string $nifDismemberNodes[] = `ls -type "nifDismemberPartition" -selection`;
+	string $nodes[] = `ls -type "shape" -type "transform" -selection`;
+
+	if(size($nifDismemberNodes) == 0) {
+		print "Please select at least a dismember partition";
+	}
+
+	for($i = 0; $i < size($nifDismemberNodes); $i++) {
+		nifTranslatorConnectNifDismemberPartitionToList($nifDismemberNodes[$i], $nodes);
+	}
+}
+
+global proc nifTranslatorCreateConnecNifDismemberPartition() {
+	string $nifDismemberNode;
+	string $nodes[] = `ls -type "shape" -type "transform" -selection`;
+
+	string $selection[] = `ls -selection`;
+
+	$nifDismemberNode = `createNode "nifDismemberPartition"`;
+
+	if(size($nodes) == 0) {
+		print "\nPlease select at least a shape node";
+	}
+	nifTranslatorConnectNifDismemberPartitionToList($nifDismemberNode, $nodes);
+	select -clear;
+
+	for($i = 0; $i < size($selection); $i++) {
+		select -add $selection[$i];
+	}
+}
+
+global proc string[] nifTranslatorGetConnectedShaders(string $transform) {
+	string $shaders[];
+
+	string $shapes[] = `listRelatives -shapes $transform`;
+	for($i = 0; $i < size($shapes); $i++) {
+		string $shading_engines[] = `listConnections -destination true -source false -plugs false -type "shadingEngine" $shapes[$i]`;
+		for($j = 0; $j < size($shading_engines); $j++) {
+			string $current_shaders[] = `listConnections -destination false -source true -plugs false -type "lambert" $shading_engines[$j]`;
+			for($k = 0; $k < size($current_shaders); $k++) {
+				$shaders[size($shaders)] = $current_shaders[$k];
 			}
 		}
+	}
+
+	return $shaders;
+}
+
+global proc nifTranslatorAddSkyrimShaderFlags(string $flag, int $type) {
+	string $selection[] = `ls -selection`;
+	string $shaders[];
+
+	for($i = 0; $i < size($selection); $i++) {
+		string $current = $selection[$i];
+		if(`objectType -isAType "material" $current` == false) {
+			string $current_shaders[]  = nifTranslatorGetConnectedShaders($current);
+			for($j = 0; $j < size($current_shaders); $j++) {
+				$shaders[size($shaders)] = $current_shaders[$j];
+			}
+		} else {
+			$shaders[size($shaders)] = $current;
+		}
+	}
+
+	for($i = 0; $i < size($shaders); $i++) {
+		string $current = $shaders[$i];
 		string $attributes[] = eval("listAttr -shortNames "+ $current);
 		int $has_attr = 0;
 		for($j = 0; $j < size($attributes); $j++) {

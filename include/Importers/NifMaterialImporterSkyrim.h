@@ -119,6 +119,8 @@ public:
 
 	MString skyrimShaderFlags2ToString( unsigned int shader_flags);
 
+	MString skyrimShaderTypeToString(unsigned int shader_type);
+
 	virtual string asString( bool verbose = false ) const;
 
 	virtual const Type& GetType() const;
