@@ -253,7 +253,7 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 						mel_command = "setAttr -type \"string\" ";
 						MGlobal::executeCommand(mel_command + new_shader.name() + "\.glowMapTexture \"" + this->GetTextureFilePath(texture_set->getTexture(2)) + "\"");
 					} else if(shader_type2 == 5) {
-						mel_command = "addAttr -dt \"string\" -shortName glowMapTexture ";
+						mel_command = "addAttr -dt \"string\" -shortName skinTexture ";
 						MGlobal::executeCommand(mel_command + new_shader.name());
 
 						mel_command = "setAttr -type \"string\" ";

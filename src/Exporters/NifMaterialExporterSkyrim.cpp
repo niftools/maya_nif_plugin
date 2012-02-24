@@ -58,6 +58,10 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			if(!shader_flags_plug.isNull()) {
 				shader_flags2 = this->stringToSkyrimShaderFlags2(shader_flags_plug.asString());
 			}
+			shader_flags_plug = shader_node.findPlug("skyrimShaderType");
+			if(!shader_flags_plug.isNull()) {
+				shader_type = this->stringToSkyrimShaderType(shader_flags_plug.asString());
+			}
 			MPlug transparency_plug = shader_node.findPlug("transparency");
 			if(!transparency_plug.isNull()) {
 				alpha = 1 - transparency_plug.asFloat();
@@ -139,6 +143,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 				shader_textures->setTexture(2, a_texture);
 			}
 
+			shader_property->SetSkyrimShaderType(shader_type);
 			shader_property->setTextureSet(shader_textures);
 			shader_property->setGlossiness(glossiness);
 			shader_property->setEmissiveColor(emissive_color);
