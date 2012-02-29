@@ -586,11 +586,10 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 				status = blind_data_mesh.createBlindDataType(blind_data_id, long_name, short_name, format_name);
 			} while(status == MStatus::kFailure);
 
-			MString name1 = blind_data_mesh.name();
-			MString name2 = meshFn.name();
-
 			vector<int> dismember_faces = cs.GetDismemberPartitionsFaces();
 			MItMeshPolygon polygon_it(blind_data_mesh.object());
+
+			selected_faces.add(meshPath);
 
 			for(int y = 0; y < dismember_faces.size() && !polygon_it.isDone(); y++, polygon_it.next()) {
 				if(dismember_faces[y] == x) {
@@ -601,8 +600,11 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 			MString mel_command = "polyBlindData -id ";
 			mel_command += blind_data_id;
 			mel_command += " -associationType \"face\" -ldn \"dismemberValue\" -ind 1";
+			MGlobal::clearSelectionList();
 			MGlobal::setActiveSelectionList(selected_faces);
 			status = MGlobal::executeCommand(mel_command);
+
+			blind_data_mesh.updateSurface();
 
 			MDGModifier dg_modifier;
 			MFnDependencyNode dismember_node;

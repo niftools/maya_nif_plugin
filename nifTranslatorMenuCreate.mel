@@ -54,9 +54,10 @@ global proc nifTranslatorMenuCreate() {
 		menuItem -label "Materials" -subMenu true materialsMenu;
 
 			menuItem -label "Skyrim shader type" -subMenu true skyrimShaderTypeMenu;
-				menuItem -label "EnvMap shader" -command "nifTranslatorSetSkyrimShaderType(\"Default\")";
-				menuItem -label "Skin shader" -command "nifTranslatorSetSkyrimShaderType(\"EnvMap\")";
-				menuItem -label "Glow shader" -command "nifTranslatorSetSkyrimShaderType(\"Skin\")";
+				menuItem -label "Default shader" -command "nifTranslatorSetSkyrimShaderType(\"Default\")";
+				menuItem -label "EnvMap shader" -command "nifTranslatorSetSkyrimShaderType(\"EnvMap\")";
+				menuItem -label "Skin shader" -command "nifTranslatorSetSkyrimShaderType(\"Skin\")";
+				menuItem -label "Glow shader" -command "nifTranslatorSetSkyrimShaderType(\"Glow\")";
 				menuItem -label "Hair shader" -command "nifTranslatorSetSkyrimShaderType(\"Hair\")";
 				menuItem -label "Ice/Parallax shader" -command "nifTranslatorSetSkyrimShaderType(\"Ice/Parallax\")";
 				menuItem -label "Eye shader" -command "nifTranslatorSetSkyrimShaderType(\"Eye\")";
