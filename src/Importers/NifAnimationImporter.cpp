@@ -1,4 +1,4 @@
-#include "include/Importers/NifAnimationImporter.h"
+#include "Importers/NifAnimationImporter.h"
 
 void NifAnimationImporter::ImportControllers( NiAVObjectRef niAVObj, MDagPath & path ) {
 	list<NiTimeControllerRef> controllers = niAVObj->GetControllers();

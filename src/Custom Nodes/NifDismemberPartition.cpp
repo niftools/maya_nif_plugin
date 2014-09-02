@@ -1,4 +1,4 @@
-#include "include/Custom Nodes/NifDismemberPartition.h"
+#include "Custom Nodes/NifDismemberPartition.h"
 
 
 NifDismemberPartition::NifDismemberPartition() {

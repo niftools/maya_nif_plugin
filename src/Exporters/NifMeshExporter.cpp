@@ -1,4 +1,4 @@
-#include "include/Exporters/NifMeshExporter.h"
+#include "Exporters/NifMeshExporter.h"
 
 NifMeshExporter::NifMeshExporter() {
 

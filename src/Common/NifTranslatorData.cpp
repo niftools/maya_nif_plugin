@@ -1,4 +1,4 @@
-#include "include/Common/NifTranslatorData.h"
+#include "Common/NifTranslatorData.h"
 
 NifTranslatorData::NifTranslatorData() {
 

@@ -1,4 +1,4 @@
-#include "include/Importers/NifDefaultImportingFixture.h"
+#include "Importers/NifDefaultImportingFixture.h"
 
 NifDefaultImportingFixture::NifDefaultImportingFixture() {
 
