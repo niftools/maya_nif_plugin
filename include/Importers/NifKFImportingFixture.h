@@ -85,12 +85,12 @@
 #include <obj/NiBSplinePoint3Interpolator.h>
 #include <obj/NiBoolInterpolator.h>
 
-#include "include/Common/NifTranslatorData.h"
-#include "include/Common/NifTranslatorOptions.h"
-#include "include/Common/NifTranslatorUtils.h"
-#include "include/Importers/NifNodeImporter.h"
-#include "include/Importers/NifImportingFixture.h"
-#include "include/Importers/NifKFAnimationImporter.h"
+#include "Common/NifTranslatorData.h"
+#include "Common/NifTranslatorOptions.h"
+#include "Common/NifTranslatorUtils.h"
+#include "Importers/NifNodeImporter.h"
+#include "Importers/NifImportingFixture.h"
+#include "Importers/NifKFAnimationImporter.h"
 
 using namespace std;
 using namespace Niflib;

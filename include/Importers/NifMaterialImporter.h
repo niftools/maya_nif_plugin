@@ -82,12 +82,12 @@
 #include <obj/NiAVObject.h>
 #include <obj/NiTriBasedGeom.h>
 
-#include "include/Common/NifTranslatorRefObject.h"
-#include "include/Common/NifTranslatorOptions.h"
-#include "include/Common/NifTranslatorData.h"
-#include "include/Common/NifTranslatorUtils.h"
-#include "include/Common/NifTranslatorFixtureItem.h"
-#include "include/Importers/NifTextureConnector.h"
+#include "Common/NifTranslatorRefObject.h"
+#include "Common/NifTranslatorOptions.h"
+#include "Common/NifTranslatorData.h"
+#include "Common/NifTranslatorUtils.h"
+#include "Common/NifTranslatorFixtureItem.h"
+#include "Importers/NifTextureConnector.h"
 
 using namespace std;
 using namespace Niflib;

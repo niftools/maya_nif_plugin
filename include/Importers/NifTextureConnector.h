@@ -83,7 +83,7 @@
 #include <obj/NiAVObject.h>
 #include <obj/NiTriBasedGeom.h>
 
-#include "include/Common/NifTranslatorRefObject.h"
+#include "Common/NifTranslatorRefObject.h"
 
 class NifTextureConnector;
 
@@ -100,7 +100,9 @@ public:
 
 	NifTextureConnector();
 
-	NifTextureConnector(MFnDependencyNode texture_placement, int uv_set);
+	//NifTextureConnector(MFnDependencyNode texture_placement, int uv_set);
+
+	NifTextureConnector(MFnDependencyNode &texture_placement, int uv_set);
 
 	virtual void ConnectTexture(MDagPath mesh_path);
 

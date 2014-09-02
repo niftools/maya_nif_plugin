@@ -81,9 +81,9 @@
 #include <obj/NiControllerSequence.h>
 #include <Ref.h>
 
-#include "include/Common/NifTranslatorRefObject.h"
-#include "include/Exporters/NifExportingFixture.h"
-#include "include/Exporters/NifKFAnimationExporter.h"
+#include "Common/NifTranslatorRefObject.h"
+#include "Exporters/NifExportingFixture.h"
+#include "Exporters/NifKFAnimationExporter.h"
 
 using namespace Niflib;
 using namespace std;

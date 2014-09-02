@@ -79,7 +79,7 @@
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 
-#include "include/Common/NifTranslatorFixtureItem.h"
+#include "Common/NifTranslatorFixtureItem.h"
 
 using namespace Niflib;
 using namespace std;

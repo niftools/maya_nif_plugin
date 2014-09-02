@@ -84,13 +84,13 @@
 #include <obj/BSLightingShaderProperty.h>
 #include <obj/BSShaderTextureSet.h>
 
-#include "include/Common/NifTranslatorRefObject.h"
-#include "include/Common/NifTranslatorOptions.h"
-#include "include/Common/NifTranslatorData.h"
-#include "include/Common/NifTranslatorUtils.h"
-#include "include/Common/NifTranslatorFixtureItem.h"
-#include "include/Exporters/NifMeshExporter.h"
-#include "include/Custom Nodes/NifDismemberPartition.h"
+#include "Common/NifTranslatorRefObject.h"
+#include "Common/NifTranslatorOptions.h"
+#include "Common/NifTranslatorData.h"
+#include "Common/NifTranslatorUtils.h"
+#include "Common/NifTranslatorFixtureItem.h"
+#include "Exporters/NifMeshExporter.h"
+#include "Custom Nodes/NifDismemberPartition.h"
 
 class NifMeshExporterSkyrim;
 

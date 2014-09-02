@@ -98,7 +98,7 @@
 #include <obj/NiVisController.h>
 #include <Ref.h>
 
-#include "include/Common/NifTranslatorFixtureItem.h"
+#include "Common/NifTranslatorFixtureItem.h"
 
 using namespace Niflib;
 using namespace std;
