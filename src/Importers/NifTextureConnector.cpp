@@ -1,11 +1,16 @@
-#include "include/Importers/NifTextureConnector.h"
+#include "Importers/NifTextureConnector.h"
 
 
 NifTextureConnector::NifTextureConnector() {
 
 }
 
-NifTextureConnector::NifTextureConnector(MFnDependencyNode texture_placement, int uv_set) {
+/*NifTextureConnector::NifTextureConnector(MFnDependencyNode texture_placement, int uv_set) {
+	this->texturePlacement.setObject(texture_placement.object());
+	this->uvSet = uv_set;
+}*/
+
+NifTextureConnector::NifTextureConnector(MFnDependencyNode &texture_placement, int uv_set) {
 	this->texturePlacement.setObject(texture_placement.object());
 	this->uvSet = uv_set;
 }
