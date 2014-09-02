@@ -1,4 +1,4 @@
-#include "include/Importers/NifMeshImporterSkyrim.h"
+#include "Importers/NifMeshImporterSkyrim.h"
 
 
 NifMeshImporterSkyrim::NifMeshImporterSkyrim() {
@@ -391,12 +391,12 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 		if(property_group.size() > 0) {
 			MObject material_object;
 
-			for(int x = 0; x < this->translatorData->importedMaterials.size(); x++) {
+			for(unsigned int x = 0; x < this->translatorData->importedMaterials.size(); x++) {
 				int coincidences = 0;
 				vector<NiPropertyRef> current_property_group = this->translatorData->importedMaterials[x].first;
 
-				for(int y = 0; y < property_group.size(); y++) {
-					for(int z = 0; z < current_property_group.size(); z++) {
+				for(unsigned int y = 0; y < property_group.size(); y++) {
+					for(unsigned int z = 0; z < current_property_group.size(); z++) {
 						if(property_group[y] == current_property_group[z]) {
 							coincidences++;
 						}
@@ -416,12 +416,12 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 
 			vector<NifTextureConnectorRef> texture_connectors;
 
-			for(int x = 0; x < this->translatorData->importedTextureConnectors.size(); x++) {
+			for(unsigned int x = 0; x < this->translatorData->importedTextureConnectors.size(); x++) {
 				int coincidences = 0;
 				vector<NiPropertyRef> current_property_group = this->translatorData->importedTextureConnectors[x].first;
 
-				for(int y = 0; y < property_group.size(); y++) {
-					for(int z = 0; z < current_property_group.size(); z++) {
+				for(unsigned int y = 0; y < property_group.size(); y++) {
+					for(unsigned int z = 0; z < current_property_group.size(); z++) {
 						if(property_group[y] == current_property_group[z]) {
 							coincidences++;
 						}
@@ -464,7 +464,7 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 		MFnSkinCluster clusterFn;
 
 		if(this->translatorOptions->importNormalizedWeights == false) {
-			MGlobal::executeCommand("setAttr " + clusterFn.name() + "\.normalizeWeights 0");
+			MGlobal::executeCommand("setAttr " + clusterFn.name() + ".normalizeWeights 0");
 		}
 
 		MSelectionList selList;
@@ -558,7 +558,7 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 
 		MFnDagNode parent_node(parent);
 		MFnDagNode check;
-		for(int x = 0; x < parent_node.childCount(); x++) {
+		for(unsigned int x = 0; x < parent_node.childCount(); x++) {
 			MObject child = parent_node.child(x);
 			check.setObject(child);
 			if(child.hasFn(MFn::kMesh) && !check.isIntermediateObject()) {
@@ -579,19 +579,19 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 
 		int blind_data_id = 0;
 
-		for(int x = 0; x < cs.GetDismemberPartitionsBodyParts().size(); x++) {
+		for(unsigned int x = 0; x < cs.GetDismemberPartitionsBodyParts().size(); x++) {
 			MSelectionList selected_faces;
 			do {
 				blind_data_id++;
 				status = blind_data_mesh.createBlindDataType(blind_data_id, long_name, short_name, format_name);
 			} while(status == MStatus::kFailure);
 
-			vector<int> dismember_faces = cs.GetDismemberPartitionsFaces();
+			vector<char32_t> dismember_faces = cs.GetDismemberPartitionsFaces();
 			MItMeshPolygon polygon_it(blind_data_mesh.object());
 
 			selected_faces.add(meshPath);
 
-			for(int y = 0; y < dismember_faces.size() && !polygon_it.isDone(); y++, polygon_it.next()) {
+			for(unsigned int y = 0; y < dismember_faces.size() && !polygon_it.isDone(); y++, polygon_it.next()) {
 				if(dismember_faces[y] == x) {
 					selected_faces.add(meshPath, polygon_it.currentItem());
 				}
@@ -626,7 +626,7 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 			mel_command += (dismember_node.name() + ".bodyPartsFlags");
 			mel_command += " -type \"stringArray\" ";
 			mel_command += body_parts_strings.length();
-			for(int z = 0; z < body_parts_strings.length(); z++) {
+			for(unsigned int z = 0; z < body_parts_strings.length(); z++) {
 				mel_command += (" \"" + body_parts_strings[z] + "\"");
 			}
 			MGlobal::executeCommand(mel_command);
@@ -635,7 +635,7 @@ MDagPath NifMeshImporterSkyrim::ImportMesh( NiAVObjectRef root, MObject parent )
 			mel_command += (dismember_node.name() + ".partsFlags");
 			mel_command += " -type \"stringArray\" ";
 			mel_command += parts_strings.length();
-			for(int z = 0; z < parts_strings.length(); z++) {
+			for(unsigned int z = 0; z < parts_strings.length(); z++) {
 				mel_command += (" \"" + parts_strings[z] + "\"");
 			}
 			MGlobal::executeCommand(mel_command);
