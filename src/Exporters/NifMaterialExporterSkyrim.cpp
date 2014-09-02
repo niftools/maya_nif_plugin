@@ -1,4 +1,4 @@
-#include "include/Exporters/NifMaterialExporterSkyrim.h"
+#include "Exporters/NifMaterialExporterSkyrim.h"
 
 NifMaterialExporterSkyrim::NifMaterialExporterSkyrim() {
 
@@ -25,9 +25,12 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			string texture = "";
 			string normal_map = "";
 
-			unsigned int shader_type = 0;
-			unsigned int shader_flags1 = 0;
-			unsigned int shader_flags2 = 0;
+			//BSLightingShaderPropertyShaderType shader_type = DEFAULT;
+			//SkyrimShaderPropertyFlags1 shader_flags1 = SLSF1_SPECULAR;  // plateofshrimp: in lieu of missing NONE value
+			//SkyrimShaderPropertyFlags2 shader_flags2 = SLSF2_ZBUFFER_WRITE;  // plateofshrimp: in lieu of missing NONE value
+			unsigned int shader_type = DEFAULT;
+			unsigned int shader_flags1 = SLSF1_SPECULAR;  // plateofshrimp: in lieu of missing NONE value
+			unsigned int shader_flags2 = SLSF2_ZBUFFER_WRITE;  // plateofshrimp: in lieu of missing NONE value
 
 			Color3 emissive_color(0.0, 0.0, 0.0);
 			Color3 specular_color(0.0, 0.0, 0.0);
@@ -35,7 +38,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			float alpha = 0;
 			float glossiness = 12.5;
 			float specular_strength = 1;
-			float lightning_effect1 = 0.3;
+			float lightning_effect1 = 0.3f;
 			float lightning_effect2 = 2.0;
 			float emissive_saturation = 1;
 
@@ -47,12 +50,12 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			MObject current_texture;
 
 			for(int i = 0; i < 9; i++) {
-				shader_textures->setTexture(i, "");
+				shader_textures->SetTexture(i, "");
 			}
 
 			MPlug shader_flags_plug = shader_node.findPlug("skyrimShaderFlags1");
 			if(!shader_flags_plug.isNull()) {
-				shader_flags1 = this->stringToSkyrimShaderFlags1(shader_flags_plug.asString());
+				shader_flags1 = (SkyrimShaderPropertyFlags1)(this->stringToSkyrimShaderFlags1(shader_flags_plug.asString()));
 			}
 			shader_flags_plug = shader_node.findPlug("skyrimShaderFlags2");
 			if(!shader_flags_plug.isNull()) {
@@ -70,7 +73,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			this->GetColor(shader_node, "color", color, current_texture);
 			if(!current_texture.isNull()) {
 				string file_name = this->ExportTexture(current_texture);
-				shader_textures->setTexture(0, file_name);
+				shader_textures->SetTexture(0, file_name);
 				MFnDependencyNode texture_node(current_texture);
 				texture_node.findPlug("outAlpha").connectedTo(connections, false, true);
 				if(connections.length() > 0 && connections[0].node() == shader_node.object()) {
@@ -92,7 +95,7 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 					MPlug alpha_plug = connections[0];
 					current_texture = alpha_plug.node();
 					string file_name = this->ExportTexture(current_texture);
-					shader_textures->setTexture(1, file_name);
+					shader_textures->SetTexture(1, file_name);
 				}
 			}
 
@@ -122,39 +125,39 @@ void NifMaterialExporterSkyrim::ExportMaterials() {
 			string a_texture;
 			if(!additional_texture.isNull()) {
 				a_texture = this->ExportTexture(additional_texture.asString());
-				shader_textures->setTexture(4, a_texture);
+				shader_textures->SetTexture(4, a_texture);
 			}
 
 			additional_texture = shader_node.findPlug("evironmentMaskTexture");
 			if(!additional_texture.isNull()) {
 				a_texture = this->ExportTexture(additional_texture.asString());
-				shader_textures->setTexture(5, a_texture);
+				shader_textures->SetTexture(5, a_texture);
 			}
 
 			additional_texture = shader_node.findPlug("glowMapTexture");
 			if(!additional_texture.isNull()) {
 				a_texture = this->ExportTexture(additional_texture.asString());
-				shader_textures->setTexture(2, a_texture);
+				shader_textures->SetTexture(2, a_texture);
 			}
 
 			additional_texture = shader_node.findPlug("skinTexture");
 			if(!additional_texture.isNull()) {
 				a_texture = this->ExportTexture(additional_texture.asString());
-				shader_textures->setTexture(2, a_texture);
+				shader_textures->SetTexture(2, a_texture);
 			}
 
-			shader_property->SetSkyrimShaderType(shader_type);
-			shader_property->setTextureSet(shader_textures);
-			shader_property->setGlossiness(glossiness);
-			shader_property->setEmissiveColor(emissive_color);
-			shader_property->setSpecularColor(specular_color);
-			shader_property->setTextureTranslation1(texture_translation1);
-			shader_property->setTextureRepeat(texture_repeat);
-			shader_property->setEmissiveSaturation(emissive_saturation);
-			shader_property->setShaderFlags1(shader_flags1);
-			shader_property->setShaderFlags2(shader_flags2);
-			shader_property->setUnknownInt7(3);
-			shader_property->setAlpha(alpha);
+			shader_property->SetSkyrimShaderType((BSLightingShaderPropertyShaderType)shader_type);
+			shader_property->SetTextureSet(shader_textures);
+			shader_property->SetGlossiness(glossiness);
+			shader_property->SetEmissiveColor(emissive_color);
+			shader_property->SetSpecularColor(specular_color);
+			//shader_property->SetTextureTranslation1(texture_translation1); FIXME
+			//shader_property->SetTextureRepeat(texture_repeat); FIXME
+			//shader_property->SetEmissiveSaturation(emissive_saturation); FIXME
+			shader_property->SetShaderFlags1((SkyrimShaderPropertyFlags1)shader_flags1);
+			shader_property->SetShaderFlags2((SkyrimShaderPropertyFlags2)shader_flags2);
+			//shader_property->SetUnknownInt7(3); FIXME
+			shader_property->SetAlpha(alpha);
 
 			vector<NiPropertyRef> properties;
 			properties.push_back(DynamicCast<NiProperty>(shader_property));
@@ -255,7 +258,7 @@ unsigned int NifMaterialExporterSkyrim::stringToSkyrimShaderFlags1( MString flag
 	
 	MStringArray flags;
 	flags_string.split('|', flags);
-	for(int i = 0; i < flags.length(); i++) {
+	for(unsigned int i = 0; i < flags.length(); i++) {
 		MString flag = flags[i];
 		if (flag == "SLSF1_Specular") {
 			shader_flags = (shader_flags | 1);
@@ -332,7 +335,7 @@ unsigned int NifMaterialExporterSkyrim::stringToSkyrimShaderFlags2( MString flag
 
 	MStringArray flags;
 	flags_string.split('|', flags);
-	for(int i = 0; i < flags.length(); i++) {
+	for(unsigned int i = 0; i < flags.length(); i++) {
 		MString flag = flags[i];
 		if (flag == "SLSF2_ZBuffer_Write") {
 			shader_flags = (shader_flags | 1);
