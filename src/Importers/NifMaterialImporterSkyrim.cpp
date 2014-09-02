@@ -1,4 +1,4 @@
-#include "include/Importers/NifMaterialImporterSkyrim.h"
+#include "Importers/NifMaterialImporterSkyrim.h"
 
 
 NifMaterialImporterSkyrim::NifMaterialImporterSkyrim() {
@@ -21,7 +21,7 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 		NiAlphaPropertyRef alpha_property = NULL;
 		BSLightingShaderPropertyRef shader_property = NULL;
 
-		array<2, Ref<NiProperty>> properties = geometry->getBsProperties(); 
+		array<2, Ref<NiProperty>> properties = geometry->GetBSProperties(); 
 
 		for(int i = 0; i < 2; i++) {
 			NiPropertyRef current_property = properties[i]; 
@@ -79,12 +79,12 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 			found_material = new_shader.create();
 
 			if(shader_property != NULL) {
-				MColor reflective_color(shader_property->getSpecularColor().r, shader_property->getSpecularColor().g, shader_property->getSpecularColor().b);
-				MColor incadescence_color(shader_property->getEmissiveColor().r, shader_property->getEmissiveColor().g, shader_property->getEmissiveColor().b);
-				float glow_intensity = shader_property->getEmissiveSaturation() / 1000;
-				float reflective_strength = shader_property->getSpecularStrength() / 1000;
-				float cosine_power = shader_property->getGlossiness();
-				float transparency = 1.0f - shader_property->getAlpha();
+				MColor reflective_color(shader_property->GetSpecularColor().r, shader_property->GetSpecularColor().g, shader_property->GetSpecularColor().b);
+				MColor incadescence_color(shader_property->GetEmissiveColor().r, shader_property->GetEmissiveColor().g, shader_property->GetEmissiveColor().b);
+				float glow_intensity = shader_property->GetEmissiveMultiple() / 1000;
+				float reflective_strength = shader_property->GetSpecularStrength() / 1000;
+				float cosine_power = shader_property->GetGlossiness();
+				float transparency = 1.0f - shader_property->GetAlpha();
 
 				new_shader.setReflectedColor(reflective_color);
 				new_shader.findPlug("reflectivity").setFloat(reflective_strength);
@@ -93,11 +93,11 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 				new_shader.setCosPower(cosine_power);
 				new_shader.setTransparency(transparency);
 
-				BSShaderTextureSetRef texture_set = shader_property->getTextureSet();
+				BSShaderTextureSetRef texture_set = shader_property->GetTextureSet();
 				if(texture_set != NULL) {
 					MDGModifier dg_modifier;
-					string color_texture = texture_set->getTexture(0);
-					string normal_map = texture_set->getTexture(1);
+					string color_texture = texture_set->GetTexture(0);
+					string normal_map = texture_set->GetTexture(1);
 
 					if(color_texture.length() > 0) {
 						MString color_texture_file = this->GetTextureFilePath(color_texture);
@@ -220,8 +220,8 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 				}
 
 				MString shader_Type = this->skyrimShaderTypeToString(shader_property->GetSkyrimShaderType());
-				MString shader_flags1 = this->skyrimShaderFlags1ToString(shader_property->getShaderFlags1());
-				MString shader_flags2 = this->skyrimShaderFlags2ToString(shader_property->getShaderFlags2());
+				MString shader_flags1 = this->skyrimShaderFlags1ToString(shader_property->GetShaderFlags1());
+				MString shader_flags2 = this->skyrimShaderFlags2ToString(shader_property->GetShaderFlags2());
 
 				MString mel_command = "addAttr -dt \"string\" -shortName skyrimShaderFlags1 ";
 				MGlobal::executeCommand(mel_command + new_shader.name());
@@ -244,20 +244,20 @@ void NifMaterialImporterSkyrim::GatherMaterialsAndTextures( NiAVObjectRef & root
 						MGlobal::executeCommand(mel_command + new_shader.name());
 
 						mel_command = "setAttr -type \"string\" ";
-						MGlobal::executeCommand(mel_command + new_shader.name() + "\.cubeMapTexture \"" + this->GetTextureFilePath(texture_set->getTexture(4)) + "\"");
-						MGlobal::executeCommand(mel_command + new_shader.name() + "\.evironmentMaskTexture \"" + this->GetTextureFilePath(texture_set->getTexture(5)) + "\"");
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.cubeMapTexture \"" + this->GetTextureFilePath(texture_set->GetTexture(4)) + "\"");
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.evironmentMaskTexture \"" + this->GetTextureFilePath(texture_set->GetTexture(5)) + "\"");
 					} else if(shader_type2 == 2) {
 						mel_command = "addAttr -dt \"string\" -shortName glowMapTexture ";
 						MGlobal::executeCommand(mel_command + new_shader.name());
 						
 						mel_command = "setAttr -type \"string\" ";
-						MGlobal::executeCommand(mel_command + new_shader.name() + "\.glowMapTexture \"" + this->GetTextureFilePath(texture_set->getTexture(2)) + "\"");
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.glowMapTexture \"" + this->GetTextureFilePath(texture_set->GetTexture(2)) + "\"");
 					} else if(shader_type2 == 5) {
 						mel_command = "addAttr -dt \"string\" -shortName skinTexture ";
 						MGlobal::executeCommand(mel_command + new_shader.name());
 
 						mel_command = "setAttr -type \"string\" ";
-						MGlobal::executeCommand(mel_command + new_shader.name() + "\.skinTexture \"" + this->GetTextureFilePath(texture_set->getTexture(2)) + "\"");
+						MGlobal::executeCommand(mel_command + new_shader.name() + "\.skinTexture \"" + this->GetTextureFilePath(texture_set->GetTexture(2)) + "\"");
 
 					}
 				}
