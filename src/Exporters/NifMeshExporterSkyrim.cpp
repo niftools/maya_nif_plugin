@@ -1,4 +1,4 @@
-#include "include/Exporters/NifMeshExporterSkyrim.h"
+#include "Exporters/NifMeshExporterSkyrim.h"
 
 NifMeshExporterSkyrim::NifMeshExporterSkyrim() {
 
@@ -511,7 +511,7 @@ void NifMeshExporterSkyrim::ExportMesh( MObject dagNode ) {
 		}
 
 		cs.SetDismemberPartitionsBodyParts(body_parts_list);
-		cs.SetDismemberPartitionsFaces(dismember_faces);
+		//cs.SetDismemberPartitionsFaces(dismember_faces);
 	}
 
 	//out << "Setting vertex info" << endl;
