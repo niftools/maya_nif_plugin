@@ -82,7 +82,7 @@
 #include "NifTranslatorData.h"
 #include "NifTranslatorOptions.h"
 #include "NifTranslatorRefObject.h"
-#include "include/Importers/NifTextureConnector.h"
+#include "Importers/NifTextureConnector.h"
 
 using namespace Niflib;
 using namespace std;

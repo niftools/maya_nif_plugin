@@ -68,6 +68,7 @@ MStatus uninitializePlugin( MObject obj )
 	MStatus   status;
 	MFnPlugin plugin( obj );
 
+	cerr << TRANSLATOR_NAME << endl;
 	status =  plugin.deregisterFileTranslator( TRANSLATOR_NAME );
 	if (!status) {
 		status.perror("deregisterFileTranslator");
@@ -101,7 +102,7 @@ MStatus NifTranslator::reader	 (const MFileObject& file, const MString& optionsS
 	NifImportingFixtureRef importer;
 
 	ImportType import_type = ImportType::Default;
-	Header file_header = ReadHeader(file.name().asChar());
+	Header file_header = ReadHeader(file.resolvedFullName().asChar());
 
 	vector<string> block_types = file_header.getBlockTypes();
 	vector<unsigned short> block_types_index = file_header.getBlockTypeIndex();
@@ -155,9 +156,9 @@ MStatus NifTranslator::writer (const MFileObject& file, const MString& optionsSt
 		if(translator_options->exportMaterialType == "standardmaterial") {
 			exporting_fixture = new NifDefaultExportingFixture(translator_data, translator_options, translator_utils);
 		}
-		if(translator_options->exportMaterialType == "skyrimmaterial") {
-			exporting_fixture = new NifSkyrimExportingFixture(translator_options, translator_data, translator_utils);
-		}
+		//if(translator_options->exportMaterialType == "skyrimmaterial") {
+		//	exporting_fixture = new NifSkyrimExportingFixture(translator_options, translator_data, translator_utils);
+		//}
 	}
 
 	if(export_type == "animation") {

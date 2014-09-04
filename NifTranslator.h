@@ -141,7 +141,7 @@ POSSIBILITY OF SUCH DAMAGE. */
 #include "include/Exporters/NifKFExportingFixture.h"
 #include "include/Importers/NifSkyrimImportingFixture.h"
 #include "include/Custom Nodes/NifDismemberPartition.h"
-#include "include/Exporters/NifSkyrimExportingfixture.h"
+//#include "include/Exporters/NifSkyrimExportingfixture.h"
 
 using namespace Niflib;
 using namespace std;

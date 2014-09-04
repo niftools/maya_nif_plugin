@@ -1,4 +1,4 @@
-#include "include/Importers/NifKFImportingFixture.h"
+#include "Importers/NifKFImportingFixture.h"
 
 
 NifKFImportingFixture::NifKFImportingFixture() {

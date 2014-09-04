@@ -1,4 +1,4 @@
-#include "include/Importers/NifMaterialImporter.h"
+#include "Importers/NifMaterialImporter.h"
 
 NifMaterialImporter::NifMaterialImporter() {
 
@@ -178,7 +178,7 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 
 	MDGModifier dgModifier;
 
-	for(int material_index = 0; material_index < this->materialCollection.GetNumMaterials(); material_index++) {
+	for(unsigned int material_index = 0; material_index < this->materialCollection.GetNumMaterials(); material_index++) {
 		MaterialWrapper mw = this->materialCollection.GetMaterial(material_index);
 		vector<NifTextureConnectorRef> texture_connectors;
 		vector<NiPropertyRef> property_group = mw.GetProperties();
@@ -275,6 +275,7 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 				}
 
 				//Create 2D Texture Placement
+				//MFnDependencyNode *texture_placement = new MFnDependencyNode();
 				MFnDependencyNode texture_placement;
 				texture_placement.create( "place2dTexture", "place2dTexture" );
 				texture_placement.findPlug("wrapU").setValue(wrap_u);
@@ -307,6 +308,8 @@ void NifMaterialImporter::ImportMaterialsAndTextures( NiAVObjectRef & root )
 					NifTextureConnectorRef texture_connector = new NifTextureConnector(texture_placement, uv_set);
 					texture_connectors.push_back(texture_connector);
 				}
+
+				//delete texture_placement;
 			}
 		}
 		this->translatorData->importedTextureConnectors.push_back(pair<vector<NiPropertyRef>, vector<NifTextureConnectorRef>>(property_group, texture_connectors));

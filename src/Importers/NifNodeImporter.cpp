@@ -1,4 +1,4 @@
-#include "include/Importers/NifNodeImporter.h"
+#include "Importers/NifNodeImporter.h"
 
 NifNodeImporter::NifNodeImporter() {
 

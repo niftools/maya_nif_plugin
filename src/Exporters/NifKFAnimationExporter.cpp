@@ -1,4 +1,4 @@
-#include "include/Exporters/NifKFAnimationExporter.h"
+#include "Exporters/NifKFAnimationExporter.h"
 
 
 NifKFAnimationExporter::NifKFAnimationExporter() {

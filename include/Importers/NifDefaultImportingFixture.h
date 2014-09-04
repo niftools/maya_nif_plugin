@@ -80,14 +80,14 @@
 #include <obj/NiTextureProperty.h>
 #include <obj/NiImage.h>
 
-#include "include/Common/NifTranslatorData.h"
-#include "include/Common/NifTranslatorOptions.h"
-#include "include/Common/NifTranslatorUtils.h"
-#include "include/Importers/NifNodeImporter.h"
-#include "include/Importers/NifImportingFixture.h"
-#include "include/Importers/NifAnimationImporter.h"
-#include "include/Importers/NifMeshImporter.h"
-#include "include/Importers/NifMaterialImporter.h"
+#include "Common/NifTranslatorData.h"
+#include "Common/NifTranslatorOptions.h"
+#include "Common/NifTranslatorUtils.h"
+#include "Importers/NifNodeImporter.h"
+#include "Importers/NifImportingFixture.h"
+#include "Importers/NifAnimationImporter.h"
+#include "Importers/NifMeshImporter.h"
+#include "Importers/NifMaterialImporter.h"
 
 class NifDefaultImportingFixture;
 

@@ -51,7 +51,6 @@
     <None Include="AEnifDismemberPartitionTemplate.mel">
       <Filter>Miscellaneous Files</Filter>
     </None>
-    <None Include="ClassDiagram1.cd" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\Exporters\NifAnimationExporter.h">
@@ -237,9 +236,6 @@
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
     <ClCompile Include="src\Exporters\NifMaterialExporterSkyrim.cpp">
-      <Filter>Source Files\Exporters</Filter>
-    </ClCompile>
-    <ClCompile Include="src\Exporters\NifSkyrimExportingFixture.cpp">
       <Filter>Source Files\Exporters</Filter>
     </ClCompile>
   </ItemGroup>

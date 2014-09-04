@@ -1,4 +1,4 @@
-#include "include/Exporters/NifDefaultExportingFixture.h"
+#include "Exporters/NifDefaultExportingFixture.h"
 
 NifDefaultExportingFixture::NifDefaultExportingFixture() {
 

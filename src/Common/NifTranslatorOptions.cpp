@@ -1,4 +1,4 @@
-#include "include/Common/NifTranslatorOptions.h"
+#include "Common/NifTranslatorOptions.h"
 
 
 NifTranslatorOptions::NifTranslatorOptions()
@@ -231,7 +231,7 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 				MStringArray exportedShapesTokens; 
 				tokens[1].split(',',exportedShapesTokens);
 				this->exportedShapes.clear();
-				for(int k = 0;k < exportedShapesTokens.length();k++) {
+				for(unsigned int k = 0;k < exportedShapesTokens.length();k++) {
 					this->exportedShapes.push_back(exportedShapesTokens[k].asChar());
 				}
 			}
@@ -242,7 +242,7 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 				MStringArray exportedJointsTokens;
 				tokens[1].split(',',exportedJointsTokens);
 				this->exportedJoints.clear();
-				for(int k = 0;k < exportedJointsTokens.length();k++) {
+				for(unsigned int k = 0;k < exportedJointsTokens.length();k++) {
 					this->exportedJoints.push_back(exportedJointsTokens[k].asChar());
 				}
 			}
@@ -253,7 +253,7 @@ void NifTranslatorOptions::ParseOptionsString( const MString & optionsString )
 				MStringArray exportedMiscTokens; 
 				tokens[1].split(',',exportedMiscTokens);
 				this->exportedShapes.clear();
-				for(int k = 0;k < exportedMiscTokens.length();k++) {
+				for(unsigned int k = 0;k < exportedMiscTokens.length();k++) {
 					this->exportedMisc.push_back(exportedMiscTokens[k].asChar());
 				}
 			}

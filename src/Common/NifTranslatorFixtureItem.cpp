@@ -1,4 +1,4 @@
-#include "include/Common/NifTranslatorFixtureItem.h"
+#include "Common/NifTranslatorFixtureItem.h"
 
 NifTranslatorFixtureItem::NifTranslatorFixtureItem() {
 

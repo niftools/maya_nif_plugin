@@ -1,4 +1,4 @@
-#include "include/Importers/NifMeshImporter.h"
+#include "Importers/NifMeshImporter.h"
 
 NifMeshImporter::NifMeshImporter() {
 

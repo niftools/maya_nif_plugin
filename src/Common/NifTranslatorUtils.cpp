@@ -1,4 +1,4 @@
-#include "include/Common/NifTranslatorUtils.h"
+#include "Common/NifTranslatorUtils.h"
 
 NifTranslatorUtils::NifTranslatorUtils() {
 
@@ -193,7 +193,7 @@ void NifTranslatorUtils::ConnectShader( MObject material_object, vector<NifTextu
 	//out << "Invoking dgModifier..." << endl;
 	dgModifier.doIt();
 
-	for(int i = 0; i < texture_connectors.size(); i++) {
+	for(unsigned int i = 0; i < texture_connectors.size(); i++) {
 		texture_connectors[i]->ConnectTexture(mesh_path);
 	}
 }
@@ -303,7 +303,7 @@ bool NifTranslatorUtils::isExportedShape( const MString& name )
 		return false;
 	}
 
-	for(int i = 0;i < this->translatorOptions->exportedShapes.size(); i++) {
+	for(unsigned int i = 0;i < this->translatorOptions->exportedShapes.size(); i++) {
 		if(name.asChar() == this->translatorOptions->exportedShapes[i])
 			return true;
 	}
@@ -317,7 +317,7 @@ bool NifTranslatorUtils::isExportedJoint( const MString& name )
 		return false;
 	}
 	
-	for(int i = 0;i < this->translatorOptions->exportedJoints.size(); i++) {
+	for(unsigned int i = 0;i < this->translatorOptions->exportedJoints.size(); i++) {
 		if(name.asChar() == this->translatorOptions->exportedJoints[i])
 			return true;
 	}
@@ -332,7 +332,7 @@ bool NifTranslatorUtils::isExportedMisc( const MString& name )
 		return false;
 	}
 	
-	for(int i = 0;i < this->translatorOptions->exportedMisc.size(); i++) {
+	for(unsigned int i = 0; i < this->translatorOptions->exportedMisc.size(); i++) {
 		if(name.asChar() == this->translatorOptions->exportedMisc[i])
 			return true;
 	}

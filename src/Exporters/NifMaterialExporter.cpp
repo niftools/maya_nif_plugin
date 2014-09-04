@@ -1,4 +1,4 @@
-#include "include/Exporters/NifMaterialExporter.h"
+#include "Exporters/NifMaterialExporter.h"
 
 NifMaterialExporter::NifMaterialExporter() {
 

@@ -1,4 +1,4 @@
-#include "include/Importers/NifSkyrimImportingFixture.h"
+#include "Importers/NifSkyrimImportingFixture.h"
 
 
 NifSkyrimImportingFixture::NifSkyrimImportingFixture() {

@@ -1,4 +1,4 @@
-#include "include/Common/NifTranslatorRefObject.h"
+#include "Common/NifTranslatorRefObject.h"
 
 string NifTranslatorRefObject::asString( bool verbose /*= false */ ) const {
 	stringstream out;

@@ -1,4 +1,4 @@
-#include "include/Exporters/NifNodeExporter.h"
+#include "Exporters/NifNodeExporter.h"
 
 NifNodeExporter::NifNodeExporter() {
 

@@ -1,4 +1,4 @@
-#include "include/Exporters/NifKFExportingFixture.h"
+#include "Exporters/NifKFExportingFixture.h"
 
 NifKFExportingFixture::NifKFExportingFixture() {
 
@@ -53,49 +53,52 @@ MStatus NifKFExportingFixture::WriteNodes( const MFileObject& file ) {
 	controller_sequence->SetTargetName(this->translatorOptions->animationTarget);
 	controller_sequence->SetFrequency(1.0);
 
-	vector<MFnDependencyNode> objectsWithExportIndexes;
-	vector<MFnDependencyNode> objectsWithoutExportIndexes;
+	vector<MFnDependencyNode*> objectsWithExportIndexes;
+	vector<MFnDependencyNode*> objectsWithoutExportIndexes;
 
-	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
+	for(unsigned int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
 		MFnDependencyNode node(this->translatorData->animatedObjects.at(i));
 		MPlug plug = node.findPlug("exportIndex");
 		string name = node.name().asChar();
 
+		// MAYA-6512
+		MFnDependencyNode *anode = new MFnDagNode(node.object());
 		if(plug.isNull()) {
-			objectsWithoutExportIndexes.push_back(node);
+			objectsWithoutExportIndexes.push_back(anode);
 		} else {
-			objectsWithExportIndexes.push_back(node);
+			objectsWithExportIndexes.push_back(anode);
 		}
+		// FIXME probably a leak here
 	}
 
 	this->translatorData->animatedObjects.clear();
 
-	for(int i = 0;i < (int)(objectsWithExportIndexes.size()) - 1; i++) {
-		for(int j = i + 1; j < objectsWithExportIndexes.size(); j++) {
-			MPlug plug_i = objectsWithExportIndexes.at(i).findPlug("exportIndex");
-			MPlug plug_j = objectsWithExportIndexes.at(j).findPlug("exportIndex");
+	for(unsigned int i = 0;i < objectsWithExportIndexes.size() - 1; i++) {
+		for(unsigned int j = i + 1; j < objectsWithExportIndexes.size(); j++) {
+			MPlug plug_i = objectsWithExportIndexes.at(i)->findPlug("exportIndex");
+			MPlug plug_j = objectsWithExportIndexes.at(j)->findPlug("exportIndex");
 
 			if(plug_i.asInt() > plug_j.asInt()) {
-				MObject aux = objectsWithExportIndexes.at(i).object();
-				objectsWithExportIndexes.at(i).setObject(objectsWithExportIndexes.at(j).object());
-				objectsWithExportIndexes.at(j).setObject(aux);
+				MObject aux = objectsWithExportIndexes.at(i)->object();
+				objectsWithExportIndexes.at(i)->setObject(objectsWithExportIndexes.at(j)->object());
+				objectsWithExportIndexes.at(j)->setObject(aux);
 			}
 		}
 	}
 
-	for(int i = 0; i < objectsWithExportIndexes.size(); i++) {
-		this->translatorData->animatedObjects.push_back(objectsWithExportIndexes.at(i).object());
+	for(unsigned int i = 0; i < objectsWithExportIndexes.size(); i++) {
+		this->translatorData->animatedObjects.push_back(objectsWithExportIndexes.at(i)->object());
 	}
 
-	for(int i = 0; i < objectsWithoutExportIndexes.size(); i++) {
-		this->translatorData->animatedObjects.push_back(objectsWithoutExportIndexes.at(i).object());
+	for(unsigned int i = 0; i < objectsWithoutExportIndexes.size(); i++) {
+		this->translatorData->animatedObjects.push_back(objectsWithoutExportIndexes.at(i)->object());
 	}
 
-	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
+	for(unsigned int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
 		
 	}
 
-	for(int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
+	for(unsigned int i = 0; i < this->translatorData->animatedObjects.size(); i++) {
 		MFnDependencyNode node(this->translatorData->animatedObjects.at(i));
 		string name = node.name().asChar();
 		this->animationExporter->ExportAnimation(controller_sequence, this->translatorData->animatedObjects.at(i));

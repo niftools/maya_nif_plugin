@@ -80,7 +80,7 @@
 #include <obj/NiImage.h>
 #include <Ref.h>
 
-#include "include/Common/NifTranslatorFixtureItem.h"
+#include "Common/NifTranslatorFixtureItem.h"
 
 using namespace std;
 using namespace Niflib;
